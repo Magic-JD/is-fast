@@ -1,45 +1,40 @@
 use ncurses::*;
 use reqwest::blocking::Client;
 use scraper::{Html, Selector};
-use std::fs::File;
-use std::io::Write;
-use std::path::Path;
-use std::env;
-use std::fs::write;
-use std::process::Command;
-use tempfile::NamedTempFile;
 
 fn main() {
-   // setup_tui();
+    setup_tui();
+    let mut index = 0;
     let message: String = std::env::args().skip(1).collect::<Vec<String>>().join(" ");
     let links = get_top_links(message);
-    showLink(links.get(0));
+    let mut page = show_link(links.get(index));
 
+    mvprintw(1, 1, format!("{}", page).as_str());
+    refresh();
     loop {
         let ch = getch();
         if ch == 'q' as i32 {
             break;
         }
-        if ch == 'n' as i32 {
-            showLink(links.get(1));
+        if ch == 'n' as i32 && index < 4 {
+            index +=1;
+            page = show_link(links.get(index));
+            mvprintw(1, 1, format!("{}", page).as_str());
+            refresh();
+        }
+        if ch == 'b' as i32 && index > 0 {
+            index -=1;
+            page = show_link(links.get(index));
+            mvprintw(1, 1, format!("{}", page).as_str());
+            refresh();
         }
     }
+    endwin();
 }
 
-fn showLink(links: Option<&Link>) {
+fn show_link(links: Option<&Link>) -> String {
     let first_url = links.map(|link| link.url.clone()).ok_or("No links available").unwrap();
-    let page = fetch_url(first_url).unwrap();
-
-    // Write to a temporary file
-    let temp_file = NamedTempFile::new().expect("Failed to create temp file");
-    write(temp_file.path(), &page).expect("Failed to write to temp file");
-
-    // Run bat for pagination
-    Command::new("bat")
-        .arg(temp_file.path()) // Pass temp file to bat
-        .arg("--paging=always") // Ensure pagination
-        .status()
-        .expect("Failed to execute bat");
+    fetch_url(first_url).unwrap()
 }
 
 fn fetch_url(first_url: String) -> Result<String, Box<dyn std::error::Error>> {
@@ -83,19 +78,6 @@ fn setup_tui() {
     raw();
     keypad(stdscr(), true);
     noecho();
-}
-
-fn debug_out(debug: String) -> std::io::Result<()> {
-    let file_path = Path::new("result.html"); // File in the project directory
-    let mut file = File::create(&file_path)?; // Create (or overwrite) the file
-
-    file.write_all(debug.as_bytes())?; // Write content to the file
-
-    println!("File written to {:?}", file_path);
-    Ok(())
-}
-
-fn await_input() {
 }
 
 struct Link {
