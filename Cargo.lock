@@ -1599,6 +1599,7 @@ dependencies = [
  "ncurses",
  "reqwest",
  "scraper",
+ "tempfile",
 ]
 
 [[package]]
