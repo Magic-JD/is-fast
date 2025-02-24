@@ -1,16 +1,13 @@
-use reqwest::blocking::Client;
-use scraper::{Html, Selector};
-use std::process::{Command, Stdio};
-use std::io::Write;
-use crate::scrape::scrape;
+use crate::error::MyError;
 use crate::extract::extract_page_content;
+use crate::scrape::scrape;
 
-pub fn fetch_url(link: Option<&crate::models::Link>) -> String {
+pub fn fetch_url(link: Option<&crate::models::Link>) -> Result<String, MyError> {
     let first_url = match link {
         Some(link) => link.url.clone(),
-        None => return "No links available".to_string(),
+        None => return Err(MyError::DisplayError("No links available".to_string())),
     };
-    let res = scrape(&format!("https://{}", first_url));
-    extract_page_content(&res)
+    scrape(&format!("https://{}", first_url))
+        .and_then(|html| extract_page_content(&html)).map_err(|e| MyError::DisplayError(e.to_string()))
 }
 

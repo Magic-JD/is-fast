@@ -1,12 +1,10 @@
 use reqwest::blocking::Client;
 
-pub fn scrape(url: &String) -> String {
-    let client = Client::new();
-    let html = client.get(url)
+pub fn scrape(url: &String) -> Result<String, String> {
+    Client::new().get(url)
         .header("User-Agent", "Mozilla/5.0")
         .send()
-        .expect("Failed to fetch search results")
+        .map_err(|e| format!("Request failed: {}", e))?  // Handle request errors
         .text()
-        .expect("Failed to read response");
-    html
+        .map_err(|e| format!("Failed to extract text: {}", e))  // Handle response body errors
 }

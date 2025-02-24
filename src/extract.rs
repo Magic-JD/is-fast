@@ -18,7 +18,7 @@ pub fn extract_links(html: &String) -> Vec<Link> {
         .collect()
 }
 
-pub fn extract_page_content(res: &String) -> String {
+pub fn extract_page_content(res: &String) -> Result<String, String> {
     let selector = Selector::parse("h1, p, br").unwrap();
     let page: String = Html::parse_document(&res)
         .select(&selector)
@@ -28,7 +28,7 @@ pub fn extract_page_content(res: &String) -> String {
     let cols = std::env::var("COLUMNS").unwrap_or_else(|_| "180".to_string())
         .parse::<usize>().unwrap_or(180).saturating_sub(5);
 
-    let output = Command::new("pandoc")
+    Command::new("pandoc")
         .arg("-f").arg("html")
         .arg("-t").arg("ansi")
         .arg("--columns").arg(cols.to_string())
@@ -41,7 +41,6 @@ pub fn extract_page_content(res: &String) -> String {
                 stdin.write_all(page.as_bytes()).ok();
             }
             child.wait_with_output()
-        }).unwrap();
-
-    String::from_utf8_lossy(&output.stdout).to_string()
+        }).map(|out| String::from_utf8_lossy(&out.stdout).to_string())
+        .map_err(|_| String::from("Error: Could not convert to ansi"))
 }

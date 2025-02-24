@@ -804,6 +804,7 @@ dependencies = [
  "reqwest",
  "scraper",
  "tempfile",
+ "thiserror",
 ]
 
 [[package]]
