@@ -8,7 +8,7 @@ use ratatui::{
 use std::io::{Result, Stdout};
 use crate::models::Link;
 
-pub fn draw_page(terminal: &mut Terminal<CrosstermBackend<Stdout>>, page: &str, link: Option<&Link>) -> Result<()> {
+pub fn draw_page(terminal: &mut Terminal<CrosstermBackend<Stdout>>, page: &str, link: Option<&Link>, scroll_offset: u16) -> Result<()> {
     terminal.draw(|frame| {
         let size = frame.area();
         let layout = Layout::default()
@@ -24,7 +24,8 @@ pub fn draw_page(terminal: &mut Terminal<CrosstermBackend<Stdout>>, page: &str, 
 
         let paragraph = Paragraph::new(page.to_string())
             .style(Style::default().fg(Color::White))
-            .block(block);
+            .block(block)
+            .scroll((scroll_offset, 0));
 
         frame.render_widget(paragraph, area);
     })?;

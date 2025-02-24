@@ -25,11 +25,11 @@ fn main() -> Result<()> {
     let links = extract_links(&scrape(&format!("https://html.duckduckgo.com/html/?q={}", &message)));
     let mut index = 0;
     let mut page = fetch::fetch_url(links.get(index));
-
-    ui::draw_page(&mut terminal, &page, links.get(index))?;
-
+    let mut scroll_offset = 0;
+    ui::draw_page(&mut terminal, &page, links.get(index), scroll_offset)?;
+    let height = terminal.get_frame().area().height;
     loop {
-        if input::handle_input(&mut index, &links, &mut page, &mut terminal)? {
+        if input::handle_input(&mut index, &links, &mut page, &mut terminal, &mut scroll_offset, height-5)? {
             break;
         }
     }
