@@ -1,9 +1,9 @@
-use crossterm::event::{self, KeyCode, KeyEvent, KeyModifiers};
-use std::result::Result;
-use crate::{ui, fetch, models::Link};
-use ratatui::{Terminal, backend::CrosstermBackend};
-use std::io::Stdout;
 use crate::error::MyError;
+use crate::{models::Link, ui};
+use crossterm::event::{self, KeyCode, KeyEvent, KeyModifiers};
+use ratatui::{backend::CrosstermBackend, Terminal};
+use std::io::Stdout;
+use std::result::Result;
 
 pub fn handle_input(
     index: &mut usize,
@@ -19,14 +19,16 @@ pub fn handle_input(
         match code {
             KeyCode::Char('q') => return Ok(true),
             KeyCode::Char('n') | KeyCode::Right if *index < links.len() - 1 => {
+                ui::draw_loading(terminal)?;
                 *index += 1;
-                *page = fetch::fetch_url(links.get(*index))?;
+                *page = links.get(*index).map(|link| link.get_content()).unwrap_or_else(|| String::from("Index out of bounds"));
                 *scroll_offset = 0;
                 draw(index, links, page, terminal, scroll_offset)?;
             }
             KeyCode::Char('b') | KeyCode::Left if *index > 0 => {
+                ui::draw_loading(terminal)?;
                 *index -= 1;
-                *page = fetch::fetch_url(links.get(*index))?;
+                *page = links.get(*index).map(|link| link.get_content()).unwrap_or_else(|| String::from("Index out of bounds"));
                 *scroll_offset = 0;
                 draw(index, links, page, terminal, scroll_offset)?;
             }

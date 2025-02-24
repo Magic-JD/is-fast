@@ -1,4 +1,8 @@
 use crate::models::Link;
+use ansi_to_tui::IntoText;
+use ratatui::style::Modifier;
+use ratatui::text::Span;
+use ratatui::widgets::Wrap;
 use ratatui::{
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout},
@@ -6,11 +10,7 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph},
     Terminal,
 };
-use ratatui::text::{Line, Text, Span};
-use ratatui::widgets::Wrap;
 use std::io::{Result, Stdout};
-use ansi_to_tui::IntoText;
-use ratatui::layout::Alignment;
 
 pub fn draw_loading(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
     terminal.draw(|frame| {
@@ -29,7 +29,12 @@ pub fn draw_loading(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result
     Ok(())
 }
 
-pub fn draw_page(terminal: &mut Terminal<CrosstermBackend<Stdout>>, page: &str, link: Option<&Link>, scroll_offset: u16) -> Result<()> {
+pub fn draw_page(
+    terminal: &mut Terminal<CrosstermBackend<Stdout>>,
+    page: &str,
+    link: Option<&Link>,
+    scroll_offset: u16,
+) -> Result<()> {
     terminal.clear()?;
     terminal.draw(|frame| {
         let size = frame.area();
@@ -40,11 +45,14 @@ pub fn draw_page(terminal: &mut Terminal<CrosstermBackend<Stdout>>, page: &str, 
         let area = layout.split(size)[0];
 
         let block = Block::default()
-            .title(link.map(|l| l.title.clone()).unwrap_or("No Title".to_string()))
-            .title_bottom(
+            .title(
                 Span::styled(
-                    "Quit: q | Scroll Down: j/↓ | Scroll Up: k/↑ | Page Down: CTRL+d | Page Up: CTRL+u | Next: n/→ | Back: b/←",
-                    Style::default().fg(Color::Green),
+                    link.map(|l| l.title.clone()).unwrap_or("No Title".to_string()),
+                    Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
+            ).title_bottom(
+                Span::styled(
+                    " Quit: q | Scroll Down: j/↓ | Scroll Up: k/↑ | Page Down: CTRL+d | Page Up: CTRL+u | Next: n/→ | Back: b/← ",
+                    Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
                 ),)
             .borders(Borders::TOP)
             .style(Style::default().fg(Color::Green));

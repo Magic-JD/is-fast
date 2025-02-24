@@ -1,6 +1,5 @@
 mod error;
 mod extract;
-mod fetch;
 mod input;
 mod models;
 mod scrape;
@@ -24,8 +23,7 @@ fn main() {
     let links = &scrape(&format!("https://html.duckduckgo.com/html/?q={}", &message))
         .map(|html| extract_links(&html))
         .unwrap_or_else(|err| shutdown_with_error(&mut terminal, &err.to_string()));
-    let mut page = fetch::fetch_url(links.get(index))
-        .unwrap_or_else(|err| shutdown_with_error(&mut terminal, &err.to_string()));
+    let mut page = links.get(index).map(|link| link.get_content()).unwrap_or_else(|| String::from("Index out of bounds"));
     let mut scroll_offset = 0;
     ui::draw_page(&mut terminal, &page, links.get(index), scroll_offset)
         .unwrap_or_else(|err| shutdown_with_error(&mut terminal, &err.to_string()));
