@@ -1,12 +1,12 @@
+use crate::models::Link;
 use ratatui::{
-    Terminal,
     backend::CrosstermBackend,
+    layout::{Constraint, Direction, Layout},
+    style::{Color, Style},
     widgets::{Block, Borders, Paragraph},
-    layout::{Layout, Constraint, Direction},
-    style::{Style, Color},
+    Terminal,
 };
 use std::io::{Result, Stdout};
-use crate::models::Link;
 
 pub fn draw_loading(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
     terminal.draw(|frame| {
@@ -26,6 +26,7 @@ pub fn draw_loading(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result
 }
 
 pub fn draw_page(terminal: &mut Terminal<CrosstermBackend<Stdout>>, page: &str, link: Option<&Link>, scroll_offset: u16) -> Result<()> {
+    terminal.clear()?;
     terminal.draw(|frame| {
         let size = frame.area();
         let layout = Layout::default()

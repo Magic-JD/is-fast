@@ -19,11 +19,20 @@ pub fn extract_links(html: &String) -> Vec<Link> {
         .collect()
 }
 
-pub fn extract_page_content(res: &String) -> Result<String, String> {
-    let selector = Selector::parse("h1, p, br").unwrap();
+pub fn extract_page_content(url: &String, res: &String) -> Result<String, String> {
+    let selector = Selector::parse(match url {
+        u if u.contains("en.wikipedia.org") => "p",
+        u if u.contains("www.baeldung.com") => ".post-content",
+        u if u.contains("www.w3schools.com") => "#main",
+        u if u.contains("linuxhandbook.com") => "article",
+        u if u.contains("docs.spring.io") => "article",
+        u if u.contains("stackoverflow.com") => ".js-post-body, .user-details, .comment-body",
+        u if u.contains("github.com") => ".markdown-body",
+        _ => "body",  // Default selector (full document)
+    }).map_err(|_| "Error: Could not parse selector")?;
     let page: String = Html::parse_document(&res)
         .select(&selector)
-        .map(|ele| ele.text().collect::<Vec<_>>().join("\n"))
+        .map(|ele| ele.html())
         .collect();
 
     let cols = std::env::var("COLUMNS")

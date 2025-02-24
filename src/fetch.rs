@@ -8,6 +8,6 @@ pub fn fetch_url(link: Option<&crate::models::Link>) -> Result<String, MyError> 
         None => return Err(MyError::DisplayError("No links available".to_string())),
     };
     scrape(&format!("https://{}", first_url))
-        .and_then(|html| extract_page_content(&html)).map_err(|e| MyError::DisplayError(e.to_string()))
+        .and_then(|html| extract_page_content(&first_url, &html)).map_err(|e| MyError::DisplayError(e.to_string()))
 }
 
