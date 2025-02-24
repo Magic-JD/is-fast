@@ -18,13 +18,13 @@ pub fn handle_input(
         let max_scroll = total_lines.saturating_sub(page_height);
         match code {
             KeyCode::Char('q') => return Ok(true),
-            KeyCode::Char('n') if *index < links.len() - 1 => {
+            KeyCode::Char('n') | KeyCode::Right if *index < links.len() - 1 => {
                 *index += 1;
                 *page = fetch::fetch_url(links.get(*index))?;
                 *scroll_offset = 0;
                 draw(index, links, page, terminal, scroll_offset)?;
             }
-            KeyCode::Char('b') if *index > 0 => {
+            KeyCode::Char('b') | KeyCode::Left if *index > 0 => {
                 *index -= 1;
                 *page = fetch::fetch_url(links.get(*index))?;
                 *scroll_offset = 0;

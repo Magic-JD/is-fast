@@ -41,6 +41,11 @@ pub fn draw_page(terminal: &mut Terminal<CrosstermBackend<Stdout>>, page: &str, 
 
         let block = Block::default()
             .title(link.map(|l| l.title.clone()).unwrap_or("No Title".to_string()))
+            .title_bottom(
+                Span::styled(
+                    "Quit: q | Scroll Down: j/↓ | Scroll Up: k/↑ | Page Down: CTRL+d | Page Up: CTRL+u | Next: n/→ | Back: b/←",
+                    Style::default().fg(Color::Green),
+                ),)
             .borders(Borders::TOP)
             .style(Style::default().fg(Color::Green));
 
