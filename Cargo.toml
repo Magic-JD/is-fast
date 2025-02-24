@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+ansi-to-tui = "7.0.0"
 crossterm = "0.28.1"
 html2text = "0.14.0"
 ncurses = "5.101.0"

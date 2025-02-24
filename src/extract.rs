@@ -28,18 +28,12 @@ pub fn extract_page_content(url: &String, res: &String) -> Result<String, String
         u if u.contains("docs.spring.io") => "article",
         u if u.contains("stackoverflow.com") => ".js-post-body, .user-details, .comment-body",
         u if u.contains("github.com") => ".markdown-body",
-        _ => "body",  // Default selector (full document)
+        _ => "body",
     }).map_err(|_| "Error: Could not parse selector")?;
     let page: String = Html::parse_document(&res)
         .select(&selector)
         .map(|ele| ele.html())
         .collect();
-
-    let cols = std::env::var("COLUMNS")
-        .unwrap_or_else(|_| "180".to_string())
-        .parse::<usize>()
-        .unwrap_or(180)
-        .saturating_sub(5);
 
     Command::new("pandoc")
         .arg("-f")
@@ -47,20 +41,17 @@ pub fn extract_page_content(url: &String, res: &String) -> Result<String, String
         .arg("-t")
         .arg("ansi")
         .arg("--columns")
-        .arg(cols.to_string())
-        .env("TERM", "xterm-256color")
+        .arg("10000") // Handle wrap later
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .spawn()
         .and_then(|mut child| {
             if let Some(stdin) = child.stdin.as_mut() {
                 stdin.write_all(page.as_bytes()).ok();
+                stdin.flush().ok();
             }
             child.wait_with_output()
         })
-        .map(|out| {
-            String::from_utf8(out.stdout)
-                .unwrap_or(String::from("Error: Could not convert to ansi"))
-        })
-        .map_err(|_| String::from("Error: Could not convert to ansi"))
+        .map(|out| String::from_utf8_lossy(&out.stdout).to_string())
+        .map_err(|e| String::from(e.to_string()))
 }
