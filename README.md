@@ -1,7 +1,26 @@
-# Internet search from the terminal
+# 🌍 Internet Search Fast from the Terminal
 
-Have you ever been attached to a terminal with no gui and wanted to quickly search something? Maybe on a pi or sshed into a remote server? Had problems copy pasting from your browser into a remote terminal? Tired of waiting for an LLM to generate the answer to a simple question as it generates needless amount of filler? This might be the solution you have been looking for!
+Ever been stuck in a **terminal-only environment** and needed to look something up? Maybe you're:
+- Using a **Raspberry Pi** with no desktop 🍓
+- Struggling with **copy-pasting** between a **local browser and sshed terminal** 📝
+- Tired of waiting for an **LLM** to generate paragraphs when you just need a quick answer ⏳
 
-## is-fast
+This tool makes **searching from the terminal fast and simple!** 🚀
 
-This tool will take your search query and show you the first result that googling would get you, presented with only the key text information. Not what you were looking for? n will take you to the next page. Want to go back? Just press b. It really is that simple. It's an internet search, as fast as possible. It is fast!
+---
+
+## ⚡ is-fast
+
+This tool fetches the **first search result** from Google and presents only the key information.  
+
+### 🔧 Navigation Controls
+- 🔍 **Next result:** `n` / `→`
+- ⬅️ **Go back:** `b` / `←`
+- ⬇️ **Scroll down:** `j` / `↓`
+- ⬆️ **Scroll up:** `k` / `↑`
+- 📜 **Page down:** `CTRL + d`
+- 📜 **Page up:** `CTRL + u`
+- ❌ **Quit:** `q`
+
+No waiting - just internet search fast in your terminal.  
+**It is fast!** ⚡
