@@ -21,7 +21,15 @@ pub fn draw_loading(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result
         let area = layout.split(size)[0];
 
         let block = Block::default()
-            .title("Loading...")
+            .title(
+                Span::styled(
+                    String::from(" Loading... "),
+                    Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
+            ).title_bottom(
+            Span::styled(
+                " Quit: q | Scroll Down: j/↓ | Scroll Up: k/↑ | Page Down: CTRL+d | Page Up: CTRL+u | Next: n/→ | Back: b/← ",
+                Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
+            ),)
             .borders(Borders::TOP)
             .style(Style::default().fg(Color::Green));
         frame.render_widget(block, area);
@@ -47,7 +55,7 @@ pub fn draw_page(
         let block = Block::default()
             .title(
                 Span::styled(
-                    link.map(|l| l.title.clone()).unwrap_or("No Title".to_string()),
+                    link.map(|l| format!(" {} ({}) ", l.title, l.url)).unwrap_or("No Title".to_string()),
                     Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
             ).title_bottom(
                 Span::styled(
