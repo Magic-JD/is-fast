@@ -60,6 +60,7 @@ pub fn draw_page(
         let text = page.into_text().unwrap();
         let paragraph = Paragraph::new(text)
             .block(block)
+            .style(Style::default().fg(Color::White))
             .wrap(Wrap { trim: true })
             .scroll((scroll_offset, 0));
 

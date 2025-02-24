@@ -2,6 +2,7 @@ use crate::models::Link;
 use scraper::{Html, Selector};
 use std::io::Write;
 use std::process::{Command, Stdio};
+use strip_ansi_escapes::strip_str;
 
 pub fn extract_links(html: &String) -> Vec<Link> {
     let document = Html::parse_document(&html);
@@ -52,6 +53,10 @@ pub fn extract_page_content(url: &String, res: &String) -> Result<String, String
             }
             child.wait_with_output()
         })
-        .map(|out| String::from_utf8_lossy(&out.stdout).to_string())
+        .map(|out| strip_non_color_ansi(String::from_utf8(out.stdout).unwrap_or(String::from("Error: Could not parse page content")).as_str()))
         .map_err(|e| String::from(e.to_string()))
+}
+
+fn strip_non_color_ansi(input: &str) -> String {
+    strip_str(input)
 }
