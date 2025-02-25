@@ -23,29 +23,18 @@ impl Link {
         if let Some(ref cached) = *content {
             return cached.clone();
         }
-
-        match scrape(&format!("https://{}", self.url))
+        let formatted_url = &format!("https://{}", self.url);
+        scrape(formatted_url)
             .and_then(|html| extract_page_content(&self.url, &html))
-        {
-            Ok(result) => {
+            .and_then(|result| {
                 *content = Some(result.clone());
-                result
-            }
-            Err(_) => {
-                // It may be that reqwest is not able to access the site, so fallback to curl.
-                match fallback_curl(&format!("https://{}", self.url))
-                    .and_then(|html| extract_page_content(&self.url, &html))
-                {
-                    Ok(result) => {
-                        *content = Some(result.clone());
-                        result
-                    }
-                    Err(e) => {
-                        let error_string = e.clone();
-                        Paragraph::new(Text::from(error_string)) // The error will be displayed on the page
-                    }
-                }
-            }
-        }
+                Ok(result)
+            })
+            .unwrap_or_else(|_| fallback_curl(formatted_url) // Try with curl on failure
+                .and_then(|html| extract_page_content(&self.url, &html))
+                .and_then(|result| {
+                *content = Some(result.clone());
+                Ok(result)
+            }).unwrap_or_else(|e| Paragraph::new(Text::from(e.clone())).into()))
     }
 }

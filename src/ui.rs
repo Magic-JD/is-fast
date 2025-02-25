@@ -1,4 +1,5 @@
 use crate::models::Link;
+use once_cell::sync::Lazy;
 use ratatui::style::Modifier;
 use ratatui::text::Span;
 use ratatui::widgets::Wrap;
@@ -12,7 +13,7 @@ use ratatui::{
 use std::io::{Result, Stdout};
 
 const INSTRUCTIONS: &'static str = " Quit: q | Scroll Down: j/↓ | Scroll Up: k/↑ | Page Down: CTRL+d | Page Up: CTRL+u | Next: n/→ | Back: b/← ";
-const TUI_BORDER_COLOR: Style = Style::default().fg(Color::Green);
+const TUI_BORDER_COLOR: Lazy<Style> = Lazy::new(|| Style::default().fg(Color::Green));
 
 pub fn draw_loading(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
     draw(terminal, &Paragraph::default(), " Loading...".to_string(), 0)
@@ -37,12 +38,11 @@ fn draw(terminal: &mut Terminal<CrosstermBackend<Stdout>>, page: &Paragraph, tit
             .direction(Direction::Vertical)
             .constraints([Constraint::Percentage(100)].as_ref());
         let area = layout.split(size)[0];
-
         let block = Block::default()
             .title(tui_border_span(title.as_str())).title_bottom(
             tui_border_span(INSTRUCTIONS))
             .borders(Borders::TOP)
-            .style(TUI_BORDER_COLOR);
+            .style(TUI_BORDER_COLOR.clone());
         let paragraph = Paragraph::from(page.clone())
             .block(block)
             .style(Style::default().fg(Color::White))
@@ -55,9 +55,6 @@ fn draw(terminal: &mut Terminal<CrosstermBackend<Stdout>>, page: &Paragraph, tit
 }
 
 fn tui_border_span(text: &str) -> Span {
-    Span::styled(
-        text,
-        TUI_BORDER_COLOR.add_modifier(Modifier::BOLD),
-    )
+    Span::styled(text, TUI_BORDER_COLOR.clone().add_modifier(Modifier::BOLD))
 }
 
