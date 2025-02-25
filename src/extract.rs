@@ -190,9 +190,9 @@ fn convert_to_text(element: ElementRef) -> Vec<Line<'static>> {
         let language_type = option
             .map(|class_attr| {
                 class_attr
-                    .split_whitespace() // Split by spaces (CSS classes are space-separated)
-                    .filter(|class_name| class_name.starts_with("language-"))
-                    .map(|class_name| class_name.replacen("language-", "", 1))
+                    .split_whitespace()
+                    .filter(|class_name| class_name.starts_with("language-") || class_name.starts_with("lang-"))
+                    .map(|class_name| class_name.replace("language-", "").replace("lang-", ""))
                     .last()
                     .unwrap_or_else(|| "not-found".to_string())
             })
