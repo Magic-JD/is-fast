@@ -174,3 +174,53 @@ To customize styles or add new site selectors, edit your user configuration file
 
 If you need to reset to the default configuration, delete the user configuration file and restart the application.
 
+# Running the Project 🏃
+
+This guide explains how to set up and run the project after cloning the repository.
+
+## Prerequisites
+
+Before running the project, ensure you have the following installed:
+
+- [Rust](https://www.rust-lang.org/tools/install) (latest stable version) 🦀
+- [Cargo](https://doc.rust-lang.org/cargo/) (comes with Rust) 📦
+- Git ([Download](https://git-scm.com/downloads)) 🛠️
+
+## Cloning the Repository
+
+Run the following command to clone the repository:
+
+```sh
+git clone https://github.com/your-repo/is-fast.git
+cd is-fast
+```
+
+## Running on Linux 🐧
+
+1. Ensure Rust and Cargo are installed.
+2. Run the following commands:
+
+```sh
+cargo build --release
+cargo run
+```
+
+## Running on macOS 🍏
+
+1. Install Rust and Cargo.
+2. Run the following:
+
+```sh
+cargo build --release
+cargo run
+```
+
+## Running on Windows 🪟
+
+1. Install Rust and Cargo using [rustup](https://rustup.rs/).
+2. Open a command prompt or PowerShell and run:
+
+```sh
+cargo build --release
+cargo run
+```
