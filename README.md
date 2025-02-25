@@ -200,8 +200,7 @@ cd is-fast
 2. Run the following commands:
 
 ```sh
-cargo build --release
-cargo run "search query"
+cargo run "search query" (" is not needed, can also directly enter the search term)
 ```
 
 ## Running on macOS 🍏
@@ -210,8 +209,7 @@ cargo run "search query"
 2. Run the following:
 
 ```sh
-cargo build --release
-cargo run "search query"
+cargo run "search query" (" is not needed, can also directly enter the search term)
 ```
 
 ## Running on Windows 🪟
@@ -220,6 +218,5 @@ cargo run "search query"
 2. Open a command prompt or PowerShell and run:
 
 ```sh
-cargo build --release
-cargo run "search query"
+cargo run "search query" (" is not needed, can also directly enter the search term)
 ```
