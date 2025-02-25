@@ -184,7 +184,6 @@ Before running the project, ensure you have the following installed:
 
 - [Rust](https://www.rust-lang.org/tools/install) (latest stable version) 🦀
 - [Cargo](https://doc.rust-lang.org/cargo/) (comes with Rust) 📦
-- Git ([Download](https://git-scm.com/downloads)) 🛠️
 
 ## Cloning the Repository
 
