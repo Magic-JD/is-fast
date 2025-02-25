@@ -823,6 +823,7 @@ dependencies = [
  "crossterm",
  "html2text",
  "ncurses",
+ "once_cell",
  "ratatui",
  "regex",
  "reqwest",

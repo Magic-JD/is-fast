@@ -1,7 +1,17 @@
+use std::collections::HashSet;
+use ratatui::style::{Color, Style};
 use crate::models::Link;
-use ratatui::text::{Line, Text};
+use ratatui::text::{Line, Span, Text};
 use ratatui::widgets::Paragraph;
-use scraper::{ElementRef, Html, Selector};
+use scraper::{ElementRef, Html, Node, Selector};
+use once_cell::sync::Lazy;
+
+static IGNORED_TAGS: Lazy<HashSet<&'static str>> = Lazy::new(|| {
+    [
+        "script", "style", "noscript", "head", "title", "meta", "input",
+        "button", "svg", "nav", "footer", "header", "aside"
+    ].iter().cloned().collect()
+});
 
 pub fn extract_links(html: &String) -> Vec<Link> {
     let document = Html::parse_document(&html);
@@ -33,12 +43,62 @@ pub fn extract_page_content(url: &String, res: &String) -> Result<Paragraph<'sta
     Ok(Paragraph::new(Text::from(Html::parse_document(&res)
         .select(&selector)
         .map(|e| convert_to_text(e))
+        .filter(|e| e.is_some())
+        .map(|e| e.unwrap())
         .map(|text| text.clone())
         .flat_map(|text| text.lines)
         .collect::<Vec<Line>>())
     ))
 }
 
-fn convert_to_text(input: ElementRef) -> Text<'static> {
-    Text::from("TEST")
+fn convert_to_text(element: ElementRef) -> Option<Text<'static>> {
+    let tag_name = element.value().name();
+
+    if IGNORED_TAGS.contains(tag_name) {
+        return None;
+    }
+
+    let mut style = Style::default();
+
+    match tag_name {
+        "h1" | "h2" | "h3" => {
+            style = style.add_modifier(ratatui::style::Modifier::BOLD);
+        }
+        "a" => {
+            style = style.fg(Color::Cyan);
+        }
+        "code" => {
+            style = style.fg(Color::Red);
+        }
+        "em" | "i" => {
+            style = style.add_modifier(ratatui::style::Modifier::ITALIC);
+        }
+        "strong" | "b" => {
+            style = style.add_modifier(ratatui::style::Modifier::BOLD);
+        }
+        _ => {}
+    }
+
+    let children_lines: Vec<Line> = element.children().flat_map(|node| {
+        match node.value() {
+            Node::Text(text) => {
+                let trimmed = text.trim();
+                if !trimmed.is_empty() {
+                    vec![Line::from(Span::styled(trimmed.to_string(), style))]
+                } else {
+                    vec![]
+                }
+            }
+            Node::Element(_) => {
+                ElementRef::wrap(node)
+                    .map(|e| convert_to_text(e))
+                    .filter(|e| e.is_some())
+                    .map(|child| child.unwrap().lines.into_iter().collect::<Vec<Line>>())
+                    .unwrap_or_else(Vec::new)
+            }
+            _ => vec![],
+        }
+    }).collect();
+
+    Some(Text::from(children_lines))
 }
