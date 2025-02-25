@@ -155,7 +155,7 @@ fn group_spans_into_lines(spans: Vec<Span>) -> Vec<Line> {
                 lines.push(Line::from(buffer.drain(..).collect::<Vec<Span>>()));
             }
             if !last_was_blank {
-                lines.push(Line::default());
+                lines.push(Line::from(Span::styled("", Style::default())));
                 last_was_blank = true;
             }
         } else {
