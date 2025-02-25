@@ -17,7 +17,7 @@ static IGNORED_TAGS: Lazy<HashSet<&'static str>> = Lazy::new(|| {
 });
 
 static BLOCK_ELEMENTS: Lazy<HashSet<&'static str>> = Lazy::new(|| {
-    ["p", "div", "article", "section", "blockquote", "pre"]
+    ["p", "div", "article", "section", "pre"]
         .iter()
         .cloned()
         .collect()
@@ -34,13 +34,24 @@ static TAG_STYLES: Lazy<HashMap<&'static str, Style>> = Lazy::new(|| {
     map.insert("i", Style::default().add_modifier(Modifier::ITALIC));
     map.insert("strong", Style::default().add_modifier(Modifier::BOLD));
     map.insert("b", Style::default().add_modifier(Modifier::BOLD));
-    map.insert("blockquote", Style::default().fg(Color::Gray).add_modifier(Modifier::ITALIC));
+    map.insert(
+        "blockquote",
+        Style::default()
+            .fg(Color::Gray)
+            .add_modifier(Modifier::ITALIC),
+    );
     map.insert("del", Style::default().add_modifier(Modifier::CROSSED_OUT));
     map.insert("ins", Style::default().add_modifier(Modifier::UNDERLINED));
     map.insert("mark", Style::default().bg(Color::Yellow).fg(Color::Black));
     map.insert("small", Style::default().fg(Color::Gray));
-    map.insert("sub", Style::default().fg(Color::Gray).add_modifier(Modifier::DIM));
-    map.insert("sup", Style::default().fg(Color::Gray).add_modifier(Modifier::DIM));
+    map.insert(
+        "sub",
+        Style::default().fg(Color::Gray).add_modifier(Modifier::DIM),
+    );
+    map.insert(
+        "sup",
+        Style::default().fg(Color::Gray).add_modifier(Modifier::DIM),
+    );
     map.insert("pre", Style::default().bg(Color::Black).fg(Color::White));
     map.insert("kbd", Style::default().bg(Color::DarkGray).fg(Color::White));
     map.insert("var", Style::default().fg(Color::Cyan));
@@ -91,49 +102,70 @@ pub fn extract_page_content(url: &String, res: &String) -> Result<Paragraph<'sta
 }
 
 fn convert_to_text(element: ElementRef) -> Vec<Line<'static>> {
+    let string = element.html();
     let tag_name = element.value().name();
 
     if IGNORED_TAGS.contains(tag_name) {
         return Vec::new();
     }
 
-    let style = TAG_STYLES.get(tag_name).unwrap_or(&Style::default()).clone();
+    let style = TAG_STYLES
+        .get(tag_name)
+        .unwrap_or(&Style::default())
+        .clone();
 
-    let mut spans: Vec<Span> = Vec::new();
-    let mut lines: Vec<Line> = Vec::new();
-
-    for node in element.children() {
-        match node.value() {
+    let mut spans: Vec<Span> = element
+        .children()
+        .flat_map(|node| match node.value() {
             Node::Text(text) => {
-                spans.push(Span::styled(text.to_string(), style));
-            }
-            Node::Element(_) => {
-                if let Some(child) = ElementRef::wrap(node) {
-                    let child_lines = convert_to_text(child);
-
-                    if BLOCK_ELEMENTS.contains(child.value().name()) {
-                        if !spans.is_empty() {
-                            lines.push(Line::from(spans.clone()));
-                            spans.clear();
-                        }
-                        lines.extend(child_lines);
-                    } else {
-                        for line in child_lines {
-                            spans.extend(line.spans);
-                        }
-                    }
+                if !text.trim().is_empty() {
+                    vec![Span::styled(text.to_string(), style)]
+                } else {
+                    vec![]
                 }
             }
-            _ => {}
+            Node::Element(_) => ElementRef::wrap(node)
+                .map(|e| convert_to_text(e))
+                .map(|lines| {
+                    lines
+                        .iter()
+                        .flat_map(|line| line.spans.clone())
+                        .into_iter()
+                        .collect::<Vec<Span>>()
+                })
+                .unwrap_or_else(Vec::new),
+            _ => vec![],
+        })
+        .collect();
+
+    if BLOCK_ELEMENTS.contains(tag_name) {
+        spans.push(Span::styled("", Style::default()));
+    }
+
+    group_spans_into_lines(spans)
+}
+fn group_spans_into_lines(spans: Vec<Span>) -> Vec<Line> {
+    let mut lines = Vec::new();
+    let mut buffer = Vec::new();
+    let mut last_was_blank = false;
+
+    for span in spans {
+        if span.content.trim().is_empty() {
+            if !buffer.is_empty() {
+                lines.push(Line::from(buffer.drain(..).collect::<Vec<Span>>()));
+            }
+            if !last_was_blank {
+                lines.push(Line::default());
+                last_was_blank = true;
+            }
+        } else {
+            buffer.push(span);
+            last_was_blank = false;
         }
     }
 
-    if !spans.is_empty() {
-        lines.push(Line::from(spans));
-    }
-
-    if BLOCK_ELEMENTS.contains(tag_name) {
-        lines.push(Line::from(vec![Span::styled("\n", Style::default())]));
+    if !buffer.is_empty() {
+        lines.push(Line::from(buffer));
     }
 
     lines
