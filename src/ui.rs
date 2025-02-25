@@ -9,31 +9,10 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph},
     Terminal,
 };
-use std::io::{Result, Stdout};
+use std::io::{Error, Result, Stdout};
 
 pub fn draw_loading(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
-    terminal.draw(|frame| {
-        let size = frame.area();
-        let layout = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([Constraint::Percentage(100)].as_ref());
-        let area = layout.split(size)[0];
-
-        let block = Block::default()
-            .title(
-                Span::styled(
-                    String::from(" Loading... "),
-                    Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
-            ).title_bottom(
-            Span::styled(
-                " Quit: q | Scroll Down: j/↓ | Scroll Up: k/↑ | Page Down: CTRL+d | Page Up: CTRL+u | Next: n/→ | Back: b/← ",
-                Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
-            ),)
-            .borders(Borders::TOP)
-            .style(Style::default().fg(Color::Green));
-        frame.render_widget(block, area);
-    })?;
-    Ok(())
+    draw(terminal, &Paragraph::default(), " Loading...".to_string(), 0)
 }
 
 pub fn draw_page(
@@ -42,28 +21,31 @@ pub fn draw_page(
     link: Option<&Link>,
     scroll_offset: u16,
 ) -> Result<()> {
+    let title = link.map(|l| format!(" {} ({}) ", l.title, l.url)).unwrap_or("No Title".to_string());
+    draw(terminal, page, title, scroll_offset)
+}
+
+fn draw(terminal: &mut Terminal<CrosstermBackend<Stdout>>, page: &Paragraph, title: String, scroll_offset: u16) -> Result<()> {
     terminal.clear()?;
     terminal.draw(|frame| {
         let size = frame.area();
         let layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints([Constraint::Percentage(100)].as_ref());
-
         let area = layout.split(size)[0];
 
         let block = Block::default()
             .title(
                 Span::styled(
-                    link.map(|l| format!(" {} ({}) ", l.title, l.url)).unwrap_or("No Title".to_string()),
+                    String::from(title),
                     Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
             ).title_bottom(
-                Span::styled(
-                    " Quit: q | Scroll Down: j/↓ | Scroll Up: k/↑ | Page Down: CTRL+d | Page Up: CTRL+u | Next: n/→ | Back: b/← ",
-                    Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
-                ),)
+            Span::styled(
+                " Quit: q | Scroll Down: j/↓ | Scroll Up: k/↑ | Page Down: CTRL+d | Page Up: CTRL+u | Next: n/→ | Back: b/← ",
+                Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
+            ), )
             .borders(Borders::TOP)
             .style(Style::default().fg(Color::Green));
-
         let paragraph = Paragraph::from(page.clone())
             .block(block)
             .style(Style::default().fg(Color::White))
@@ -74,3 +56,4 @@ pub fn draw_page(
     })?;
     Ok(())
 }
+
