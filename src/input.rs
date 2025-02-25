@@ -22,28 +22,12 @@ pub fn handle_input(
         match code {
             KeyCode::Char('q') => return Ok(true),
             KeyCode::Char('n') | KeyCode::Right if *index < links.len() - 1 => {
-                ui::draw_loading(terminal)?;
                 *index += 1;
-                *page = links
-                    .get(*index)
-                    .map(|link| link.get_content())
-                    .unwrap_or_else(|| {
-                        Paragraph::new(Text::from(String::from("Index out of bounds")))
-                    });
-                *scroll_offset = 0;
-                draw(index, links, page, terminal, scroll_offset)?;
+                handle_navigation(index, links, page, terminal, scroll_offset)?;
             }
             KeyCode::Char('b') | KeyCode::Left if *index > 0 => {
-                ui::draw_loading(terminal)?;
                 *index -= 1;
-                *page = links
-                    .get(*index)
-                    .map(|link| link.get_content())
-                    .unwrap_or_else(|| {
-                        Paragraph::new(Text::from(String::from("Index out of bounds")))
-                    });
-                *scroll_offset = 0;
-                draw(index, links, page, terminal, scroll_offset)?;
+                handle_navigation(index, links, page, terminal, scroll_offset)?;
             }
             KeyCode::Down | KeyCode::Char('j') => {
                 *scroll_offset = *scroll_offset + 1;
@@ -54,17 +38,34 @@ pub fn handle_input(
                 draw(index, links, page, terminal, scroll_offset)?;
             }
             KeyCode::Char('u') if modifiers.contains(KeyModifiers::CONTROL) => {
-                *scroll_offset = scroll_offset.saturating_sub(page_height);
+                *scroll_offset = scroll_offset.saturating_sub(page_height/2);
                 draw(index, links, page, terminal, scroll_offset)?;
             }
             KeyCode::Char('d') if modifiers.contains(KeyModifiers::CONTROL) => {
-                *scroll_offset = *scroll_offset + page_height;
+                *scroll_offset = *scroll_offset + (page_height/2);
                 draw(index, links, page, terminal, scroll_offset)?;
             }
             _ => {}
         }
     }
     Ok(false)
+}
+
+fn handle_navigation(index: &mut usize, links: &[Link], page: &mut Paragraph, terminal: &mut Terminal<CrosstermBackend<Stdout>>, scroll_offset: &mut u16) -> Result<(), MyError> {
+    ui::draw_loading(terminal)?;
+    *page = new_paragraph(index, links);
+    *scroll_offset = 0;
+    draw(index, links, page, terminal, scroll_offset)?;
+    Ok(())
+}
+
+fn new_paragraph(index: &mut usize, links: &[Link]) -> Paragraph<'static> {
+    links
+        .get(*index)
+        .map(|link| link.get_content())
+        .unwrap_or_else(|| {
+            Paragraph::new(Text::from(String::from("Index out of bounds")))
+        })
 }
 
 fn draw(
