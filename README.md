@@ -30,6 +30,101 @@ No waiting - just internet search fast in your terminal.
 
 This project supports both built-in and user-provided configurations for styles and content selection rules. Configuration is handled using a TOML file, and a default configuration is embedded within the binary. Users can override this configuration by placing a custom config file in their system's configuration directory.
 
+## Default Configuration
+
+A built-in configuration is included with the binary and is loaded automatically. The default configuration defines styles for various elements and selectors for extracting content from different websites.
+
+### Full Default Configuration
+
+```toml
+[styles.h1]
+bold = true
+
+[styles.h2]
+bold = true
+
+[styles.h3]
+bold = true
+
+[styles.a]
+fg = "Cyan"
+
+[styles.code]
+fg = "Red"
+
+[styles.em]
+italic = true
+
+[styles.i]
+italic = true
+
+[styles.strong]
+bold = true
+
+[styles.b]
+bold = true
+
+[styles.blockquote]
+fg = "Gray"
+italic = true
+
+[styles.del]
+crossed_out = true
+
+[styles.ins]
+underlined = true
+
+[styles.mark]
+fg = "Black"
+bg = "Yellow"
+
+[styles.small]
+fg = "Gray"
+
+[styles.sub]
+fg = "Gray"
+dim = true
+
+[styles.sup]
+fg = "Gray"
+dim = true
+
+[styles.pre]
+fg = "White"
+bg = "Black"
+
+[styles.kbd]
+fg = "White"
+bg = "DarkGray"
+
+[styles.var]
+fg = "Cyan"
+
+[styles.samp]
+fg = "Magenta"
+
+[styles.u]
+underlined = true
+
+[styles.li]
+bold = true
+
+[styles.dt]
+bold = true
+
+[styles.dd]
+fg = "Gray"
+
+[selectors]
+"en.wikipedia.org" = "p"
+"www.baeldung.com" = ".post-content"
+"www.w3schools.com" = "#main"
+"linuxhandbook.com" = "article"
+"docs.spring.io" = "article"
+"stackoverflow.com" = ".js-post-body, .user-details, .comment-body"
+"github.com" = ".markdown-body"
+```
+
 ## User Configuration
 
 Users can override the default configuration by creating a TOML configuration file in their system’s configuration directory.
