@@ -9,7 +9,10 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph},
     Terminal,
 };
-use std::io::{Error, Result, Stdout};
+use std::io::{Result, Stdout};
+
+const INSTRUCTIONS: &'static str = " Quit: q | Scroll Down: j/↓ | Scroll Up: k/↑ | Page Down: CTRL+d | Page Up: CTRL+u | Next: n/→ | Back: b/← ";
+const TUI_BORDER_COLOR: Style = Style::default().fg(Color::Green);
 
 pub fn draw_loading(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
     draw(terminal, &Paragraph::default(), " Loading...".to_string(), 0)
@@ -25,6 +28,7 @@ pub fn draw_page(
     draw(terminal, page, title, scroll_offset)
 }
 
+
 fn draw(terminal: &mut Terminal<CrosstermBackend<Stdout>>, page: &Paragraph, title: String, scroll_offset: u16) -> Result<()> {
     terminal.clear()?;
     terminal.draw(|frame| {
@@ -35,17 +39,10 @@ fn draw(terminal: &mut Terminal<CrosstermBackend<Stdout>>, page: &Paragraph, tit
         let area = layout.split(size)[0];
 
         let block = Block::default()
-            .title(
-                Span::styled(
-                    String::from(title),
-                    Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
-            ).title_bottom(
-            Span::styled(
-                " Quit: q | Scroll Down: j/↓ | Scroll Up: k/↑ | Page Down: CTRL+d | Page Up: CTRL+u | Next: n/→ | Back: b/← ",
-                Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
-            ), )
+            .title(tui_border_span(title.as_str())).title_bottom(
+            tui_border_span(INSTRUCTIONS))
             .borders(Borders::TOP)
-            .style(Style::default().fg(Color::Green));
+            .style(TUI_BORDER_COLOR);
         let paragraph = Paragraph::from(page.clone())
             .block(block)
             .style(Style::default().fg(Color::White))
@@ -55,5 +52,12 @@ fn draw(terminal: &mut Terminal<CrosstermBackend<Stdout>>, page: &Paragraph, tit
         frame.render_widget(paragraph, area);
     })?;
     Ok(())
+}
+
+fn tui_border_span(text: &str) -> Span {
+    Span::styled(
+        text,
+        TUI_BORDER_COLOR.add_modifier(Modifier::BOLD),
+    )
 }
 
