@@ -1,5 +1,4 @@
 use crate::models::Link;
-use ansi_to_tui::IntoText;
 use ratatui::style::Modifier;
 use ratatui::text::Span;
 use ratatui::widgets::Wrap;
@@ -39,7 +38,7 @@ pub fn draw_loading(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result
 
 pub fn draw_page(
     terminal: &mut Terminal<CrosstermBackend<Stdout>>,
-    page: &str,
+    page: &Paragraph,
     link: Option<&Link>,
     scroll_offset: u16,
 ) -> Result<()> {
@@ -65,8 +64,7 @@ pub fn draw_page(
             .borders(Borders::TOP)
             .style(Style::default().fg(Color::Green));
 
-        let text = page.into_text().unwrap();
-        let paragraph = Paragraph::new(text)
+        let paragraph = Paragraph::from(page.clone())
             .block(block)
             .style(Style::default().fg(Color::White))
             .wrap(Wrap { trim: true })

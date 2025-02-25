@@ -1,11 +1,13 @@
 use std::sync::Mutex;
+use ratatui::text::Text;
+use ratatui::widgets::Paragraph;
 use crate::extract::extract_page_content;
 use crate::scrape::scrape;
 
 pub struct Link {
     pub url: String,
     pub title: String,
-    pub content: Mutex<Option<String>>,
+    pub content: Mutex<Option<Paragraph<'static>>>,
 }
 impl Link {
     pub fn new(title: String, url: String) -> Self {
@@ -16,7 +18,7 @@ impl Link {
         }
     }
 
-    pub fn get_content(&self) -> String {
+    pub fn get_content(&self) -> Paragraph<'static> {
         let mut content = self.content.lock().unwrap();
         if let Some(ref cached) = *content {
             return cached.clone();
@@ -29,7 +31,8 @@ impl Link {
                 result
             }
             Err(e) => {
-                e // The error will be displayed on the page
+                let error_string = e.clone();
+                Paragraph::new(Text::from(error_string)) // The error will be displayed on the page
             }
         }
     }
