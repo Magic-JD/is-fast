@@ -93,12 +93,18 @@ pub fn extract_page_content(url: &String, res: &String) -> Result<Paragraph<'sta
         _ => "body",
     })
     .map_err(|_| "Error: Could not parse selector")?;
-    Ok(Paragraph::new(Text::from(
-        Html::parse_document(&res)
-            .select(&selector)
-            .flat_map(|e| convert_to_text(e))
-            .collect::<Vec<Line>>(),
-    )))
+    let mut lines = Html::parse_document(&res)
+        .select(&selector)
+        .flat_map(|e| convert_to_text(e))
+        .collect::<Vec<Line>>();
+    while let Some(first) = lines.first() {
+        if first.spans.iter().all(|span| span.content.trim().is_empty()) {
+            lines.remove(0);
+        } else {
+            break;
+        }
+    }
+    Ok(Paragraph::new(Text::from(lines)))
 }
 
 fn convert_to_text(element: ElementRef) -> Vec<Line<'static>> {
@@ -119,22 +125,10 @@ fn convert_to_text(element: ElementRef) -> Vec<Line<'static>> {
         Node::Text(text) => {
             if !text.trim().is_empty() {
                 let mut current_lines = text
-                    .lines()
+                    .split_inclusive('\n')
                     .map(|line| Line::from(Span::styled(line.to_string(), style)))
                     .collect::<Vec<Line>>();
-
-                let last_line_o = lines.pop();
-                // If there is no previous line, then we don't need to do anything
-                if last_line_o.is_none() {
-                    lines.extend(current_lines);
-                    return;
-                }
-                let mut spans = Vec::new();
-                let last_line = last_line_o.unwrap();
-                spans.extend(last_line.spans.clone());
-                spans.extend(current_lines.first().unwrap().spans.clone());
-                lines.push(Line::from(spans));
-                lines.extend(current_lines.drain(1..));
+                merge_with_previous_line(&mut lines, &mut current_lines);
             }
         }
         Node::Element(_) => ElementRef::wrap(node).iter().for_each(|element| {
@@ -144,26 +138,30 @@ fn convert_to_text(element: ElementRef) -> Vec<Line<'static>> {
             }
             if BLOCK_ELEMENTS.contains(element.value().name()) {
                 lines.extend(element_lines);
-                lines.push(Line::from(Span::styled("", style)));
                 return;
             }
-            // If it is not the case that the element should be a block, we should join it to the
-            // previous line.
-            let last_line_o = lines.pop();
-            // If there is no previous line, then we don't need to do anything
-            if last_line_o.is_none() {
-                lines.extend(element_lines);
-                return;
-            }
-            let mut spans = Vec::new();
-            let last_line = last_line_o.unwrap();
-            spans.extend(last_line.spans.clone());
-            spans.extend(element_lines.first().unwrap().spans.clone());
-            lines.push(Line::from(spans));
-            lines.extend(element_lines.drain(1..));
+            merge_with_previous_line(&mut lines, &mut element_lines);
         }),
         _ => {}
     });
 
+    if BLOCK_ELEMENTS.contains(tag_name) && !lines.is_empty(){
+        lines.insert(0, Line::default());
+        lines.push(Line::default());
+    }
     lines
+}
+
+fn merge_with_previous_line(lines: &mut Vec<Line<'static>>, new_lines: &mut Vec<Line<'static>>) {
+    if new_lines.is_empty() {
+        return;
+    }
+    if let Some(last_line) = lines.pop() {
+        let mut spans = last_line.spans.clone();
+        spans.extend(new_lines.first().unwrap().spans.clone());
+        lines.push(Line::from(spans));
+        lines.extend(new_lines.drain(1..));
+    } else {
+        lines.extend(new_lines.drain(..));
+    }
 }

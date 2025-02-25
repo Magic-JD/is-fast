@@ -67,7 +67,7 @@ pub fn draw_page(
         let paragraph = Paragraph::from(page.clone())
             .block(block)
             .style(Style::default().fg(Color::White))
-            .wrap(Wrap { trim: true })
+            .wrap(Wrap { trim: false })
             .scroll((scroll_offset, 0));
 
         frame.render_widget(paragraph, area);
