@@ -5,6 +5,10 @@ use ratatui::text::{Line, Span, Text};
 use ratatui::widgets::Paragraph;
 use scraper::{ElementRef, Html, Node, Selector};
 use std::collections::{HashMap, HashSet};
+use syntect::easy::HighlightLines;
+use syntect::highlighting::{Style as SyntectStyle, ThemeSet};
+use syntect::parsing::SyntaxSet;
+use syntect::util::LinesWithEndings;
 
 static IGNORED_TAGS: Lazy<HashSet<&'static str>> = Lazy::new(|| {
     [
@@ -17,10 +21,29 @@ static IGNORED_TAGS: Lazy<HashSet<&'static str>> = Lazy::new(|| {
 });
 
 static BLOCK_ELEMENTS: Lazy<HashSet<&'static str>> = Lazy::new(|| {
-    ["p", "div", "article", "section", "pre"]
-        .iter()
-        .cloned()
-        .collect()
+    [
+        "p",
+        "div",
+        "article",
+        "section",
+        "pre",
+        "blockquote",
+        "ul",
+        "ol",
+        "dl",
+        "dt",
+        "dd",
+        "li",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+    ]
+    .iter()
+    .cloned()
+    .collect()
 });
 
 static TAG_STYLES: Lazy<HashMap<&'static str, Style>> = Lazy::new(|| {
@@ -98,7 +121,11 @@ pub fn extract_page_content(url: &String, res: &String) -> Result<Paragraph<'sta
         .flat_map(|e| convert_to_text(e))
         .collect::<Vec<Line>>();
     while let Some(first) = lines.first() {
-        if first.spans.iter().all(|span| span.content.trim().is_empty()) {
+        if first
+            .spans
+            .iter()
+            .all(|span| span.content.trim().is_empty())
+        {
             lines.remove(0);
         } else {
             break;
@@ -109,11 +136,18 @@ pub fn extract_page_content(url: &String, res: &String) -> Result<Paragraph<'sta
 
 fn convert_to_text(element: ElementRef) -> Vec<Line<'static>> {
     let tag_name = element.value().name();
+    let html = element.html();
+
+    if tag_name == "br" {
+        return vec![
+            Line::default(),
+            Line::from(Span::styled("", Style::default())),
+        ];
+    }
 
     if IGNORED_TAGS.contains(tag_name) {
         return Vec::new();
     }
-
     let style = TAG_STYLES
         .get(tag_name)
         .unwrap_or(&Style::default())
@@ -145,9 +179,28 @@ fn convert_to_text(element: ElementRef) -> Vec<Line<'static>> {
         _ => {}
     });
 
-    if BLOCK_ELEMENTS.contains(tag_name) && !lines.is_empty(){
+    if BLOCK_ELEMENTS.contains(tag_name) && !lines.is_empty() {
         lines.insert(0, Line::default());
         lines.push(Line::default());
+    }
+    if tag_name == "code" {
+        let option = element.value().attr("class");
+        let language_type = option
+            .map(|class_attr| {
+                class_attr
+                    .split_whitespace() // Split by spaces (CSS classes are space-separated)
+                    .filter(|class_name| class_name.starts_with("language-"))
+                    .map(|class_name| class_name.replacen("language-", "", 1))
+                    .last()
+                    .unwrap_or_else(|| "not-found".to_string())
+            })
+            .unwrap_or_else(|| "not-found".to_string());
+        let code_text = lines
+            .iter()
+            .map(|line| line.spans.iter().map(|span| span.content.clone()).collect())
+            .collect::<Vec<String>>()
+            .join("\n");
+        return highlight_code(&code_text, &language_type); // Work out how to determine the language
     }
     lines
 }
@@ -164,4 +217,38 @@ fn merge_with_previous_line(lines: &mut Vec<Line<'static>>, new_lines: &mut Vec<
     } else {
         lines.extend(new_lines.drain(..));
     }
+}
+
+fn highlight_code(text: &str, language: &str) -> Vec<Line<'static>> {
+    let syntax_set = SyntaxSet::load_defaults_newlines();
+    let theme_set = ThemeSet::load_defaults();
+    let syntax = syntax_set
+        .find_syntax_by_token(language)
+        .unwrap_or(syntax_set.find_syntax_by_token("java").unwrap()); // Default to java - should be able to set in settings.
+    let mut highlighter = HighlightLines::new(syntax, &theme_set.themes["base16-ocean.dark"]); // Trial different themes?
+
+    let mut lines = Vec::new();
+
+    for line in LinesWithEndings::from(text) {
+        let highlighted = highlighter.highlight_line(line, &syntax_set).unwrap();
+
+        let styled_spans = highlighted
+            .iter()
+            .map(|(style, content)| {
+                Span::styled(content.to_string(), convert_syntect_style(*style))
+            })
+            .collect::<Vec<Span>>();
+
+        lines.push(Line::from(styled_spans));
+    }
+
+    lines
+}
+
+fn convert_syntect_style(syntect_style: SyntectStyle) -> Style {
+    Style::default().fg(Color::Rgb(
+        syntect_style.foreground.r,
+        syntect_style.foreground.g,
+        syntect_style.foreground.b,
+    ))
 }
