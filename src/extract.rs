@@ -1,4 +1,4 @@
-use crate::config::load_config;
+use crate::config::{Config};
 use crate::models::Link;
 use once_cell::sync::Lazy;
 use ratatui::style::{Color, Style};
@@ -47,7 +47,7 @@ static BLOCK_ELEMENTS: Lazy<HashSet<&'static str>> = Lazy::new(|| {
     .collect()
 });
 
-static TAG_STYLES: Lazy<HashMap<String, Style>> = Lazy::new(load_config);
+static TAG_STYLES: Lazy<&HashMap<String, Style>> = Lazy::new(Config::get_styles);
 
 pub fn extract_links(html: &String) -> Vec<Link> {
     let document = Html::parse_document(&html);
@@ -68,16 +68,12 @@ pub fn extract_links(html: &String) -> Vec<Link> {
 }
 
 pub fn extract_page_content(url: &String, res: &String) -> Result<Paragraph<'static>, String> {
-    let selector = Selector::parse(match url {
-        u if u.contains("en.wikipedia.org") => "p",
-        u if u.contains("www.baeldung.com") => ".post-content",
-        u if u.contains("www.w3schools.com") => "#main",
-        u if u.contains("linuxhandbook.com") => "article",
-        u if u.contains("docs.spring.io") => "article",
-        u if u.contains("stackoverflow.com") => ".js-post-body, .user-details, .comment-body",
-        u if u.contains("github.com") => ".markdown-body",
-        _ => "body",
-    })
+    let selection_tag = Config::get_selectors()
+        .iter()
+        .find(|(k, _)| url.contains(*k))
+        .map(|(_, v)| v.clone())
+        .unwrap_or("body".to_string());
+    let selector = Selector::parse(&selection_tag)
     .map_err(|_| "Error: Could not parse selector")?;
     let mut lines = Html::parse_document(&res)
         .select(&selector)

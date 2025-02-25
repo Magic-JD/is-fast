@@ -1,7 +1,11 @@
-use ratatui::style::{Color, Modifier, Style};
+use std::collections::HashMap;
+use std::fs;
+use once_cell::sync::Lazy;
 use serde::Deserialize;
-use std::{collections::HashMap, fs};
 use toml;
+use ratatui::style::{Color, Modifier, Style};
+
+static CONFIG: Lazy<Config> = Lazy::new(Config::load);
 
 #[derive(Debug, Deserialize)]
 struct TagStyleConfig {
@@ -15,58 +19,82 @@ struct TagStyleConfig {
 }
 
 #[derive(Debug, Deserialize)]
-struct Config {
+struct RawConfig {
+    #[serde(default)]
     styles: HashMap<String, TagStyleConfig>,
+    #[serde(default)]
+    selectors: HashMap<String, String>,
 }
 
-pub fn load_config() -> HashMap<String, Style> {
-    let user_config = dirs::config_dir()
-        .map(|p| p.join("is-fast/config.toml"))
-        .and_then(|path| fs::read_to_string(&path).ok())
-        .and_then(|content| toml::from_str::<Config>(&content).ok());
+#[derive(Debug)]
+pub struct Config {
+    styles: HashMap<String, Style>,
+    selectors: HashMap<String, String>,
+}
 
-    let mut config: Config = toml::from_str(DEFAULT_CONFIG)
-        .unwrap_or(Config { styles: HashMap::new()});
+impl Config {
+    fn load() -> Self {
+        let user_config = dirs::config_dir()
+            .map(|p| p.join("is-fast/config.toml"))
+            .and_then(|path| fs::read_to_string(&path).ok())
+            .and_then(|content| toml::from_str::<RawConfig>(&content).ok());
 
-    user_config.map(|u_config| {
-        for (tag, user_style) in u_config.styles {
-            config.styles.insert(tag, user_style);
+        let mut config: RawConfig = toml::from_str(DEFAULT_CONFIG)
+            .unwrap_or(RawConfig { styles: HashMap::new(), selectors: HashMap::new() });
+
+        if let Some(u_config) = user_config {
+            for (tag, user_style) in u_config.styles {
+                config.styles.insert(tag, user_style);
+            }
+            for (site, selector) in u_config.selectors {
+                config.selectors.insert(site, selector);
+            }
         }
-    });
-    convert_config(config)
 
-}
+        Self {
+            styles: Self::convert_styles(config.styles),
+            selectors: config.selectors,
+        }
+    }
 
-fn convert_config(config: Config) -> HashMap<String, Style> {
-    config
-        .styles
-        .into_iter()
-        .map(|(tag, cfg)| {
-            let mut style = Style::default();
-            if let Some(fg) = cfg.fg {
-                style = style.fg(parse_color(&fg));
-            }
-            if let Some(bg) = cfg.bg {
-                style = style.bg(parse_color(&bg));
-            }
-            if cfg.bold.unwrap_or(false) {
-                style = style.add_modifier(Modifier::BOLD);
-            }
-            if cfg.italic.unwrap_or(false) {
-                style = style.add_modifier(Modifier::ITALIC);
-            }
-            if cfg.underlined.unwrap_or(false) {
-                style = style.add_modifier(Modifier::UNDERLINED);
-            }
-            if cfg.crossed_out.unwrap_or(false) {
-                style = style.add_modifier(Modifier::CROSSED_OUT);
-            }
-            if cfg.dim.unwrap_or(false) {
-                style = style.add_modifier(Modifier::DIM);
-            }
-            (tag, style)
-        })
-        .collect()
+    fn convert_styles(styles: HashMap<String, TagStyleConfig>) -> HashMap<String, Style> {
+        styles
+            .into_iter()
+            .map(|(tag, cfg)| {
+                let mut style = Style::default();
+                if let Some(fg) = cfg.fg {
+                    style = style.fg(parse_color(&fg));
+                }
+                if let Some(bg) = cfg.bg {
+                    style = style.bg(parse_color(&bg));
+                }
+                if cfg.bold.unwrap_or(false) {
+                    style = style.add_modifier(Modifier::BOLD);
+                }
+                if cfg.italic.unwrap_or(false) {
+                    style = style.add_modifier(Modifier::ITALIC);
+                }
+                if cfg.underlined.unwrap_or(false) {
+                    style = style.add_modifier(Modifier::UNDERLINED);
+                }
+                if cfg.crossed_out.unwrap_or(false) {
+                    style = style.add_modifier(Modifier::CROSSED_OUT);
+                }
+                if cfg.dim.unwrap_or(false) {
+                    style = style.add_modifier(Modifier::DIM);
+                }
+                (tag, style)
+            })
+            .collect()
+    }
+
+    pub fn get_styles() -> &'static HashMap<String, Style> {
+        &CONFIG.styles
+    }
+
+    pub fn get_selectors() -> &'static HashMap<String, String> {
+        &CONFIG.selectors
+    }
 }
 
 fn parse_color(color: &str) -> Color {
@@ -85,82 +113,4 @@ fn parse_color(color: &str) -> Color {
     }
 }
 
-const DEFAULT_CONFIG: &str = r#"
-[styles.h1]
-bold = true
-
-[styles.h2]
-bold = true
-
-[styles.h3]
-bold = true
-
-[styles.a]
-fg = "Cyan"
-
-[styles.code]
-fg = "Red"
-
-[styles.em]
-italic = true
-
-[styles.i]
-italic = true
-
-[styles.strong]
-bold = true
-
-[styles.b]
-bold = true
-
-[styles.blockquote]
-fg = "Gray"
-italic = true
-
-[styles.del]
-crossed_out = true
-
-[styles.ins]
-underlined = true
-
-[styles.mark]
-fg = "Black"
-bg = "Yellow"
-
-[styles.small]
-fg = "Gray"
-
-[styles.sub]
-fg = "Gray"
-dim = true
-
-[styles.sup]
-fg = "Gray"
-dim = true
-
-[styles.pre]
-fg = "White"
-bg = "Black"
-
-[styles.kbd]
-fg = "White"
-bg = "DarkGray"
-
-[styles.var]
-fg = "Cyan"
-
-[styles.samp]
-fg = "Magenta"
-
-[styles.u]
-underlined = true
-
-[styles.li]
-bold = true
-
-[styles.dt]
-bold = true
-
-[styles.dd]
-fg = "Gray"
-"#;
+const DEFAULT_CONFIG: &str = include_str!("config/default_config.toml");
