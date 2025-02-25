@@ -131,12 +131,14 @@ pub fn extract_page_content(url: &String, res: &String) -> Result<Paragraph<'sta
             break;
         }
     }
+    if lines.is_empty() {
+        return Err("No content found".to_string());
+    }
     Ok(Paragraph::new(Text::from(lines)))
 }
 
 fn convert_to_text(element: ElementRef) -> Vec<Line<'static>> {
     let tag_name = element.value().name();
-    let html = element.html();
 
     if tag_name == "br" {
         return vec![

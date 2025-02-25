@@ -2,7 +2,7 @@ use std::sync::Mutex;
 use ratatui::text::Text;
 use ratatui::widgets::Paragraph;
 use crate::extract::extract_page_content;
-use crate::scrape::scrape;
+use crate::scrape::{fallback_curl, scrape};
 
 pub struct Link {
     pub url: String,
@@ -30,10 +30,19 @@ impl Link {
                 *content = Some(result.clone());
                 result
             }
-            Err(e) => {
-                let error_string = e.clone();
-                Paragraph::new(Text::from(error_string)) // The error will be displayed on the page
+            Err(_) => { // It may be that reqwest is not able to access the site, so fallback to curl.
+                match fallback_curl(&format!("https://{}", self.url)).and_then(|html| extract_page_content(&self.url, &html)) {
+                    Ok(result) => {
+                        *content = Some(result.clone());
+                        result
+                    }
+                    Err(e) => {
+                        let error_string = e.clone();
+                        Paragraph::new(Text::from(error_string)) // The error will be displayed on the page
+                    }
+                }
             }
+
         }
     }
 }

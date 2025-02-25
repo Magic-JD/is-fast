@@ -1,4 +1,18 @@
+use std::process::Command;
 use reqwest::blocking::Client;
+
+pub fn fallback_curl(url: &String) -> Result<String, String> {
+    let output = Command::new("curl")
+        .args(&[
+            "-A", "Mozilla/5.0 (compatible; MSIE 7.01; Windows NT 5.0)",
+            url
+        ])
+        .output()
+        .map_err(|e| format!("Failed to execute curl: {}", e))?;
+
+
+    Ok(String::from_utf8_lossy(&output.stdout).to_string().into())
+}
 
 pub fn scrape(url: &String) -> Result<String, String> {
     Client::new().get(url)
