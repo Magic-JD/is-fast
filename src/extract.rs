@@ -1,6 +1,7 @@
+use crate::config::load_config;
 use crate::models::Link;
 use once_cell::sync::Lazy;
-use ratatui::style::{Color, Modifier, Style};
+use ratatui::style::{Color, Style};
 use ratatui::text::{Line, Span, Text};
 use ratatui::widgets::Paragraph;
 use scraper::{ElementRef, Html, Node, Selector};
@@ -46,45 +47,7 @@ static BLOCK_ELEMENTS: Lazy<HashSet<&'static str>> = Lazy::new(|| {
     .collect()
 });
 
-static TAG_STYLES: Lazy<HashMap<&'static str, Style>> = Lazy::new(|| {
-    let mut map = HashMap::new();
-    map.insert("h1", Style::default().add_modifier(Modifier::BOLD));
-    map.insert("h2", Style::default().add_modifier(Modifier::BOLD));
-    map.insert("h3", Style::default().add_modifier(Modifier::BOLD));
-    map.insert("a", Style::default().fg(Color::Cyan));
-    map.insert("code", Style::default().fg(Color::Red));
-    map.insert("em", Style::default().add_modifier(Modifier::ITALIC));
-    map.insert("i", Style::default().add_modifier(Modifier::ITALIC));
-    map.insert("strong", Style::default().add_modifier(Modifier::BOLD));
-    map.insert("b", Style::default().add_modifier(Modifier::BOLD));
-    map.insert(
-        "blockquote",
-        Style::default()
-            .fg(Color::Gray)
-            .add_modifier(Modifier::ITALIC),
-    );
-    map.insert("del", Style::default().add_modifier(Modifier::CROSSED_OUT));
-    map.insert("ins", Style::default().add_modifier(Modifier::UNDERLINED));
-    map.insert("mark", Style::default().bg(Color::Yellow).fg(Color::Black));
-    map.insert("small", Style::default().fg(Color::Gray));
-    map.insert(
-        "sub",
-        Style::default().fg(Color::Gray).add_modifier(Modifier::DIM),
-    );
-    map.insert(
-        "sup",
-        Style::default().fg(Color::Gray).add_modifier(Modifier::DIM),
-    );
-    map.insert("pre", Style::default().bg(Color::Black).fg(Color::White));
-    map.insert("kbd", Style::default().bg(Color::DarkGray).fg(Color::White));
-    map.insert("var", Style::default().fg(Color::Cyan));
-    map.insert("samp", Style::default().fg(Color::Magenta));
-    map.insert("u", Style::default().add_modifier(Modifier::UNDERLINED));
-    map.insert("li", Style::default().add_modifier(Modifier::BOLD));
-    map.insert("dt", Style::default().add_modifier(Modifier::BOLD));
-    map.insert("dd", Style::default().fg(Color::Gray));
-    map
-});
+static TAG_STYLES: Lazy<HashMap<String, Style>> = Lazy::new(load_config);
 
 pub fn extract_links(html: &String) -> Vec<Link> {
     let document = Html::parse_document(&html);

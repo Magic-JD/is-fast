@@ -4,6 +4,7 @@ mod input;
 mod models;
 mod scrape;
 mod ui;
+mod config;
 
 use crate::extract::extract_links;
 use crate::scrape::scrape;
