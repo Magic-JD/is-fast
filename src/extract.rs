@@ -102,7 +102,6 @@ pub fn extract_page_content(url: &String, res: &String) -> Result<Paragraph<'sta
 }
 
 fn convert_to_text(element: ElementRef) -> Vec<Line<'static>> {
-    let string = element.html();
     let tag_name = element.value().name();
 
     if IGNORED_TAGS.contains(tag_name) {
@@ -114,59 +113,57 @@ fn convert_to_text(element: ElementRef) -> Vec<Line<'static>> {
         .unwrap_or(&Style::default())
         .clone();
 
-    let mut spans: Vec<Span> = element
-        .children()
-        .flat_map(|node| match node.value() {
-            Node::Text(text) => {
-                if !text.trim().is_empty() {
-                    vec![Span::styled(text.to_string(), style)]
-                } else {
-                    vec![]
-                }
-            }
-            Node::Element(_) => ElementRef::wrap(node)
-                .map(|e| convert_to_text(e))
-                .map(|lines| {
-                    lines
-                        .iter()
-                        .flat_map(|line| line.spans.clone())
-                        .into_iter()
-                        .collect::<Vec<Span>>()
-                })
-                .unwrap_or_else(Vec::new),
-            _ => vec![],
-        })
-        .collect();
-
-    if BLOCK_ELEMENTS.contains(tag_name) {
-        spans.push(Span::styled("", Style::default()));
-    }
-
-    group_spans_into_lines(spans)
-}
-fn group_spans_into_lines(spans: Vec<Span>) -> Vec<Line> {
     let mut lines = Vec::new();
-    let mut buffer = Vec::new();
-    let mut last_was_blank = false;
 
-    for span in spans {
-        if span.content.trim().is_empty() {
-            if !buffer.is_empty() {
-                lines.push(Line::from(buffer.drain(..).collect::<Vec<Span>>()));
+    element.children().for_each(|node| match node.value() {
+        Node::Text(text) => {
+            if !text.trim().is_empty() {
+                let mut current_lines = text
+                    .lines()
+                    .map(|line| Line::from(Span::styled(line.to_string(), style)))
+                    .collect::<Vec<Line>>();
+
+                let last_line_o = lines.pop();
+                // If there is no previous line, then we don't need to do anything
+                if last_line_o.is_none() {
+                    lines.extend(current_lines);
+                    return;
+                }
+                let mut spans = Vec::new();
+                let last_line = last_line_o.unwrap();
+                spans.extend(last_line.spans.clone());
+                spans.extend(current_lines.first().unwrap().spans.clone());
+                lines.push(Line::from(spans));
+                lines.extend(current_lines.drain(1..));
             }
-            if !last_was_blank {
-                lines.push(Line::from(Span::styled("", Style::default())));
-                last_was_blank = true;
-            }
-        } else {
-            buffer.push(span);
-            last_was_blank = false;
         }
-    }
-
-    if !buffer.is_empty() {
-        lines.push(Line::from(buffer));
-    }
+        Node::Element(_) => ElementRef::wrap(node).iter().for_each(|element| {
+            let mut element_lines = convert_to_text(*element);
+            if element_lines.is_empty() {
+                return;
+            }
+            if BLOCK_ELEMENTS.contains(element.value().name()) {
+                lines.extend(element_lines);
+                lines.push(Line::from(Span::styled("", style)));
+                return;
+            }
+            // If it is not the case that the element should be a block, we should join it to the
+            // previous line.
+            let last_line_o = lines.pop();
+            // If there is no previous line, then we don't need to do anything
+            if last_line_o.is_none() {
+                lines.extend(element_lines);
+                return;
+            }
+            let mut spans = Vec::new();
+            let last_line = last_line_o.unwrap();
+            spans.extend(last_line.spans.clone());
+            spans.extend(element_lines.first().unwrap().spans.clone());
+            lines.push(Line::from(spans));
+            lines.extend(element_lines.drain(1..));
+        }),
+        _ => {}
+    });
 
     lines
 }
