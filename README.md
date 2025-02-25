@@ -201,7 +201,7 @@ cd is-fast
 
 ```sh
 cargo build --release
-cargo run
+cargo run "search query"
 ```
 
 ## Running on macOS 🍏
@@ -211,7 +211,7 @@ cargo run
 
 ```sh
 cargo build --release
-cargo run
+cargo run "search query"
 ```
 
 ## Running on Windows 🪟
@@ -221,5 +221,5 @@ cargo run
 
 ```sh
 cargo build --release
-cargo run
+cargo run "search query"
 ```
