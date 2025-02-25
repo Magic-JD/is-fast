@@ -1,8 +1,8 @@
-use std::sync::Mutex;
-use ratatui::text::Text;
-use ratatui::widgets::Paragraph;
 use crate::extract::extract_page_content;
 use crate::scrape::{fallback_curl, scrape};
+use ratatui::text::Text;
+use ratatui::widgets::Paragraph;
+use std::sync::Mutex;
 
 pub struct Link {
     pub url: String,
@@ -25,13 +25,17 @@ impl Link {
         }
 
         match scrape(&format!("https://{}", self.url))
-            .and_then(|html| extract_page_content(&self.url, &html)) {
+            .and_then(|html| extract_page_content(&self.url, &html))
+        {
             Ok(result) => {
                 *content = Some(result.clone());
                 result
             }
-            Err(_) => { // It may be that reqwest is not able to access the site, so fallback to curl.
-                match fallback_curl(&format!("https://{}", self.url)).and_then(|html| extract_page_content(&self.url, &html)) {
+            Err(_) => {
+                // It may be that reqwest is not able to access the site, so fallback to curl.
+                match fallback_curl(&format!("https://{}", self.url))
+                    .and_then(|html| extract_page_content(&self.url, &html))
+                {
                     Ok(result) => {
                         *content = Some(result.clone());
                         result
@@ -42,7 +46,6 @@ impl Link {
                     }
                 }
             }
-
         }
     }
 }

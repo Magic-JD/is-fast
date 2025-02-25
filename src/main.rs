@@ -1,10 +1,10 @@
+mod config;
 mod error;
 mod extract;
 mod input;
 mod models;
 mod scrape;
 mod ui;
-mod config;
 
 use crate::extract::extract_links;
 use crate::scrape::scrape;
@@ -12,10 +12,10 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::{backend::CrosstermBackend, Terminal};
-use std::io::{stdout, Stdout};
 use ratatui::text::Text;
 use ratatui::widgets::Paragraph;
+use ratatui::{backend::CrosstermBackend, Terminal};
+use std::io::{stdout, Stdout};
 
 fn main() {
     let mut terminal = startup();
@@ -26,7 +26,10 @@ fn main() {
     let links = &scrape(&format!("https://html.duckduckgo.com/html/?q={}", &message))
         .map(|html| extract_links(&html))
         .unwrap_or_else(|err| shutdown_with_error(&mut terminal, &err.to_string()));
-    let mut page = links.get(index).map(|link| link.get_content()).unwrap_or_else(|| Paragraph::new(Text::from(String::from("Index out of bounds"))));
+    let mut page = links
+        .get(index)
+        .map(|link| link.get_content())
+        .unwrap_or_else(|| Paragraph::new(Text::from(String::from("Index out of bounds"))));
     let mut scroll_offset = 0;
     ui::draw_page(&mut terminal, &page, links.get(index), scroll_offset)
         .unwrap_or_else(|err| shutdown_with_error(&mut terminal, &err.to_string()));

@@ -1,9 +1,9 @@
+use once_cell::sync::Lazy;
+use ratatui::style::{Color, Modifier, Style};
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::fs;
-use once_cell::sync::Lazy;
-use serde::Deserialize;
 use toml;
-use ratatui::style::{Color, Modifier, Style};
 
 static CONFIG: Lazy<Config> = Lazy::new(Config::load);
 
@@ -39,8 +39,10 @@ impl Config {
             .and_then(|path| fs::read_to_string(&path).ok())
             .and_then(|content| toml::from_str::<RawConfig>(&content).ok());
 
-        let mut config: RawConfig = toml::from_str(DEFAULT_CONFIG)
-            .unwrap_or(RawConfig { styles: HashMap::new(), selectors: HashMap::new() });
+        let mut config: RawConfig = toml::from_str(DEFAULT_CONFIG).unwrap_or(RawConfig {
+            styles: HashMap::new(),
+            selectors: HashMap::new(),
+        });
 
         if let Some(u_config) = user_config {
             for (tag, user_style) in u_config.styles {

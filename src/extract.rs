@@ -1,4 +1,4 @@
-use crate::config::{Config};
+use crate::config::Config;
 use crate::models::Link;
 use once_cell::sync::Lazy;
 use ratatui::style::{Color, Style};
@@ -73,8 +73,8 @@ pub fn extract_page_content(url: &String, res: &String) -> Result<Paragraph<'sta
         .find(|(k, _)| url.contains(*k))
         .map(|(_, v)| v.clone())
         .unwrap_or("body".to_string());
-    let selector = Selector::parse(&selection_tag)
-    .map_err(|_| "Error: Could not parse selector")?;
+    let selector =
+        Selector::parse(&selection_tag).map_err(|_| "Error: Could not parse selector")?;
     let mut lines = Html::parse_document(&res)
         .select(&selector)
         .flat_map(|e| convert_to_text(e))
@@ -151,7 +151,9 @@ fn convert_to_text(element: ElementRef) -> Vec<Line<'static>> {
             .map(|class_attr| {
                 class_attr
                     .split_whitespace()
-                    .filter(|class_name| class_name.starts_with("language-") || class_name.starts_with("lang-"))
+                    .filter(|class_name| {
+                        class_name.starts_with("language-") || class_name.starts_with("lang-")
+                    })
                     .map(|class_name| class_name.replace("language-", "").replace("lang-", ""))
                     .last()
                     .unwrap_or_else(|| "not-found".to_string())
