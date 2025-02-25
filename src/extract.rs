@@ -79,6 +79,7 @@ pub fn extract_page_content(url: &String, res: &String) -> Result<Paragraph<'sta
         .select(&selector)
         .flat_map(|e| convert_to_text(e))
         .collect::<Vec<Line>>();
+    lines.dedup();
     while let Some(first) = lines.first() {
         if first
             .spans
