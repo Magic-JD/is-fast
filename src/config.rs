@@ -34,24 +34,22 @@ pub struct Config {
 
 impl Config {
     fn load() -> Self {
-        let user_config = dirs::config_dir()
-            .map(|p| p.join("is-fast/config.toml"))
-            .and_then(|path| fs::read_to_string(&path).ok())
-            .and_then(|content| toml::from_str::<RawConfig>(&content).ok());
-
         let mut config: RawConfig = toml::from_str(DEFAULT_CONFIG).unwrap_or(RawConfig {
             styles: HashMap::new(),
             selectors: HashMap::new(),
         });
-
-        if let Some(u_config) = user_config {
-            for (tag, user_style) in u_config.styles {
-                config.styles.insert(tag, user_style);
-            }
-            for (site, selector) in u_config.selectors {
-                config.selectors.insert(site, selector);
-            }
-        }
+        _ = dirs::config_dir()
+            .map(|p| p.join("is-fast/config.toml"))
+            .and_then(|path| fs::read_to_string(&path).ok())
+            .and_then(|content| toml::from_str::<RawConfig>(&content).ok())
+            .map(|u_config| {
+                for (tag, user_style) in u_config.styles {
+                    config.styles.insert(tag, user_style);
+                }
+                for (site, selector) in u_config.selectors {
+                    config.selectors.insert(site, selector);
+                }
+            });
 
         Self {
             styles: Self::convert_styles(config.styles),
