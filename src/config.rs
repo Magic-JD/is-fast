@@ -1,11 +1,12 @@
 use once_cell::sync::Lazy;
 use ratatui::style::{Color, Modifier, Style};
 use serde::Deserialize;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use toml;
 
 static CONFIG: Lazy<Config> = Lazy::new(Config::load);
+const DEFAULT_CONFIG: &str = include_str!("config/config.toml");
 
 #[derive(Debug, Deserialize)]
 struct TagStyleConfig {
@@ -17,6 +18,13 @@ struct TagStyleConfig {
     crossed_out: Option<bool>,
     dim: Option<bool>,
 }
+#[derive(Debug, Deserialize)]
+struct FormatSection {
+    #[serde(default)]
+    ignored_tags: Vec<String>,
+    #[serde(default)]
+    block_elements: Vec<String>,
+}
 
 #[derive(Debug, Deserialize)]
 struct RawConfig {
@@ -24,19 +32,28 @@ struct RawConfig {
     styles: HashMap<String, TagStyleConfig>,
     #[serde(default)]
     selectors: HashMap<String, String>,
+    #[serde(default)]
+    format: Option<FormatSection>,
 }
 
 #[derive(Debug)]
 pub struct Config {
     styles: HashMap<String, Style>,
     selectors: HashMap<String, String>,
+    ignored_tags: HashSet<String>,
+    block_elements: HashSet<String>,
 }
 
 impl Config {
     fn load() -> Self {
-        let mut config: RawConfig = toml::from_str(DEFAULT_CONFIG).unwrap_or(RawConfig {
+        let mut config: RawConfig = toml::from_str(DEFAULT_CONFIG).map_err(|e|
+                                                                               {
+                                                                                   println!("{}", e.to_string())
+                                                                               }
+                                                                                   ).unwrap_or(RawConfig {
             styles: HashMap::new(),
             selectors: HashMap::new(),
+            format: None,
         });
         _ = dirs::config_dir()
             .map(|p| p.join("is-fast/config.toml"))
@@ -49,11 +66,27 @@ impl Config {
                 for (site, selector) in u_config.selectors {
                     config.selectors.insert(site, selector);
                 }
+                let mut format = config.format.take().unwrap_or_else(|| FormatSection {
+                    ignored_tags: Vec::new(),
+                    block_elements: Vec::new(),
+                });
+
+                if let Some(u_format) = u_config.format {
+                    if !u_format.ignored_tags.is_empty() {
+                        format.ignored_tags = u_format.ignored_tags;
+                    }
+                    if !u_format.block_elements.is_empty() {
+                        format.block_elements = u_format.block_elements;
+                    }
+                }
+                config.format = Some(format);
             });
 
         Self {
             styles: Self::convert_styles(config.styles),
             selectors: config.selectors,
+            ignored_tags: config.format.as_ref().map(|format| format.ignored_tags.iter().cloned().collect()).unwrap_or_else(|| HashSet::new()),
+            block_elements: config.format.as_ref().map(|format| format.block_elements.iter().cloned().collect()).unwrap_or_else(|| HashSet::new()),
         }
     }
 
@@ -95,6 +128,10 @@ impl Config {
     pub fn get_selectors() -> &'static HashMap<String, String> {
         &CONFIG.selectors
     }
+
+    pub fn get_ignored_tags() -> &'static HashSet<String> { &CONFIG.ignored_tags }
+
+    pub fn get_block_elements() -> &'static HashSet<String> { &CONFIG.block_elements }
 }
 
 fn parse_color(color: &str) -> Color {
@@ -113,4 +150,3 @@ fn parse_color(color: &str) -> Color {
     }
 }
 
-const DEFAULT_CONFIG: &str = include_str!("config/default_config.toml");

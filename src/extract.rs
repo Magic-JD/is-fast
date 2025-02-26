@@ -11,42 +11,9 @@ use syntect::highlighting::{Style as SyntectStyle, ThemeSet};
 use syntect::parsing::SyntaxSet;
 use syntect::util::LinesWithEndings;
 
-static IGNORED_TAGS: Lazy<HashSet<&'static str>> = Lazy::new(|| {
-    [
-        "script", "style", "noscript", "head", "title", "meta", "input", "button", "svg", "nav",
-        "footer", "header", "aside",
-    ]
-    .iter()
-    .cloned()
-    .collect()
-});
+static IGNORED_TAGS: Lazy<&HashSet<String>> = Lazy::new(|| Config::get_ignored_tags());
 
-static BLOCK_ELEMENTS: Lazy<HashSet<&'static str>> = Lazy::new(|| {
-    [
-        "p",
-        "div",
-        "article",
-        "section",
-        "pre",
-        "blockquote",
-        "ul",
-        "ol",
-        "dl",
-        "dt",
-        "dd",
-        "li",
-        "h1",
-        "h2",
-        "h3",
-        "h4",
-        "h5",
-        "h6",
-    ]
-    .iter()
-    .cloned()
-    .collect()
-});
-
+static BLOCK_ELEMENTS: Lazy<&HashSet<String>> = Lazy::new(|| Config::get_block_elements());
 static TAG_STYLES: Lazy<&HashMap<String, Style>> = Lazy::new(Config::get_styles);
 
 pub fn extract_links(html: &String) -> Vec<Link> {

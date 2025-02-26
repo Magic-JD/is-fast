@@ -37,6 +37,12 @@ A built-in configuration is included with the binary and is loaded automatically
 ### Full Default Configuration
 
 ```toml
+[format]
+ignored_tags = ["script", "style", "noscript", "head", "title", "meta", "input", "button", "svg", "nav", "footer", "header", "aside"]
+block_elements = ["p", "div", "article", "section", "pre", "blockquote", "ul", "ol", "dl", "dt", "dd", "li", "h1", "h2", "h3", "h4", "h5", "h6"]
+
+
+
 [styles.h1]
 bold = true
 
@@ -137,36 +143,122 @@ The configuration file should be placed in:
 - **macOS**: `~/Library/Application Support/is-fast/config.toml`
 - **Windows**: `%APPDATA%\is-fast\config.toml`
 
-### Example User Configuration File
+# Configuration
 
+This guide explains how different elements in your `config.toml` file affect the parsing of HTML content for display.
+
+## 🏷 Block Elements
+### Definition
+Block elements are HTML tags that should have **a new line before and after** them when processed. This helps preserve readability and logical structure in the parsed content.
+
+### Example Configuration
 ```toml
-[styles.h1]
-fg = "Blue"
-bold = true
-
-[styles.code]
-fg = "Green"
-
-[selectors]
-"example.com" = "article"
-"website.gov" = ".main-section"
+block_elements = [
+    "p", "div", "article", "section", "pre", "blockquote", "ul", "ol", "dl", "dt", "dd", "li",
+    "h1", "h2", "h3", "h4", "h5", "h6"
+]
 ```
 
-## Configuration Loading Behavior
+### Effect on Output
+#### Input HTML:
+```html
+<p>This is a paragraph.</p><h2>Title</h2><ul><li>Item 1</li><li>Item 2</li></ul>
+```
 
-1. The program first loads the built-in configuration.
-2. If a user configuration file exists, it is loaded and overrides the corresponding values from the default configuration.
-3. Any missing values in the user configuration will fall back to the default values.
+#### Output After Processing:
+```
+This is a paragraph.
 
-## Selecting Elements from Websites
+Title
 
-The application extracts content from different websites based on the `selectors` mapping. When processing a URL, it checks against the keys in the `selectors` table and applies the corresponding CSS selector to extract relevant content.
+- Item 1
+- Item 2
+```
+Each **block element** is **separated by a new line** for better readability.
 
-### Example Usage
+---
 
-When processing a wikipedia page, the program looks up `en.wikipedia.org` in the `selectors` table and applies the selector `p` to extract the article content.
+## 🚫 Ignored Tags
+### Definition
+Ignored tags are HTML elements that **will be completely removed** from the processed content. These typically include **scripts, metadata, and interactive elements** that are irrelevant to text processing.
 
-If no matching selector is found, it defaults to extracting content from the `<body>` tag.
+### Example Configuration
+```toml
+ignored_tags = [
+    "script", "style", "noscript", "head", "title", "meta", "input", "button", "svg", "nav",
+    "footer", "header", "aside"
+]
+```
+
+### Effect on Output
+#### Input HTML:
+```html
+<head><title>My Page</title></head>
+<body>
+  <p>Hello, world!</p>
+  <script>alert("Hello");</script>
+  <footer>© 2025 My Website</footer>
+</body>
+```
+
+#### Output After Processing:
+```
+Hello, world!
+```
+- **`<script>` and `<footer>` are removed**.
+- **Only meaningful content remains**.
+
+---
+
+## 🔍 Selectors
+### Definition
+Selectors allow you to **extract only relevant content** from different websites. This is useful for **web scraping or text extraction**.
+
+### Example Configuration
+```toml
+[selectors]
+"en.wikipedia.org" = "p"
+"www.baeldung.com" = ".post-content"
+"www.w3schools.com" = "#main"
+```
+
+### Effect
+When processing content from Wikipedia, only `<p>` elements will be extracted. For w3schools, only elements inside `main` will be considered.
+
+---
+
+## 🎨 Text Styles
+### Definition
+This section defines **how different HTML tags should be styled** in the output.
+
+### Example Configuration
+```toml
+[styles.h1]
+bold = true
+
+[styles.a]
+fg = "Cyan"
+
+[styles.code]
+fg = "Red"
+```
+This means:
+- `<h1>` will be **bold**.
+- `<a>` (links) will be **cyan**.
+- `<code>` will be **red**.
+
+---
+
+## 📌 Summary
+
+| Configuration    | Purpose |
+|-----------------|---------|
+| **Block Elements** | Ensure new lines before and after specified tags. |
+| **Ignored Tags**  | Remove unnecessary elements like scripts, metadata, and navigation. |
+| **Selectors**     | Extract only specific content from websites. |
+| **Styles**        | Define how text should be formatted. |
+
+This setup helps **clean, structure, and format HTML content** for better readability and usability. 🚀
 
 ## Modifying the Configuration
 
