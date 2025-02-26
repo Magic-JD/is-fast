@@ -4,9 +4,9 @@ use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use toml;
+use crate::config::constants::DEFAULT_CONFIG_LOCATION;
 
 static CONFIG: Lazy<Config> = Lazy::new(Config::load);
-const DEFAULT_CONFIG: &str = include_str!("config/config.toml");
 
 #[derive(Debug, Deserialize)]
 struct TagStyleConfig {
@@ -58,7 +58,7 @@ pub struct Config {
 
 impl Config {
     fn load() -> Self {
-        let mut config: RawConfig = toml::from_str(DEFAULT_CONFIG)
+        let mut config: RawConfig = toml::from_str(DEFAULT_CONFIG_LOCATION)
             .map_err(|e| println!("{}", e.to_string()))
             .unwrap_or(RawConfig {
                 styles: HashMap::new(),
@@ -199,33 +199,13 @@ fn parse_color(color: &str) -> Color {
         "white" => Color::White,
         "gray" => Color::Gray,
         "darkgray" => Color::DarkGray,
+        "lightred" => Color::LightRed,
+        "lightgreen" => Color::LightGreen,
+        "lightyellow" => Color::LightYellow,
+        "lightblue" => Color::LightBlue,
+        "lightmagenta" => Color::LightMagenta,
+        "lightcyan" => Color::LightCyan,
         _ => Color::Reset,
     }
 }
-pub fn generate_config() {
-    println!("Generating config file...");
-    let config_directory = dirs::config_dir();
-    if let None = config_directory {
-        println!("Could not determine config directory");
-        return;
-    }
-    if let Some(config_dir) = config_directory {
-        let is_fast_dir = config_dir.join("is-fast");
-        let config_path = is_fast_dir.join("config.toml");
 
-        fs::create_dir_all(&is_fast_dir)
-            .map_err(|e| format!("Error creating config directory: {}", e))
-            .and_then(|_| {
-                if !config_path.exists() {
-                    fs::write(&config_path, DEFAULT_CONFIG)
-                        .map_err(|e| format!("Error writing config file: {}", e))
-                } else {
-                    Err(format!("Config file already exists at {:?}", config_path))
-                }
-            })
-            .map(|_| println!("Config file generated at {:?}", config_path))
-            .unwrap_or_else(|e| eprintln!("{}", e));
-
-
-    }
-}

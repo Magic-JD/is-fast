@@ -1,7 +1,7 @@
 use reqwest::blocking::Client;
 use std::process::Command;
 
-pub fn fallback_curl(url: &String) -> Result<String, String> {
+pub fn curl_scrape(url: &String) -> Result<String, String> {
     let output = Command::new("curl")
         .args(&[
             "-A",
@@ -14,7 +14,7 @@ pub fn fallback_curl(url: &String) -> Result<String, String> {
     Ok(String::from_utf8_lossy(&output.stdout).to_string().into())
 }
 
-pub fn scrape(url: &String) -> Result<String, String> {
+pub fn reqwest_scrape(url: &String) -> Result<String, String> {
     Client::new()
         .get(url)
         .header("User-Agent", "Mozilla/5.0")

@@ -3,11 +3,11 @@ use clap_mangen::Man;
 use std::fs::File;
 use std::io::{Write};
 
-include!("src/cli.rs");
+include!("src/cli/command.rs");
 
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
-    println!("cargo:rerun-if-changed=src/cli.rs");
+    println!("cargo:rerun-if-changed=src/cli/command.rs");
 
     let cmd = Cli::command();
 

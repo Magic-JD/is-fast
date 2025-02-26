@@ -1,4 +1,4 @@
-use crate::link::Link;
+use crate::links::link::Link;
 use once_cell::sync::Lazy;
 use ratatui::style::Modifier;
 use ratatui::text::Span;
@@ -15,11 +15,11 @@ use std::io::{Result, Stdout};
 const INSTRUCTIONS: &'static str = " Quit: q | Scroll Down: j/↓ | Scroll Up: k/↑ | Page Down: CTRL+d | Page Up: CTRL+u | Next: n/→ | Back: b/← ";
 const TUI_BORDER_COLOR: Lazy<Style> = Lazy::new(|| Style::default().fg(Color::Green));
 
-pub fn draw_loading(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
+pub fn loading(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
     draw(terminal, &Paragraph::default(), " Loading...".to_string(), 0)
 }
 
-pub fn draw_page(
+pub fn page(
     terminal: &mut Terminal<CrosstermBackend<Stdout>>,
     page: &Paragraph,
     link: Option<&Link>,

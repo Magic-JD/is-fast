@@ -1,7 +1,7 @@
 use scraper::{Html, Selector};
-use crate::link::Link;
+use crate::links::link::Link;
 
-pub fn extract_links(html: &String) -> Vec<Link> {
+pub fn from_html(html: &String) -> Vec<Link> {
     let document = Html::parse_document(&html);
     let selector_title = Selector::parse("a.result__a").unwrap();
     let selector_url = Selector::parse("a.result__url").unwrap();

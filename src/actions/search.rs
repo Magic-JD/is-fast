@@ -5,31 +5,31 @@ use ratatui::backend::CrosstermBackend;
 use ratatui::prelude::Text;
 use ratatui::Terminal;
 use ratatui::widgets::Paragraph;
-use crate::extract_links::extract_links;
-use crate::scrape::scrape;
-use crate::{input, ui};
+use crate::links::extract::from_html;
+use crate::scrapers::scrape::reqwest_scrape;
+use crate::tui::{events, render};
 
-pub fn run_search(search_term: String) {
+pub fn run(search_term: String) {
     let mut terminal = startup();
     let mut index = 0;
-    ui::draw_loading(&mut terminal)
+    render::loading(&mut terminal)
         .unwrap_or_else(|err| shutdown_with_error(&mut terminal, &err.to_string()));
-    let links = &scrape(&format!(
+    let links = &reqwest_scrape(&format!(
         "https://html.duckduckgo.com/html/?q={}",
         &search_term
     ))
-        .map(|html| extract_links(&html))
+        .map(|html| from_html(&html))
         .unwrap_or_else(|err| shutdown_with_error(&mut terminal, &err.to_string()));
     let mut page = links
         .get(index)
         .map(|link| link.get_content())
         .unwrap_or_else(|| Paragraph::new(Text::from(String::from("Index out of bounds"))));
     let mut scroll_offset = 0;
-    ui::draw_page(&mut terminal, &page, links.get(index), scroll_offset)
+    render::page(&mut terminal, &page, links.get(index), scroll_offset)
         .unwrap_or_else(|err| shutdown_with_error(&mut terminal, &err.to_string()));
     let height = terminal.get_frame().area().height;
     loop {
-        if input::handle_input(
+        if events::handle_input(
             &mut index,
             &links,
             &mut page,

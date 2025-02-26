@@ -1,30 +1,27 @@
+mod scrapers;
+mod formatting;
+mod links;
+mod tui;
 mod config;
-mod error;
-mod extract_formatted;
-mod extract_links;
-mod input;
-mod link;
-mod scrape;
-mod syntax_highlighting;
-mod ui;
+mod errors;
+mod actions;
 mod cli;
-mod run_search;
 
-use crate::cli::Cli;
-use crate::config::generate_config;
-use crate::run_search::run_search;
+use crate::cli::command::Cli;
+use actions::search;
+use actions::generate_config;
 use clap::Parser;
 
 fn main() {
     let args = Cli::parse();
     if args.generate_config {
-        generate_config();
+        generate_config::run();
         return;
     }
     let search_term = args.query.map(|query| query.join(" "));
     if let Some(search_term) = search_term {
-        run_search(search_term);
+        search::run(search_term);
         return;
     }
-    eprintln!("No search term provided!");
+    eprintln!("No actions term provided!");
 }

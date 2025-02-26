@@ -1,5 +1,5 @@
-use crate::config::Config;
-use crate::syntax_highlighting::highlight_code;
+use crate::config::load::Config;
+use crate::formatting::syntax_highlight::highlight_code;
 use once_cell::sync::Lazy;
 use ratatui::style::Style;
 use ratatui::text::{Line, Span, Text};
@@ -13,7 +13,7 @@ static TAG_STYLES: Lazy<&HashMap<String, Style>> = Lazy::new(Config::get_styles)
 
 
 
-pub fn extract_page_content(url: &String, res: &String) -> Result<Paragraph<'static>, String> {
+pub fn to_display(url: &String, res: &String) -> Result<Paragraph<'static>, String> {
     let selection_tag = Config::get_selectors()
         .iter()
         .find(|(k, _)| url.contains(*k))
@@ -23,7 +23,7 @@ pub fn extract_page_content(url: &String, res: &String) -> Result<Paragraph<'sta
         Selector::parse(&selection_tag).map_err(|_| "Error: Could not parse selector")?;
     let mut lines = Html::parse_document(&res)
         .select(&selector)
-        .flat_map(|e| convert_to_text(e))
+        .flat_map(|e| to_lines(e))
         .collect::<Vec<Line>>();
     lines.dedup();
     while let Some(first) = lines.first() {
@@ -43,7 +43,7 @@ pub fn extract_page_content(url: &String, res: &String) -> Result<Paragraph<'sta
     Ok(Paragraph::new(Text::from(lines)))
 }
 
-fn convert_to_text(element: ElementRef) -> Vec<Line<'static>> {
+fn to_lines(element: ElementRef) -> Vec<Line<'static>> {
     let tag_name = element.value().name();
 
     if tag_name == "br" {
@@ -74,7 +74,7 @@ fn convert_to_text(element: ElementRef) -> Vec<Line<'static>> {
             }
         }
         Node::Element(_) => ElementRef::wrap(node).iter().for_each(|element| {
-            let mut element_lines = convert_to_text(*element);
+            let mut element_lines = to_lines(*element);
             if element_lines.is_empty() {
                 return;
             }

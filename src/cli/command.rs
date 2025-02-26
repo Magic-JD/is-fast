@@ -4,7 +4,7 @@ use clap::{Parser, ArgAction};
 ///
 /// is-fast is a command-line tool that allows you to quickly search the internet
 /// from a terminal-only environment. Instead of loading a full web browser,
-/// it fetches the first search result from Google and presents only the key information.
+/// it fetches the first search result and presents only the key information.
 ///
 /// Navigation Controls:
 ///
@@ -29,9 +29,8 @@ use clap::{Parser, ArgAction};
 pub struct Cli {
     /// Generate a default configuration file
     ///
-    /// Running this option will create a `config.toml` file inside the default configuration
-    /// directory (`$XDG_CONFIG_HOME/is-fast/` or `~/.config/is-fast/`).
-    /// If the directory does not exist, it will be created automatically.
+    /// Running this option will create a config.toml file inside the default configuration
+    /// directory if one doesn't already exist.
     ///
     /// Example Usage:
     ///

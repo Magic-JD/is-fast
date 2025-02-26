@@ -1,4 +1,4 @@
-use crate::config::Config;
+use crate::config::load::Config;
 use once_cell::sync::Lazy;
 use ratatui::prelude::{Color, Line, Span, Style};
 use syntect::easy::HighlightLines;
