@@ -210,13 +210,12 @@ Hello, world!
 
 ## 🔍 Selectors
 ### Definition
-Selectors allow you to **extract only relevant content** from different websites. This is useful for **web scraping or text extraction**.
+Selectors allow you to **extract only relevant content** from different websites. This is useful for customizing certain sites for a better user experience.
 
 ### Example Configuration
 ```toml
 [selectors]
 "en.wikipedia.org" = "p"
-"www.baeldung.com" = ".post-content"
 "www.w3schools.com" = "#main"
 ```
 
