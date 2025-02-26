@@ -188,8 +188,6 @@ Themes should be a valid theme from **syntect**.
 
 ---
 
-This updated document includes **all configuration options** and a **clear table of values**. Let me know if you need more details! 🚀
-
 ## 📌 Summary
 
 | Configuration           | Purpose                                                             |
@@ -219,7 +217,7 @@ Before running the project, ensure you have the following installed:
 
 ## Installing the program (🐧 🍏 🪟)
 
-Run the following command to clone the repository:
+Run the following command to clone the repository and install it on your system:
 
 ```sh
 git clone https://github.com/Magic-JD/is-fast.git
