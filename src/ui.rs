@@ -1,4 +1,4 @@
-use crate::models::Link;
+use crate::link::Link;
 use once_cell::sync::Lazy;
 use ratatui::style::Modifier;
 use ratatui::text::Span;

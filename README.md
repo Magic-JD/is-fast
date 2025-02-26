@@ -34,104 +34,19 @@ This project supports both built-in and user-provided configurations for styles 
 
 A built-in configuration is included with the binary and is loaded automatically. The default configuration defines styles for various elements and selectors for extracting content from different websites.
 
-### Full Default Configuration
-
-```toml
-[format]
-ignored_tags = ["script", "style", "noscript", "head", "title", "meta", "input", "button", "svg", "nav", "footer", "header", "aside"]
-block_elements = ["p", "div", "article", "section", "pre", "blockquote", "ul", "ol", "dl", "dt", "dd", "li", "h1", "h2", "h3", "h4", "h5", "h6"]
-
-[styles.h1]
-bold = true
-
-[styles.h2]
-bold = true
-
-[styles.h3]
-bold = true
-
-[styles.a]
-fg = "Cyan"
-
-[styles.code]
-fg = "Red"
-
-[styles.em]
-italic = true
-
-[styles.i]
-italic = true
-
-[styles.strong]
-bold = true
-
-[styles.b]
-bold = true
-
-[styles.blockquote]
-fg = "Gray"
-italic = true
-
-[styles.del]
-crossed_out = true
-
-[styles.ins]
-underlined = true
-
-[styles.mark]
-fg = "Black"
-bg = "Yellow"
-
-[styles.small]
-fg = "Gray"
-
-[styles.sub]
-fg = "Gray"
-dim = true
-
-[styles.sup]
-fg = "Gray"
-dim = true
-
-[styles.pre]
-fg = "White"
-bg = "Black"
-
-[styles.kbd]
-fg = "White"
-bg = "DarkGray"
-
-[styles.var]
-fg = "Cyan"
-
-[styles.samp]
-fg = "Magenta"
-
-[styles.u]
-underlined = true
-
-[styles.li]
-bold = true
-
-[styles.dt]
-bold = true
-
-[styles.dd]
-fg = "Gray"
-
-[selectors]
-"en.wikipedia.org" = "p"
-"www.baeldung.com" = ".post-content"
-"www.w3schools.com" = "#main"
-"linuxhandbook.com" = "article"
-"docs.spring.io" = "article"
-"stackoverflow.com" = ".js-post-body, .user-details, .comment-body"
-"github.com" = ".markdown-body"
-```
 
 ## User Configuration
 
 Users can override the default configuration by creating a TOML configuration file in their system’s configuration directory.
+
+Running --generate-content generates a copy of the default config.toml in the user's configuration directory for easy editing.
+
+```sh
+cargo run -- --generate-config
+
+```
+
+When using `--generate-config`, the program will create the is-fast directory in the user's default config directory (if it does not exist) and write the default config.toml inside it. You can see the location of the file in the console output.
 
 ### Location of User Configuration File
 

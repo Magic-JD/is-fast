@@ -1,5 +1,5 @@
 use crate::error::MyError;
-use crate::{models::Link, ui};
+use crate::{link::Link, ui};
 use crossterm::event::{self, KeyCode, KeyEvent, KeyModifiers};
 use ratatui::text::Text;
 use ratatui::widgets::Paragraph;

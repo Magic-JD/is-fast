@@ -1,5 +1,5 @@
 use scraper::{Html, Selector};
-use crate::models::Link;
+use crate::link::Link;
 
 pub fn extract_links(html: &String) -> Vec<Link> {
     let document = Html::parse_document(&html);
