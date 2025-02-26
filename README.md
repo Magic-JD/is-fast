@@ -37,7 +37,7 @@ or
 is-fast search query
 ```
 
-## ⚙ Generate Default Configuration
+## ⚙️ Generate Default Configuration
 Creates a `config.toml` in your system's configuration directory for customization:
 ```sh
 is-fast --generate-config
@@ -63,10 +63,6 @@ If not generated the configuration file should be placed in:
 - **Windows**: `%APPDATA%\is-fast\config.toml`
 
 If the `--generate-config` command is used a copy of the default configuration will be placed there automatically.
-
-# Configuration
-
-This guide explains how different elements in your `config.toml` file affect the parsing of HTML content for display.
 
 ## 🏷 Block Elements
 ### Definition
