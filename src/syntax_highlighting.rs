@@ -1,33 +1,43 @@
+use crate::config::Config;
+use once_cell::sync::Lazy;
 use ratatui::prelude::{Color, Line, Span, Style};
 use syntect::easy::HighlightLines;
+use syntect::highlighting::{Style as SyntectStyle, Theme, ThemeSet};
 use syntect::parsing::SyntaxSet;
 use syntect::util::LinesWithEndings;
-use syntect::highlighting::{Style as SyntectStyle, ThemeSet};
+
+static DEFAULT_LANGUAGE: Lazy<String> = Lazy::new(Config::get_default_language);
+static SYNTAX_HIGHLIGHTING_THEME: Lazy<String> = Lazy::new(Config::get_syntax_highlighting_theme);
 
 pub fn highlight_code(text: &str, language: &str) -> Vec<Line<'static>> {
     let syntax_set = SyntaxSet::load_defaults_newlines();
-    let theme_set = ThemeSet::load_defaults();
     let syntax = syntax_set
-        .find_syntax_by_token(language)
-        .unwrap_or(syntax_set.find_syntax_by_token("java").unwrap()); // Default to java - should be able to set in settings.
-    let mut highlighter = HighlightLines::new(syntax, &theme_set.themes["base16-ocean.dark"]); // Trial different themes?
+        .find_syntax_by_token(language) // Attempt to use language from css
+        .or_else(|| syntax_set.find_syntax_by_token(DEFAULT_LANGUAGE.as_str())) // Attempt to use language from config
+        .unwrap_or_else(|| syntax_set.find_syntax_plain_text()); // Use plain text
 
-    let mut lines = Vec::new();
+    let theme_set = ThemeSet::load_defaults();
+    let default_theme = Theme::default();
+    let theme = theme_set
+        .themes
+        .get(SYNTAX_HIGHLIGHTING_THEME.as_str())
+        .unwrap_or_else(|| &default_theme);
 
-    for line in LinesWithEndings::from(text) {
-        let highlighted = highlighter.highlight_line(line, &syntax_set).unwrap();
+    let mut highlighter = HighlightLines::new(syntax, theme);
 
-        let styled_spans = highlighted
-            .iter()
-            .map(|(style, content)| {
-                Span::styled(content.to_string(), convert_syntect_style(*style))
-            })
-            .collect::<Vec<Span>>();
+    LinesWithEndings::from(text)
+        .map(|line| highlight_line(&syntax_set, &mut highlighter, line))
+        .collect()
+}
 
-        lines.push(Line::from(styled_spans));
-    }
+fn highlight_line(syntax_set: &SyntaxSet, highlighter: &mut HighlightLines, line: &str) -> Line<'static> {
+    let highlighted = highlighter.highlight_line(line, syntax_set).unwrap();
 
-    lines
+    let styled_spans = highlighted
+        .iter()
+        .map(|(style, content)| Span::styled(content.to_string(), convert_syntect_style(*style)))
+        .collect::<Vec<Span>>();
+    Line::from(styled_spans)
 }
 
 fn convert_syntect_style(syntect_style: SyntectStyle) -> Style {

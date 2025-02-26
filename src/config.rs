@@ -27,6 +27,14 @@ struct FormatSection {
 }
 
 #[derive(Debug, Deserialize)]
+struct SyntaxHighlightingSection {
+    #[serde(default)]
+    theme: Option<String>,
+    #[serde(default)]
+    default_language: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
 struct RawConfig {
     #[serde(default)]
     styles: HashMap<String, TagStyleConfig>,
@@ -34,6 +42,8 @@ struct RawConfig {
     selectors: HashMap<String, String>,
     #[serde(default)]
     format: Option<FormatSection>,
+    #[serde(default)]
+    syntax: Option<SyntaxHighlightingSection>,
 }
 
 #[derive(Debug)]
@@ -42,19 +52,20 @@ pub struct Config {
     selectors: HashMap<String, String>,
     ignored_tags: HashSet<String>,
     block_elements: HashSet<String>,
+    syntax_default_language: Option<String>,
+    syntax_highlighting_theme: Option<String>,
 }
 
 impl Config {
     fn load() -> Self {
-        let mut config: RawConfig = toml::from_str(DEFAULT_CONFIG).map_err(|e|
-                                                                               {
-                                                                                   println!("{}", e.to_string())
-                                                                               }
-                                                                                   ).unwrap_or(RawConfig {
-            styles: HashMap::new(),
-            selectors: HashMap::new(),
-            format: None,
-        });
+        let mut config: RawConfig = toml::from_str(DEFAULT_CONFIG)
+            .map_err(|e| println!("{}", e.to_string()))
+            .unwrap_or(RawConfig {
+                styles: HashMap::new(),
+                selectors: HashMap::new(),
+                format: None,
+                syntax: None,
+            });
         _ = dirs::config_dir()
             .map(|p| p.join("is-fast/config.toml"))
             .and_then(|path| fs::read_to_string(&path).ok())
@@ -79,14 +90,38 @@ impl Config {
                         format.block_elements = u_format.block_elements;
                     }
                 }
+                let mut syntax = config.syntax.take().unwrap_or(
+                    SyntaxHighlightingSection {
+                        theme: None,
+                        default_language: None,
+                    },);
+                if let Some(u_syntax) = u_config.syntax {
+                    if let Some(theme) = u_syntax.theme {
+                        syntax.theme = Some(theme);
+                    }
+                    if let Some(default_language) = u_syntax.default_language {
+                        syntax.default_language = Some(default_language);
+                    }
+                }
                 config.format = Some(format);
+                config.syntax = Some(syntax);
             });
 
         Self {
             styles: Self::convert_styles(config.styles),
             selectors: config.selectors,
-            ignored_tags: config.format.as_ref().map(|format| format.ignored_tags.iter().cloned().collect()).unwrap_or_else(|| HashSet::new()),
-            block_elements: config.format.as_ref().map(|format| format.block_elements.iter().cloned().collect()).unwrap_or_else(|| HashSet::new()),
+            ignored_tags: config
+                .format
+                .as_ref()
+                .map(|format| format.ignored_tags.iter().cloned().collect())
+                .unwrap_or_else(|| HashSet::new()),
+            block_elements: config
+                .format
+                .as_ref()
+                .map(|format| format.block_elements.iter().cloned().collect())
+                .unwrap_or_else(|| HashSet::new()),
+            syntax_default_language: config.syntax.as_ref().and_then(|syntax| syntax.default_language.clone()),
+            syntax_highlighting_theme: config.syntax.as_ref().and_then(|syntax| syntax.theme.clone()),
         }
     }
 
@@ -129,9 +164,27 @@ impl Config {
         &CONFIG.selectors
     }
 
-    pub fn get_ignored_tags() -> &'static HashSet<String> { &CONFIG.ignored_tags }
+    pub fn get_ignored_tags() -> &'static HashSet<String> {
+        &CONFIG.ignored_tags
+    }
 
-    pub fn get_block_elements() -> &'static HashSet<String> { &CONFIG.block_elements }
+    pub fn get_block_elements() -> &'static HashSet<String> {
+        &CONFIG.block_elements
+    }
+
+    pub fn get_default_language() -> String {
+        CONFIG
+            .syntax_default_language
+            .clone()
+            .unwrap_or_else(|| "".to_string())
+    }
+
+    pub fn get_syntax_highlighting_theme() -> String {
+        CONFIG
+            .syntax_highlighting_theme
+            .clone()
+            .unwrap_or_else(|| "base16-ocean.dark".to_string())
+    }
 }
 
 fn parse_color(color: &str) -> Color {
@@ -149,4 +202,3 @@ fn parse_color(color: &str) -> Color {
         _ => Color::Reset,
     }
 }
-

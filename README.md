@@ -246,16 +246,40 @@ This means:
 
 ---
 
+## 🌈 Syntax Highlighting
+
+The `[syntax]` section defines syntax highlighting settings.
+
+Example:
+
+```toml
+[syntax]
+default_language = "plain"
+theme = "base16-ocean.dark"
+```
+
+| **Key**            | **Description**                                        | **Example**           |
+| ------------------ | ------------------------------------------------------ | --------------------- |
+| `default_language` | The fallback language for highlighting                 | `"plain"`             |
+| `theme`            | The theme for syntax highlighting                      | `"base16-ocean.dark"` |
+
+The **default language** is used as a fallback when syntax highlighting is applied. The language is first determined from the CSS classes present in the HTML tags. If no valid language is detected, the default language specified in the configuration will be used instead.
+
+Themes should be a valid theme from **syntect**.
+
+---
+
+This updated document includes **all configuration options** and a **clear table of values**. Let me know if you need more details! 🚀
+
 ## 📌 Summary
 
-| Configuration    | Purpose |
-|-----------------|---------|
-| **Block Elements** | Ensure new lines before and after specified tags. |
-| **Ignored Tags**  | Remove unnecessary elements like scripts, metadata, and navigation. |
-| **Selectors**     | Extract only specific content from websites. |
-| **Styles**        | Define how text should be formatted. |
-
-This setup helps **clean, structure, and format HTML content** for better readability and usability. 🚀
+| Configuration           | Purpose                                                             |
+|-------------------------|---------------------------------------------------------------------|
+| **Block Elements**      | Ensure new lines before and after specified tags.                   |
+| **Ignored Tags**        | Remove unnecessary elements like scripts, metadata, and navigation. |
+| **Selectors**           | Extract only specific content from websites.                        |
+| **Styles**              | Define how text should be formatted.                                |
+| **Syntax Highlighting** | Defines how the syntax highlighting should be handled.              |
 
 ## Modifying the Configuration
 
