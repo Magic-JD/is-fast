@@ -41,8 +41,6 @@ A built-in configuration is included with the binary and is loaded automatically
 ignored_tags = ["script", "style", "noscript", "head", "title", "meta", "input", "button", "svg", "nav", "footer", "header", "aside"]
 block_elements = ["p", "div", "article", "section", "pre", "blockquote", "ul", "ol", "dl", "dt", "dd", "li", "h1", "h2", "h3", "h4", "h5", "h6"]
 
-
-
 [styles.h1]
 bold = true
 
