@@ -1,38 +1,17 @@
 use crate::config::Config;
-use crate::models::Link;
+use crate::syntax_highlighting::highlight_code;
 use once_cell::sync::Lazy;
-use ratatui::style::{Color, Style};
+use ratatui::style::Style;
 use ratatui::text::{Line, Span, Text};
 use ratatui::widgets::Paragraph;
 use scraper::{ElementRef, Html, Node, Selector};
 use std::collections::{HashMap, HashSet};
-use syntect::easy::HighlightLines;
-use syntect::highlighting::{Style as SyntectStyle, ThemeSet};
-use syntect::parsing::SyntaxSet;
-use syntect::util::LinesWithEndings;
 
 static IGNORED_TAGS: Lazy<&HashSet<String>> = Lazy::new(|| Config::get_ignored_tags());
-
 static BLOCK_ELEMENTS: Lazy<&HashSet<String>> = Lazy::new(|| Config::get_block_elements());
 static TAG_STYLES: Lazy<&HashMap<String, Style>> = Lazy::new(Config::get_styles);
 
-pub fn extract_links(html: &String) -> Vec<Link> {
-    let document = Html::parse_document(&html);
-    let selector_title = Selector::parse("a.result__a").unwrap();
-    let selector_url = Selector::parse("a.result__url").unwrap();
 
-    document
-        .select(&selector_title)
-        .zip(document.select(&selector_url))
-        .take(5)
-        .map(|(title, url)| {
-            Link::new(
-                title.text().collect::<Vec<_>>().join(" ").trim().to_owned(),
-                url.text().collect::<Vec<_>>().join(" ").trim().to_owned(),
-            )
-        })
-        .collect()
-}
 
 pub fn extract_page_content(url: &String, res: &String) -> Result<Paragraph<'static>, String> {
     let selection_tag = Config::get_selectors()
@@ -148,38 +127,4 @@ fn merge_with_previous_line(lines: &mut Vec<Line<'static>>, new_lines: &mut Vec<
     } else {
         lines.extend(new_lines.drain(..));
     }
-}
-
-fn highlight_code(text: &str, language: &str) -> Vec<Line<'static>> {
-    let syntax_set = SyntaxSet::load_defaults_newlines();
-    let theme_set = ThemeSet::load_defaults();
-    let syntax = syntax_set
-        .find_syntax_by_token(language)
-        .unwrap_or(syntax_set.find_syntax_by_token("java").unwrap()); // Default to java - should be able to set in settings.
-    let mut highlighter = HighlightLines::new(syntax, &theme_set.themes["base16-ocean.dark"]); // Trial different themes?
-
-    let mut lines = Vec::new();
-
-    for line in LinesWithEndings::from(text) {
-        let highlighted = highlighter.highlight_line(line, &syntax_set).unwrap();
-
-        let styled_spans = highlighted
-            .iter()
-            .map(|(style, content)| {
-                Span::styled(content.to_string(), convert_syntect_style(*style))
-            })
-            .collect::<Vec<Span>>();
-
-        lines.push(Line::from(styled_spans));
-    }
-
-    lines
-}
-
-fn convert_syntect_style(syntect_style: SyntectStyle) -> Style {
-    Style::default().fg(Color::Rgb(
-        syntect_style.foreground.r,
-        syntect_style.foreground.g,
-        syntect_style.foreground.b,
-    ))
 }

@@ -1,4 +1,4 @@
-use crate::extract::extract_page_content;
+use crate::extract_formatted::extract_page_content;
 use crate::scrape::{fallback_curl, scrape};
 use ratatui::text::Text;
 use ratatui::widgets::Paragraph;

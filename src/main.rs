@@ -1,12 +1,14 @@
 mod config;
 mod error;
-mod extract;
+mod extract_formatted;
 mod input;
 mod models;
 mod scrape;
 mod ui;
+mod syntax_highlighting;
+mod extract_links;
 
-use crate::extract::extract_links;
+use crate::extract_links::extract_links;
 use crate::scrape::scrape;
 use crossterm::{
     execute,
