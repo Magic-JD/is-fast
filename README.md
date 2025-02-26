@@ -129,7 +129,7 @@ Hello, world!
 
 ## 🔍 Selectors
 ### Definition
-Selectors allow you to **extract only relevant content** from different websites. This is useful for customizing certain sites for a better user experience.
+Selectors allow you to **extract only relevant content** from different websites. This is useful for customizing certain sites for a better user experience. If no selector is provided for a specific site then body will be used.
 
 ### Example Configuration
 ```toml
