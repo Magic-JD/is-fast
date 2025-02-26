@@ -109,7 +109,7 @@ fn convert_to_text(element: ElementRef) -> Vec<Line<'static>> {
             .iter()
             .map(|line| line.spans.iter().map(|span| span.content.clone()).collect())
             .collect::<Vec<String>>()
-            .join("\n");
+            .join("");
         return highlight_code(&code_text, &language_type); // Work out how to determine the language
     }
     lines
