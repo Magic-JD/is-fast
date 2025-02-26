@@ -25,6 +25,24 @@ This tool fetches the **first search result** from Google and presents only the 
 No waiting - just internet search fast in your terminal.  
 **It is fast!** ⚡
 
+# 📜 Commands
+
+## 🔍 Search the Web
+Run a search query from the terminal:
+```sh
+is-fast "search query"
+```
+or
+```sh
+is-fast search query
+```
+
+## ⚙ Generate Default Configuration
+Creates a `config.toml` in your system's configuration directory for customization:
+```sh
+is-fast --generate-config
+```
+
 
 # Configuration Guide
 
@@ -34,27 +52,17 @@ This project supports both built-in and user-provided configurations for styles 
 
 A built-in configuration is included with the binary and is loaded automatically. The default configuration defines styles for various elements and selectors for extracting content from different websites.
 
-
-## User Configuration
-
 Users can override the default configuration by creating a TOML configuration file in their system’s configuration directory.
-
-Running --generate-content generates a copy of the default config.toml in the user's configuration directory for easy editing.
-
-```sh
-cargo run -- --generate-config
-
-```
-
-When using `--generate-config`, the program will create the is-fast directory in the user's default config directory (if it does not exist) and write the default config.toml inside it. You can see the location of the file in the console output.
 
 ### Location of User Configuration File
 
-The configuration file should be placed in:
+If not generated the configuration file should be placed in:
 
 - **Linux**: `~/.config/is-fast/config.toml`
 - **macOS**: `~/Library/Application Support/is-fast/config.toml`
 - **Windows**: `%APPDATA%\is-fast\config.toml`
+
+If the `--generate-config` command is used a copy of the default configuration will be placed there automatically.
 
 # Configuration
 
@@ -204,7 +212,7 @@ If you need to reset to the default configuration, delete the user configuration
 
 # Running the Project 🏃
 
-This guide explains how to set up and run the project after cloning the repository.
+This guide explains how to set up and install the project through Cargo after cloning the repository.
 
 ## Prerequisites
 
@@ -213,38 +221,14 @@ Before running the project, ensure you have the following installed:
 - [Rust](https://www.rust-lang.org/tools/install) (latest stable version) 🦀
 - [Cargo](https://doc.rust-lang.org/cargo/) (comes with Rust) 📦
 
-## Cloning the Repository
+## Installing the program (🐧 🍏 🪟)
 
 Run the following command to clone the repository:
 
 ```sh
 git clone https://github.com/Magic-JD/is-fast.git
 cd is-fast
+cargo install --path .
+is-fast "your search term"
 ```
 
-## Running on Linux 🐧
-
-1. Ensure Rust and Cargo are installed.
-2. Run the following commands:
-
-```sh
-cargo run "search query" (" is not needed, can also directly enter the search term)
-```
-
-## Running on macOS 🍏
-
-1. Install Rust and Cargo.
-2. Run the following:
-
-```sh
-cargo run "search query" (" is not needed, can also directly enter the search term)
-```
-
-## Running on Windows 🪟
-
-1. Install Rust and Cargo using [rustup](https://rustup.rs/).
-2. Open a command prompt or PowerShell and run:
-
-```sh
-cargo run "search query" (" is not needed, can also directly enter the search term)
-```
