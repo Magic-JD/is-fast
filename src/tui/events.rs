@@ -8,11 +8,12 @@ use ratatui::{backend::CrosstermBackend, Terminal};
 use std::io::Stdout;
 use std::result::Result;
 use open;
+use crate::formatting::format::{to_error_display, UIComponent};
 
 pub fn handle_input(
     index: &mut usize,
     links: &[Link],
-    page: &mut Paragraph<'static>,
+    page: &mut Vec<UIComponent>,
     terminal: &mut Terminal<CrosstermBackend<Stdout>>,
     scroll_offset: &mut u16,
     page_height: u16,
@@ -68,7 +69,7 @@ fn open_link(index: &mut usize, links: &[Link]) {
 fn change_page(
     index: &mut usize,
     links: &[Link],
-    page: &mut Paragraph,
+    page: &mut Vec<UIComponent>,
     terminal: &mut Terminal<CrosstermBackend<Stdout>>,
     scroll_offset: &mut u16,
 ) -> Result<(), MyError> {
@@ -79,17 +80,17 @@ fn change_page(
     Ok(())
 }
 
-fn new_page(index: &mut usize, links: &[Link]) -> Paragraph<'static> {
+fn new_page(index: &mut usize, links: &[Link]) -> Vec<UIComponent> {
     links
         .get(*index)
         .map(|link| link.get_content())
-        .unwrap_or_else(|| Paragraph::new(Text::from(String::from("Index out of bounds"))))
+        .unwrap_or_else(|| to_error_display("Index out of bounds".to_string()))
 }
 
 fn draw(
     index: &mut usize,
     links: &[Link],
-    page: &mut Paragraph,
+    page: &mut Vec<UIComponent>,
     terminal: &mut Terminal<CrosstermBackend<Stdout>>,
     scroll_offset: &mut u16,
 ) -> Result<(), MyError> {

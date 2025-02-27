@@ -11,17 +11,18 @@ use ratatui::{
     Terminal,
 };
 use std::io::{Result, Stdout};
+use crate::formatting::format::UIComponent;
 
 const INSTRUCTIONS: &'static str = " Quit: q | Scroll Down: j/↓ | Scroll Up: k/↑ | Page Down: CTRL+d | Page Up: CTRL+u | Next: n/→ | Back: b/← | Open in Browser: o";
 const TUI_BORDER_COLOR: Lazy<Style> = Lazy::new(|| Style::default().fg(Color::Green));
 
 pub fn loading(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
-    draw(terminal, &Paragraph::default(), " Loading...".to_string(), 0)
+    draw(terminal, &vec![], " Loading...".to_string(), 0)
 }
 
 pub fn page(
     terminal: &mut Terminal<CrosstermBackend<Stdout>>,
-    page: &Paragraph,
+    page: &Vec<UIComponent>,
     link: Option<&Link>,
     scroll_offset: u16,
 ) -> Result<()> {
@@ -30,7 +31,7 @@ pub fn page(
 }
 
 
-fn draw(terminal: &mut Terminal<CrosstermBackend<Stdout>>, page: &Paragraph, title: String, scroll_offset: u16) -> Result<()> {
+fn draw(terminal: &mut Terminal<CrosstermBackend<Stdout>>, page: &Vec<UIComponent>, title: String, scroll_offset: u16) -> Result<()> {
     terminal.clear()?;
     terminal.draw(|frame| {
         let size = frame.area();
@@ -43,13 +44,6 @@ fn draw(terminal: &mut Terminal<CrosstermBackend<Stdout>>, page: &Paragraph, tit
             tui_border_span(INSTRUCTIONS))
             .borders(Borders::TOP)
             .style(TUI_BORDER_COLOR.clone());
-        let paragraph = Paragraph::from(page.clone())
-            .block(block)
-            .style(Style::default().fg(Color::White))
-            .wrap(Wrap { trim: false })
-            .scroll((scroll_offset, 0));
-
-        frame.render_widget(paragraph, area);
     })?;
     Ok(())
 }

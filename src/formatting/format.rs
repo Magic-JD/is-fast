@@ -3,15 +3,29 @@ use crate::formatting::syntax_highlight::highlight_code;
 use once_cell::sync::Lazy;
 use ratatui::style::{Style, Styled};
 use ratatui::text::{Line, Span, Text};
-use ratatui::widgets::Paragraph;
+use ratatui::widgets::{Block, Paragraph, Table, Widget, Wrap};
 use scraper::{ElementRef, Html, Node, Selector};
 use std::collections::{HashMap, HashSet};
+use ratatui::layout::{Direction, Layout};
+use ratatui::prelude::Color;
+use crate::formatting::format::UIComponent::Paragraph as P;
+use crate::formatting::format::UIComponent::Table as T;
 
 static IGNORED_TAGS: Lazy<&HashSet<String>> = Lazy::new(|| Config::get_ignored_tags());
 static BLOCK_ELEMENTS: Lazy<&HashSet<String>> = Lazy::new(|| Config::get_block_elements());
 static TAG_STYLES: Lazy<&HashMap<String, Style>> = Lazy::new(Config::get_styles);
 
-pub fn to_display(url: &String, res: &String) -> Result<Paragraph<'static>, String> {
+#[derive(Clone)]
+pub enum UIComponent {
+    Paragraph(Paragraph<'static>),
+    Table(Table<'static>),
+}
+
+pub fn to_error_display(err: String) -> Vec<UIComponent> {
+    vec![P(Paragraph::new(Text::from(err)))]
+}
+
+pub fn to_display(url: &String, res: &String) -> Result<Vec<UIComponent>, String> {
     let selection_tag = Config::get_selectors()
         .iter()
         .find(|(k, _)| url.contains(*k))
@@ -39,7 +53,12 @@ pub fn to_display(url: &String, res: &String) -> Result<Paragraph<'static>, Stri
     if lines.is_empty() {
         return Err("No content found".to_string());
     }
-    Ok(Paragraph::new(Text::from(lines)))
+
+    let paragraph = Paragraph::new(Text::from(lines))
+        .style(Style::default().fg(Color::White))
+        .wrap(Wrap { trim: false })
+        .scroll((scroll_offset, 0));
+    Ok(vec![P(paragraph1)])
 }
 
 fn standardize_empty(line: Line) -> Line {
@@ -49,7 +68,7 @@ fn standardize_empty(line: Line) -> Line {
         line
     }
 }
-fn is_hidden(element: &scraper::ElementRef) -> bool {
+fn is_hidden(element: &ElementRef) -> bool {
     if element.value().attr("hidden") == Some("true") {
         return true;
     }
@@ -63,6 +82,7 @@ fn is_hidden(element: &scraper::ElementRef) -> bool {
     }
     false
 }
+
 fn to_lines(element: ElementRef, pre_formatted: bool) -> Vec<Line<'static>> {
     if is_hidden(&element) {
         return Vec::new();

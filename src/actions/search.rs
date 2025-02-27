@@ -5,6 +5,7 @@ use ratatui::backend::CrosstermBackend;
 use ratatui::prelude::Text;
 use ratatui::Terminal;
 use ratatui::widgets::Paragraph;
+use crate::formatting::format::to_error_display;
 use crate::links::extract::from_html;
 use crate::scrapers::scrape::reqwest_scrape;
 use crate::tui::{events, render};
@@ -23,7 +24,7 @@ pub fn run(search_term: String) {
     let mut page = links
         .get(index)
         .map(|link| link.get_content())
-        .unwrap_or_else(|| Paragraph::new(Text::from(String::from("Index out of bounds"))));
+        .unwrap_or_else(|| to_error_display("Index out of bounds".to_string()));
     let mut scroll_offset = 0;
     render::page(&mut terminal, &page, links.get(index), scroll_offset)
         .unwrap_or_else(|err| shutdown_with_error(&mut terminal, &err.to_string()));
