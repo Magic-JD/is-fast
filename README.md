@@ -20,6 +20,7 @@ This tool fetches the **first search result** from Google and presents only the 
 - ⬆️ **Scroll up:** `k` / `↑`
 - 📜 **Page down:** `CTRL + d`
 - 📜 **Page up:** `CTRL + u`
+- 🖥️ **Open in browser** `o`
 - ❌ **Quit:** `q`
 
 No waiting - just internet search fast in your terminal.  

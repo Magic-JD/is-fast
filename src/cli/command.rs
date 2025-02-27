@@ -6,7 +6,7 @@ use clap::{Parser, ArgAction};
 /// from a terminal-only environment. Instead of loading a full web browser,
 /// it fetches the first search result and presents only the key information.
 ///
-/// Navigation Controls:
+/// Navigation Controls default keybindings:
 ///
 /// - Next result: n / →
 ///
@@ -19,6 +19,8 @@ use clap::{Parser, ArgAction};
 /// - Page down: CTRL + d
 ///
 /// - Page up: CTRL + u
+///
+/// - Open in browser: o
 ///
 /// - Quit: q
 #[derive(Parser)]
