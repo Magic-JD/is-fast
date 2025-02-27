@@ -1,7 +1,7 @@
 use crate::config::load::Config;
 use crate::formatting::syntax_highlight::highlight_code;
 use once_cell::sync::Lazy;
-use ratatui::style::Style;
+use ratatui::style::{Style, Styled};
 use ratatui::text::{Line, Span, Text};
 use ratatui::widgets::Paragraph;
 use scraper::{ElementRef, Html, Node, Selector};
@@ -81,12 +81,10 @@ fn to_lines(element: ElementRef, pre_formatted: bool) -> Vec<Line<'static>> {
         return Vec::new();
     }
     let style = TAG_STYLES
-        .get(tag_name)
-        .unwrap_or(&Style::default())
-        .clone();
+        .get(tag_name);
 
     if tag_name == "img" {
-        return vec![Line::from(Span::styled("IMAGE", style))];
+        return vec![create_optionally_styled_line("IMAGE", style)];
     }
 
     let mut lines = Vec::new();
@@ -96,7 +94,7 @@ fn to_lines(element: ElementRef, pre_formatted: bool) -> Vec<Line<'static>> {
             if pre_formatted || tag_name == "pre" || !text.trim().is_empty() {
                 let mut current_lines = text
                     .split_inclusive('\n')
-                    .map(|line| Line::from(Span::styled(line.to_string(), style)))
+                    .map(|line| create_optionally_styled_line(&*line.to_string(), style))
                     .collect::<Vec<Line>>();
                 merge_with_previous_line(&mut lines, &mut current_lines);
             }
@@ -114,7 +112,9 @@ fn to_lines(element: ElementRef, pre_formatted: bool) -> Vec<Line<'static>> {
         }),
         _ => {}
     });
-
+    if let Some(styled) = style {
+        lines = lines.into_iter().map(|line| line.set_style(*styled)).collect();
+    }
     if BLOCK_ELEMENTS.contains(tag_name) && !lines.is_empty() {
         lines.insert(0, Line::default());
         lines.push(Line::default());
@@ -142,6 +142,15 @@ fn to_lines(element: ElementRef, pre_formatted: bool) -> Vec<Line<'static>> {
     }
     lines
 }
+
+fn create_optionally_styled_line(content: &str, style: Option<&Style>) -> Line<'static> {
+    if let Some(style) = style {
+        Line::from(Span::styled(content.to_string(), *style))
+    } else {
+        Line::from(Span::from(content.to_string()))
+    }
+}
+
 
 fn merge_with_previous_line(lines: &mut Vec<Line<'static>>, new_lines: &mut Vec<Line<'static>>) {
     if new_lines.is_empty() {
