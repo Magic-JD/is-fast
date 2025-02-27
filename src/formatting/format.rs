@@ -36,47 +36,29 @@ pub fn to_display(url: &String, res: &String) -> Result<Paragraph<'static>, Stri
     Ok(Paragraph::new(Text::from(lines)))
 }
 
-fn standardize_empty(line: Line) -> Line {
-    if line.spans.is_empty() || line.spans.iter().all(|span| span.content.trim().is_empty()) {
-        Line::default()
-    } else {
-        line
-    }
-}
-fn is_hidden(element: &scraper::ElementRef) -> bool {
-    if element.value().attr("hidden") == Some("true") {
-        return true;
-    }
-    if let Some(style) = element.value().attr("style") {
-        if style.contains("display: none") || style.contains("visibility: hidden") {
-            return true;
-        }
-    }
-    if element.value().attr("aria-hidden") == Some("true") {
-        return true;
-    }
-    false
-}
 fn to_lines(element: ElementRef, pre_formatted: bool) -> Vec<Line<'static>> {
     if is_hidden(&element) {
-        return Vec::new();
+        return vec![];
     }
     let tag_name = element.value().name();
 
+    if IGNORED_TAGS.contains(tag_name) {
+        return vec![];
+    }
+
     if tag_name == "br" {
         return vec![
-            // Must return 2 lines because the line after might try and merge back into the previous
-            // line. If it doesn't the duplicate will be stripped in the end.
+            // Must return 2 lines - the first will be merged back into the previous line,
+            // and the second will be the start of the next line.
+            // Must be treated differently to block elements as it requires no empty line.
             Line::default(),
-            Line::from(Span::styled("", Style::default())),
+            Line::from(Span::from("")),
         ];
     }
-    if IGNORED_TAGS.contains(tag_name) {
-        return Vec::new();
-    }
+
     let style = TAG_STYLES.get(tag_name);
 
-    if tag_name == "img" {
+    if tag_name == "img" { // Show there is an image without rendering the image.
         return vec![create_optionally_styled_line("IMAGE", style)];
     }
 
@@ -84,12 +66,13 @@ fn to_lines(element: ElementRef, pre_formatted: bool) -> Vec<Line<'static>> {
 
     element.children().for_each(|node| match node.value() {
         Node::Text(text) => {
+            let mut lines1 = &mut lines;
             if pre_formatted || tag_name == "pre" || !text.trim().is_empty() {
                 let mut current_lines = text
                     .split_inclusive('\n')
                     .map(|line| create_optionally_styled_line(&*line.to_string(), style))
                     .collect::<Vec<Line>>();
-                merge_with_previous_line(&mut lines, &mut current_lines);
+                merge_with_previous_line(&mut lines1, &mut current_lines);
             }
         }
         Node::Element(_) => ElementRef::wrap(node).iter().for_each(|element| {
@@ -105,6 +88,9 @@ fn to_lines(element: ElementRef, pre_formatted: bool) -> Vec<Line<'static>> {
         }),
         _ => {}
     });
+    if lines.is_empty() {
+        return vec![];
+    }
     if let Some(styled) = style {
         lines = lines
             .into_iter()
@@ -116,19 +102,7 @@ fn to_lines(element: ElementRef, pre_formatted: bool) -> Vec<Line<'static>> {
         lines.push(Line::default());
     }
     if tag_name == "code" {
-        let option = element.value().attr("class");
-        let language_type = option
-            .map(|class_attr| {
-                class_attr
-                    .split_whitespace()
-                    .filter(|class_name| {
-                        class_name.starts_with("language-") || class_name.starts_with("lang-")
-                    })
-                    .map(|class_name| class_name.replace("language-", "").replace("lang-", ""))
-                    .last()
-                    .unwrap_or_else(|| "not-found".to_string())
-            })
-            .unwrap_or_else(|| "not-found".to_string());
+        let language_type = extract_language_type(element);
         let code_text = lines
             .iter()
             .map(|line| line.spans.iter().map(|span| span.content.clone()).collect())
@@ -137,6 +111,39 @@ fn to_lines(element: ElementRef, pre_formatted: bool) -> Vec<Line<'static>> {
         return highlight_code(&code_text, &language_type);
     }
     lines
+}
+
+fn extract_language_type(element: ElementRef) -> String {
+    element.value().attr("class")
+        .into_iter()
+        .flat_map(|class_attr| class_attr.split_whitespace())
+        .filter(|class_name| class_name.starts_with("language-") || class_name.starts_with("lang-"))
+        .map(|class_name| class_name.replace("language-", "").replace("lang-", ""))
+        .next()
+        .unwrap_or_else(|| "not-found".to_string())
+}
+
+fn is_hidden(element: &ElementRef) -> bool {
+    if element.value().attr("hidden") == Some("true") {
+        return true;
+    }
+    if let Some(style) = element.value().attr("style") {
+        if style.contains("display: none") || style.contains("visibility: hidden") {
+            return true;
+        }
+    }
+    if element.value().attr("aria-hidden") == Some("true") {
+        return true;
+    }
+    false
+}
+
+fn standardize_empty(line: Line) -> Line {
+    if line.spans.is_empty() || line.spans.iter().all(|span| span.content.trim().is_empty()) {
+        Line::default()
+    } else {
+        line
+    }
 }
 
 fn create_optionally_styled_line(content: &str, style: Option<&Style>) -> Line<'static> {
