@@ -8,16 +8,18 @@ use syntect::util::LinesWithEndings;
 
 static DEFAULT_LANGUAGE: Lazy<String> = Lazy::new(Config::get_default_language);
 static SYNTAX_HIGHLIGHTING_THEME: Lazy<String> = Lazy::new(Config::get_syntax_highlighting_theme);
+static THEME_SET: Lazy<ThemeSet> = Lazy::new(ThemeSet::load_defaults);
+static DEFAULT_THEME: Lazy<Theme> = Lazy::new(|| Theme::default());
+static SYNTAX_SET: Lazy<SyntaxSet> = Lazy::new(SyntaxSet::load_defaults_newlines);
 
 pub fn highlight_code(text: &str, language: &str) -> Vec<Line<'static>> {
-    let syntax_set = SyntaxSet::load_defaults_newlines();
-    let syntax = syntax_set
+    let syntax = SYNTAX_SET
         .find_syntax_by_token(language) // Attempt to use language from css
-        .or_else(|| syntax_set.find_syntax_by_token(DEFAULT_LANGUAGE.as_str())) // Attempt to use language from config
-        .unwrap_or_else(|| syntax_set.find_syntax_plain_text()); // Use plain text
+        .or_else(|| SYNTAX_SET.find_syntax_by_token(DEFAULT_LANGUAGE.as_str())) // Attempt to use language from config
+        .unwrap_or_else(|| SYNTAX_SET.find_syntax_plain_text()); // Use plain text
 
-    let theme_set = ThemeSet::load_defaults();
-    let default_theme = Theme::default();
+    let theme_set = &THEME_SET;
+    let default_theme = &DEFAULT_THEME;
     let theme = theme_set
         .themes
         .get(SYNTAX_HIGHLIGHTING_THEME.as_str())
@@ -26,13 +28,12 @@ pub fn highlight_code(text: &str, language: &str) -> Vec<Line<'static>> {
     let mut highlighter = HighlightLines::new(syntax, theme);
 
     LinesWithEndings::from(text)
-        .map(|line| highlight_line(&syntax_set, &mut highlighter, line))
+        .map(|line| highlight_line(&SYNTAX_SET, &mut highlighter, line))
         .collect()
 }
 
 fn highlight_line(syntax_set: &SyntaxSet, highlighter: &mut HighlightLines, line: &str) -> Line<'static> {
     let highlighted = highlighter.highlight_line(line, syntax_set).unwrap();
-
     let styled_spans = highlighted
         .iter()
         .map(|(style, content)| Span::styled(content.to_string(), convert_syntect_style(*style)))
