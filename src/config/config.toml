@@ -10,8 +10,9 @@ bold = true
 [styles.a]
 fg = "Cyan"
 
-[styles.code]
+[styles.img]
 fg = "Red"
+bold=true
 
 [styles.em]
 italic = true

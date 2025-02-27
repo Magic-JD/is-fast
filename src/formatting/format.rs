@@ -11,8 +11,6 @@ static IGNORED_TAGS: Lazy<&HashSet<String>> = Lazy::new(|| Config::get_ignored_t
 static BLOCK_ELEMENTS: Lazy<&HashSet<String>> = Lazy::new(|| Config::get_block_elements());
 static TAG_STYLES: Lazy<&HashMap<String, Style>> = Lazy::new(Config::get_styles);
 
-
-
 pub fn to_display(url: &String, res: &String) -> Result<Paragraph<'static>, String> {
     let selection_tag = Config::get_selectors()
         .iter()
@@ -23,7 +21,8 @@ pub fn to_display(url: &String, res: &String) -> Result<Paragraph<'static>, Stri
         Selector::parse(&selection_tag).map_err(|_| "Error: Could not parse selector")?;
     let mut lines = Html::parse_document(&res)
         .select(&selector)
-        .flat_map(|e| to_lines(e))
+        .flat_map(|e| to_lines(e, e.value().name() == "pre"))
+        .map(|line| standardize_empty(line))
         .collect::<Vec<Line>>();
     lines.dedup();
     while let Some(first) = lines.first() {
@@ -43,16 +42,41 @@ pub fn to_display(url: &String, res: &String) -> Result<Paragraph<'static>, Stri
     Ok(Paragraph::new(Text::from(lines)))
 }
 
-fn to_lines(element: ElementRef) -> Vec<Line<'static>> {
+fn standardize_empty(line: Line) -> Line {
+    if line.spans.is_empty() || line.spans.iter().all(|span| span.content.trim().is_empty()) {
+        Line::default()
+    } else {
+        line
+    }
+}
+fn is_hidden(element: &scraper::ElementRef) -> bool {
+    if element.value().attr("hidden") == Some("true") {
+        return true;
+    }
+    if let Some(style) = element.value().attr("style") {
+        if style.contains("display: none") || style.contains("visibility: hidden") {
+            return true;
+        }
+    }
+    if element.value().attr("aria-hidden") == Some("true") {
+        return true;
+    }
+    false
+}
+fn to_lines(element: ElementRef, pre_formatted: bool) -> Vec<Line<'static>> {
+    if is_hidden(&element) {
+        return Vec::new();
+    }
     let tag_name = element.value().name();
 
     if tag_name == "br" {
         return vec![
+            // Must return 2 lines because the line after might try and merge back into the previous
+            // line. If it doesn't the duplicate will be stripped in the end.
             Line::default(),
             Line::from(Span::styled("", Style::default())),
         ];
     }
-
     if IGNORED_TAGS.contains(tag_name) {
         return Vec::new();
     }
@@ -61,11 +85,15 @@ fn to_lines(element: ElementRef) -> Vec<Line<'static>> {
         .unwrap_or(&Style::default())
         .clone();
 
+    if tag_name == "img" {
+        return vec![Line::from(Span::styled("IMAGE", style))];
+    }
+
     let mut lines = Vec::new();
 
     element.children().for_each(|node| match node.value() {
         Node::Text(text) => {
-            if !text.trim().is_empty() {
+            if pre_formatted || tag_name == "pre" || !text.trim().is_empty() {
                 let mut current_lines = text
                     .split_inclusive('\n')
                     .map(|line| Line::from(Span::styled(line.to_string(), style)))
@@ -74,7 +102,7 @@ fn to_lines(element: ElementRef) -> Vec<Line<'static>> {
             }
         }
         Node::Element(_) => ElementRef::wrap(node).iter().for_each(|element| {
-            let mut element_lines = to_lines(*element);
+            let mut element_lines = to_lines(*element, pre_formatted || tag_name == "pre");
             if element_lines.is_empty() {
                 return;
             }
@@ -91,8 +119,6 @@ fn to_lines(element: ElementRef) -> Vec<Line<'static>> {
         lines.insert(0, Line::default());
         lines.push(Line::default());
     }
-    // TODO need to handle pre code better - allow later steps to format and then do a text compare
-    // TODO after syntax highlighting?
     if tag_name == "code" {
         let option = element.value().attr("class");
         let language_type = option
@@ -112,7 +138,7 @@ fn to_lines(element: ElementRef) -> Vec<Line<'static>> {
             .map(|line| line.spans.iter().map(|span| span.content.clone()).collect())
             .collect::<Vec<String>>()
             .join("");
-        return highlight_code(&code_text, &language_type); // Work out how to determine the language
+        return highlight_code(&code_text, &language_type);
     }
     lines
 }
