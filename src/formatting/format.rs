@@ -25,15 +25,9 @@ pub fn to_display(url: &String, res: &String) -> Result<Paragraph<'static>, Stri
         .map(|line| standardize_empty(line))
         .collect::<Vec<Line>>();
     lines.dedup();
-    while let Some(first) = lines.first() {
-        if first
-            .spans
-            .iter()
-            .all(|span| span.content.trim().is_empty())
-        {
+    if let Some(first) = lines.first() {
+        if first.spans.iter().all(|span| span.content.trim().is_empty()) {
             lines.remove(0);
-        } else {
-            break;
         }
     }
     if lines.is_empty() {
@@ -80,8 +74,7 @@ fn to_lines(element: ElementRef, pre_formatted: bool) -> Vec<Line<'static>> {
     if IGNORED_TAGS.contains(tag_name) {
         return Vec::new();
     }
-    let style = TAG_STYLES
-        .get(tag_name);
+    let style = TAG_STYLES.get(tag_name);
 
     if tag_name == "img" {
         return vec![create_optionally_styled_line("IMAGE", style)];
@@ -113,7 +106,10 @@ fn to_lines(element: ElementRef, pre_formatted: bool) -> Vec<Line<'static>> {
         _ => {}
     });
     if let Some(styled) = style {
-        lines = lines.into_iter().map(|line| line.set_style(*styled)).collect();
+        lines = lines
+            .into_iter()
+            .map(|line| line.set_style(*styled))
+            .collect();
     }
     if BLOCK_ELEMENTS.contains(tag_name) && !lines.is_empty() {
         lines.insert(0, Line::default());
@@ -150,7 +146,6 @@ fn create_optionally_styled_line(content: &str, style: Option<&Style>) -> Line<'
         Line::from(Span::from(content.to_string()))
     }
 }
-
 
 fn merge_with_previous_line(lines: &mut Vec<Line<'static>>, new_lines: &mut Vec<Line<'static>>) {
     if new_lines.is_empty() {
