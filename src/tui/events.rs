@@ -7,6 +7,7 @@ use ratatui::widgets::Paragraph;
 use ratatui::{backend::CrosstermBackend, Terminal};
 use std::io::Stdout;
 use std::result::Result;
+use open;
 
 pub fn handle_input(
     index: &mut usize,
@@ -39,12 +40,15 @@ pub fn handle_input(
                 draw(index, links, page, terminal, scroll_offset)?;
             }
             KeyCode::Char('u') if modifiers.contains(KeyModifiers::CONTROL) => {
-                *scroll_offset = scroll_offset.saturating_sub(page_height/2);
+                *scroll_offset = scroll_offset.saturating_sub(page_height / 2);
                 draw(index, links, page, terminal, scroll_offset)?;
             }
             KeyCode::Char('d') if modifiers.contains(KeyModifiers::CONTROL) => {
-                *scroll_offset = *scroll_offset + (page_height/2);
+                *scroll_offset = *scroll_offset + (page_height / 2);
                 draw(index, links, page, terminal, scroll_offset)?;
+            }
+            KeyCode::Char('o') => {
+                open_link(index, links);
             }
             _ => {}
         }
@@ -52,7 +56,22 @@ pub fn handle_input(
     Ok(false)
 }
 
-fn change_page(index: &mut usize, links: &[Link], page: &mut Paragraph, terminal: &mut Terminal<CrosstermBackend<Stdout>>, scroll_offset: &mut u16) -> Result<(), MyError> {
+fn open_link(index: &mut usize, links: &[Link]) {
+    links
+        .get(*index)
+        .map(|link| format!("https://{}", link.url))
+        .and_then(|url| open::that(&url).err())
+        .iter()
+        .for_each(|e| println!("{}", e));
+}
+
+fn change_page(
+    index: &mut usize,
+    links: &[Link],
+    page: &mut Paragraph,
+    terminal: &mut Terminal<CrosstermBackend<Stdout>>,
+    scroll_offset: &mut u16,
+) -> Result<(), MyError> {
     render::loading(terminal)?;
     *page = new_page(index, links);
     *scroll_offset = 0;
@@ -64,9 +83,7 @@ fn new_page(index: &mut usize, links: &[Link]) -> Paragraph<'static> {
     links
         .get(*index)
         .map(|link| link.get_content())
-        .unwrap_or_else(|| {
-            Paragraph::new(Text::from(String::from("Index out of bounds")))
-        })
+        .unwrap_or_else(|| Paragraph::new(Text::from(String::from("Index out of bounds"))))
 }
 
 fn draw(

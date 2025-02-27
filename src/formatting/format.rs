@@ -91,6 +91,8 @@ fn to_lines(element: ElementRef) -> Vec<Line<'static>> {
         lines.insert(0, Line::default());
         lines.push(Line::default());
     }
+    // TODO need to handle pre code better - allow later steps to format and then do a text compare
+    // TODO after syntax highlighting?
     if tag_name == "code" {
         let option = element.value().attr("class");
         let language_type = option
