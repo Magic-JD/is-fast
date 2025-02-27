@@ -1,5 +1,5 @@
 use crate::formatting::format::to_display;
-use crate::scrapers::scrape::{curl_scrape, reqwest_scrape};
+use crate::scrapers::scrape::scrape;
 use ratatui::text::Text;
 use ratatui::widgets::Paragraph;
 use std::sync::Mutex;
@@ -24,17 +24,12 @@ impl Link {
             return cached.clone();
         }
         let formatted_url = &format!("https://{}", self.url);
-        reqwest_scrape(formatted_url)
+        scrape(formatted_url)
             .and_then(|html| to_display(&self.url, &html))
             .and_then(|result| {
                 *content = Some(result.clone());
                 Ok(result)
             })
-            .unwrap_or_else(|_| curl_scrape(formatted_url) // Try with curl on failure
-                .and_then(|html| to_display(&self.url, &html))
-                .and_then(|result| {
-                *content = Some(result.clone());
-                Ok(result)
-            }).unwrap_or_else(|e| Paragraph::new(Text::from(e.clone())).into()))
+            .unwrap_or_else(|e| Paragraph::new(Text::from(e.clone())).into())
     }
 }

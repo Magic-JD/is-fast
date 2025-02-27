@@ -1,25 +1,30 @@
-use std::io::{stdout, Stdout};
+use crate::links::extract::from_html;
+use crate::scrapers::scrape::scrape;
+use crate::tui::{events, render};
 use crossterm::execute;
-use crossterm::terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen};
+use crossterm::terminal::{
+    disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
+};
 use ratatui::backend::CrosstermBackend;
 use ratatui::prelude::Text;
-use ratatui::Terminal;
 use ratatui::widgets::Paragraph;
-use crate::links::extract::from_html;
-use crate::scrapers::scrape::reqwest_scrape;
-use crate::tui::{events, render};
+use ratatui::Terminal;
+use std::io::{stdout, Stdout};
 
 pub fn run(search_term: String) {
     let mut terminal = startup();
     let mut index = 0;
     render::loading(&mut terminal)
         .unwrap_or_else(|err| shutdown_with_error(&mut terminal, &err.to_string()));
-    let links = &reqwest_scrape(&format!(
+    let links = &scrape(&format!(
         "https://html.duckduckgo.com/html/?q={}",
         &search_term
     ))
-        .map(|html| from_html(&html))
-        .unwrap_or_else(|err| shutdown_with_error(&mut terminal, &err.to_string()));
+    .map(|html| from_html(&html))
+    .unwrap_or_else(|err| shutdown_with_error(&mut terminal, &err.to_string()));
+    if links.is_empty() {
+        shutdown_with_error(&mut terminal, "No results found");
+    }
     let mut page = links
         .get(index)
         .map(|link| link.get_content())
@@ -37,11 +42,11 @@ pub fn run(search_term: String) {
             &mut scroll_offset,
             height - 5,
         )
-            .map_err(|e| {
-                eprintln!("Error: {}", e);
-                true
-            })
-            .unwrap_or(true)
+        .map_err(|e| {
+            eprintln!("Error: {}", e);
+            true
+        })
+        .unwrap_or(true)
         {
             break;
         }
