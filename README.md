@@ -205,6 +205,38 @@ To customize styles or add new site selectors, edit your user configuration file
 
 If you need to reset to the default configuration, delete the user configuration file and restart the application.
 
+# 📃 Using `is-fast` with Local HTML Files
+
+`is-fast` also supports rendering local HTML files inside its terminal viewer. This is done using the `--file` option. Additionally, you can associate the file with a reference URL using the `--url` option.
+
+## Options
+
+### `--file` / `-f`
+**View a local HTML file instead of performing an internet search.**
+
+If this option is provided, `is-fast` will render the given HTML file inside its terminal viewer instead of fetching search results from the internet.
+
+#### Example Usage:
+```sh
+is-fast --file example.html
+is-fast -f example.html
+```
+
+### `--url` / `-u`
+**Associate the HTML file with a reference URL.**
+
+This option is only valid when `--file` is used. It allows you to provide a URL that will be used for informing which selector should be used with this file.
+
+#### Example Usage:
+```sh
+is-fast --file example.html --url example.com
+is-fast -f example.html -u example.com
+```
+
+## Notes
+- The `--url` option **must** be used in combination with `--file`. It does not work independently.
+- The provided URL serves as metadata, helping the tool determine appropriate rendering behavior for the file.
+
 # Running the Project 🏃
 
 This guide explains how to set up and install the project through Cargo after cloning the repository.

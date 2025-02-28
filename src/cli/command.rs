@@ -52,4 +52,30 @@ pub struct Cli {
     /// is-fast Rust tutorial
     #[arg(help = "The search query to extract content from websites")]
     pub(crate) query: Option<Vec<String>>,
+
+    /// View a local HTML file instead of performing an internet search.
+    ///
+    /// If this option is provided, is-fast will render the given HTML file inside
+    /// its terminal viewer instead of fetching search results from the internet.
+    ///
+    /// Example Usage:
+    ///
+    ///   is-fast --file example.html
+    ///
+    ///   is-fast -f example.html
+    #[arg(short = 'f', long = "file", help = "Path to the HTML file to render")]
+    pub(crate) file: Option<String>,
+
+    /// Associate the HTML file with a reference URL.
+    ///
+    /// This option is only valid when --file is used. It allows you to provide
+    /// a URL that will be used for informing which selector should be used with this file.
+    ///
+    /// Example Usage:
+    ///
+    ///   is-fast --file example.html --url "example.com"
+    ///
+    ///   is-fast -f example.html -u "example.com"
+    #[arg(short = 'u', long = "url", requires = "file", help = "Optional URL to associate with the file")]
+    pub(crate) url: Option<String>,
 }

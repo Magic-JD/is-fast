@@ -1,5 +1,4 @@
 use crate::formatting::format::to_display;
-use crate::scrapers::scrape::scrape;
 use ratatui::text::Text;
 use ratatui::widgets::Paragraph;
 use std::sync::Mutex;
@@ -7,13 +6,18 @@ use std::sync::Mutex;
 pub struct Link {
     pub url: String,
     pub title: String,
+    pub convert_to_html: Box<dyn Fn() -> Result<String, String>>,
     pub content: Mutex<Option<Paragraph<'static>>>,
 }
 impl Link {
-    pub fn new(title: String, url: String) -> Self {
+    pub fn new<F>(title: String, url: String, convert_to_html: F) -> Self
+    where
+        F: Fn() -> Result<String, String> + 'static
+    {
         Self {
             url,
             title,
+            convert_to_html: Box::new(convert_to_html),
             content: Mutex::new(None),
         }
     }
@@ -23,8 +27,7 @@ impl Link {
         if let Some(ref cached) = *content {
             return cached.clone();
         }
-        let formatted_url = &format!("https://{}", self.url);
-        scrape(formatted_url)
+        (self.convert_to_html)()
             .and_then(|html| to_display(&self.url, &html))
             .and_then(|result| {
                 *content = Some(result.clone());

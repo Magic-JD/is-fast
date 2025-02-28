@@ -1,5 +1,6 @@
 use scraper::{Html, Selector};
 use crate::links::link::Link;
+use crate::scrapers::scrape::scrape;
 
 pub fn from_html(html: &String) -> Vec<Link> {
     let document = Html::parse_document(&html);
@@ -11,9 +12,11 @@ pub fn from_html(html: &String) -> Vec<Link> {
         .zip(document.select(&selector_url))
         .take(5)
         .map(|(title, url)| {
+            let url = url.text().collect::<Vec<_>>().join(" ").trim().to_owned();
             Link::new(
                 title.text().collect::<Vec<_>>().join(" ").trim().to_owned(),
-                url.text().collect::<Vec<_>>().join(" ").trim().to_owned(),
+                url.clone(),
+                move || scrape(&format!("https://{}", url).to_string())
             )
         })
         .collect()
