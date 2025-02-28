@@ -78,4 +78,17 @@ pub struct Cli {
     ///   is-fast -f example.html -u "example.com"
     #[arg(short = 'u', long = "url", requires = "file", help = "Optional URL to associate with the file")]
     pub(crate) url: Option<String>,
+
+    /// Open the given URL directly in the TUI viewer.
+    ///
+    /// This option allows you to bypass the search functionality and load a specific
+    /// webpage immediately. The page will be displayed directly in the terminal interface.
+    ///
+    /// Example Usage:
+    ///
+    ///   is-fast --direct https://example.com
+    ///
+    ///   is-fast -d https://example.com
+    #[arg(short = 'd', long = "direct", help = "Open the given URL directly")]
+    pub(crate) direct: Option<String>,
 }

@@ -144,17 +144,18 @@ bold = true
 [styles.a]
 fg = "Cyan"
 
-[styles.code]
-fg = "Red"
+[styles.blockquote]
+fg = "Gray"
+italic = true
 ```
 This means:
 - `<h1>` will be **bold**.
 - `<a>` (links) will be **cyan**.
-- `<code>` will be **red**.
+- `<blockquote>` will be **gray** and **italicised**.
 
 ## 🌈 Syntax Highlighting
 
-The `[syntax]` section defines syntax highlighting settings.
+The `[syntax]` section defines syntax highlighting settings for code.
 
 Example:
 
@@ -169,7 +170,7 @@ theme = "base16-ocean.dark"
 | `default_language` | The fallback language for highlighting                 | `"plain"`             |
 | `theme`            | The theme for syntax highlighting                      | `"base16-ocean.dark"` |
 
-The **default language** is used as a fallback when syntax highlighting is applied. The language is first determined from the CSS classes present in the HTML tags. If no valid language is detected, the default language specified in the configuration will be used instead.
+The **default language** is used as a fallback when syntax highlighting is applied. It is used if there are no CSS classes present in the HTML tags that indicated the intended language.
 
 Themes should be a valid theme from **syntect**.
 
@@ -188,6 +189,23 @@ Themes should be a valid theme from **syntect**.
 To customize styles or add new site selectors, edit your user configuration file and restart the application for changes to take effect.
 
 If you need to reset to the default configuration, delete the user configuration file and restart the application.
+
+---
+
+# 🌐 Using `is-fast` to Open URLs Directly
+
+`is-fast` allows you to open a specific URL directly in its terminal viewer, bypassing the search functionality. This is done using the `--direct` option.
+
+### `--direct` / `-d`
+**Open a given URL directly in the TUI viewer.**
+
+If this option is provided, `is-fast` will immediately load and render the contents of the given URL inside the terminal interface.
+
+#### Example Usage:
+```sh
+is-fast --direct "https://example.com"
+is-fast -d https://example.com
+```
 
 ---
 

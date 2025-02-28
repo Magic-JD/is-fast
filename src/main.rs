@@ -12,6 +12,7 @@ use actions::generate_config;
 use actions::search;
 use actions::view;
 use clap::Parser;
+use crate::actions::direct;
 
 fn main() {
     let args = Cli::parse();
@@ -23,6 +24,10 @@ fn main() {
         view::run(file, args.url);
         return;
 
+    }
+    if let Some(url) = args.direct {
+        direct::run(url);
+        return;
     }
     let search_term = args.query.map(|query| query.join(" "));
     if let Some(search_term) = search_term {
