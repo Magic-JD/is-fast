@@ -7,11 +7,15 @@ Ever been stuck in a **terminal-only environment** and needed to look something 
 
 This tool makes **searching from the terminal fast and simple!** 🚀
 
----
-
 ## ⚡ is-fast
 
-This tool fetches the **first search result** from Google and presents only the key information.  
+```sh
+is-fast "search query"
+```
+or
+```sh
+is-fast search query
+```
 
 ### 🔧 Navigation Controls
 - 🔍 **Next result:** `n` / `→`
@@ -26,24 +30,7 @@ This tool fetches the **first search result** from Google and presents only the 
 No waiting - just internet search fast in your terminal.  
 **It is fast!** ⚡
 
-# 📜 Commands
-
-## 🔍 Search the Web
-Run a search query from the terminal:
-```sh
-is-fast "search query"
-```
-or
-```sh
-is-fast search query
-```
-
-## ⚙️ Generate Default Configuration
-Creates a `config.toml` in your system's configuration directory for customization:
-```sh
-is-fast --generate-config
-```
-
+---
 
 # Configuration Guide
 
@@ -54,6 +41,13 @@ This project supports both built-in and user-provided configurations for styles 
 A built-in configuration is included with the binary and is loaded automatically. The default configuration defines styles for various elements and selectors for extracting content from different websites.
 
 Users can override the default configuration by creating a TOML configuration file in their system’s configuration directory.
+
+### `--generate-config`
+Creates a `config.toml` in your system's configuration directory for customization:
+```sh
+is-fast --generate-config
+```
+This will only run if the user does not already have a configuration file in that location.
 
 ### Location of User Configuration File
 
@@ -94,8 +88,6 @@ Title
 ```
 Each **block element** is **separated by a new line** for better readability.
 
----
-
 ## 🚫 Ignored Tags
 ### Definition
 Ignored tags are HTML elements that **will be completely removed** from the processed content. These typically include **scripts, metadata, and interactive elements** that are irrelevant to text processing.
@@ -126,8 +118,6 @@ Hello, world!
 - **`<script>` and `<footer>` are removed**.
 - **Only meaningful content remains**.
 
----
-
 ## 🔍 Selectors
 ### Definition
 Selectors allow you to **extract only relevant content** from different websites. This is useful for customizing certain sites for a better user experience. If no selector is provided for a specific site then `body` will be used.
@@ -141,8 +131,6 @@ Selectors allow you to **extract only relevant content** from different websites
 
 ### Effect
 When processing content from Wikipedia, only `<p>` elements will be extracted. For w3schools, only elements inside `main` will be considered.
-
----
 
 ## 🎨 Text Styles
 ### Definition
@@ -163,8 +151,6 @@ This means:
 - `<h1>` will be **bold**.
 - `<a>` (links) will be **cyan**.
 - `<code>` will be **red**.
-
----
 
 ## 🌈 Syntax Highlighting
 
@@ -187,8 +173,6 @@ The **default language** is used as a fallback when syntax highlighting is appli
 
 Themes should be a valid theme from **syntect**.
 
----
-
 ## 📌 Summary
 
 | Configuration           | Purpose                                                             |
@@ -205,11 +189,11 @@ To customize styles or add new site selectors, edit your user configuration file
 
 If you need to reset to the default configuration, delete the user configuration file and restart the application.
 
+---
+
 # 📃 Using `is-fast` with Local HTML Files
 
 `is-fast` also supports rendering local HTML files inside its terminal viewer. This is done using the `--file` option. Additionally, you can associate the file with a reference URL using the `--url` option.
-
-## Options
 
 ### `--file` / `-f`
 **View a local HTML file instead of performing an internet search.**
@@ -232,10 +216,6 @@ This option is only valid when `--file` is used. It allows you to provide a URL 
 is-fast --file example.html --url example.com
 is-fast -f example.html -u example.com
 ```
-
-## Notes
-- The `--url` option **must** be used in combination with `--file`. It does not work independently.
-- The provided URL serves as metadata, helping the tool determine appropriate rendering behavior for the file.
 
 # Running the Project 🏃
 
