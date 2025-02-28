@@ -34,7 +34,7 @@ No waiting - just internet search fast in your terminal.
 
 # Configuration Guide
 
-This project supports both built-in and user-provided configurations for styles and content selection rules. Configuration is handled using a TOML file, and a default configuration is embedded within the binary. Users can override this configuration by placing a custom config file in their system's configuration directory.
+This project supports both built-in and user-provided configurations for styles and content selection rules. Configuration is handled using a TOML file, and a default configuration is embedded within the binary. Users can override this configuration by placing a custom config file in their system's configuration directory. Changes will only take effect once the program is run again.
 
 ## Default Configuration
 
@@ -155,24 +155,33 @@ This means:
 
 ## 🌈 Syntax Highlighting
 
-The `[syntax]` section defines syntax highlighting settings for code.
+The `[syntax]` section defines syntax highlighting settings for code. Where possible the language type will be determined from the CSS classes present in the HTML.
 
-Example:
+### Default Language
+
+This defines the language that is used if the language type cannot be determined from the CSS classes. This should be set to your primary development language.
+
+### Theme
+
+This sets the theme that should be used. Valid themes are:
+
+```
+InspiredGitHub
+Solarized (dark)
+Solarized (light)
+base16-eighties.dark
+base16-mocha.dark
+base16-ocean.dark
+base16-ocean.light
+```
+
+### Example:
 
 ```toml
 [syntax]
-default_language = "plain"
+default_language = "rust"
 theme = "base16-ocean.dark"
 ```
-
-| **Key**            | **Description**                                        | **Example**           |
-| ------------------ | ------------------------------------------------------ | --------------------- |
-| `default_language` | The fallback language for highlighting                 | `"plain"`             |
-| `theme`            | The theme for syntax highlighting                      | `"base16-ocean.dark"` |
-
-The **default language** is used as a fallback when syntax highlighting is applied. It is used if there are no CSS classes present in the HTML tags that indicated the intended language.
-
-Themes should be a valid theme from **syntect**.
 
 ## 📌 Summary
 
@@ -183,12 +192,6 @@ Themes should be a valid theme from **syntect**.
 | **Selectors**           | Extract only specific content from websites.                        |
 | **Styles**              | Define how text should be formatted.                                |
 | **Syntax Highlighting** | Defines how the syntax highlighting should be handled.              |
-
-## Modifying the Configuration
-
-To customize styles or add new site selectors, edit your user configuration file and restart the application for changes to take effect.
-
-If you need to reset to the default configuration, delete the user configuration file and restart the application.
 
 ---
 
