@@ -300,6 +300,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "crossbeam-utils"
+version = "0.8.21"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28"
+
+[[package]]
 name = "crossterm"
 version = "0.28.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -380,6 +386,20 @@ dependencies = [
  "darling_core",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "dashmap"
+version = "7.0.0-rc1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "48a6edd990d414379eca12f1828fc7cb2e64927987b75aa2df2383e0e88c2543"
+dependencies = [
+ "cfg-if",
+ "crossbeam-utils",
+ "equivalent",
+ "hashbrown",
+ "lock_api",
+ "parking_lot_core",
 ]
 
 [[package]]
@@ -1010,6 +1030,7 @@ dependencies = [
  "clap",
  "clap_mangen",
  "crossterm",
+ "dashmap",
  "dirs",
  "once_cell",
  "open",

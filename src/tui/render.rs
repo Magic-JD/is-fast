@@ -18,6 +18,7 @@ use ratatui::{
 };
 use std::io::{stdout, Result, Stdout};
 use std::sync::Mutex;
+use crate::links::cache::{get_content, preload};
 
 const INSTRUCTIONS: &'static str = " Quit: q | Scroll Down: j/↓ | Scroll Up: k/↑ | Page Down: CTRL+d | Page Up: CTRL+u | Next: n/→ | Back: b/← | Open in Browser: o";
 const TUI_BORDER_COLOR: Lazy<Style> = Lazy::new(|| Style::default().fg(Color::Green));
@@ -37,8 +38,11 @@ pub fn show(links: &Vec<Link>) {
     let mut index = 0;
     let mut page = links
         .get(index)
-        .map(|link| link.get_content())
+        .map(|link| get_content(link))
         .unwrap_or_else(|| Paragraph::new(Text::from(String::from("Index out of bounds"))));
+    if let Some(link) = links.get(index+1) {
+        preload(link);
+    }
     let mut scroll_offset = 0;
     results_page(&page, links.get(index), scroll_offset)
         .unwrap_or_else(|err| shutdown_with_error(&err.to_string()));

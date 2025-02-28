@@ -7,6 +7,7 @@ use open;
 use ratatui::text::Text;
 use ratatui::widgets::Paragraph;
 use std::result::Result;
+use crate::links::cache::{get_content, preload};
 
 pub fn handle_input(
     index: &mut usize,
@@ -21,12 +22,12 @@ pub fn handle_input(
     {
         match code {
             KeyCode::Char('q') => return Ok(true),
-            KeyCode::Char('n') | KeyCode::Right if *index < links.len() - 1 => {
-                *index += 1;
+            KeyCode::Char('n') | KeyCode::Right => {
+                *index = (*index + 1).min(links.len().saturating_sub(1));
                 change_page(index, links, page, scroll_offset)?;
             }
             KeyCode::Char('b') | KeyCode::Left if *index > 0 => {
-                *index -= 1;
+                *index = index.saturating_sub(1);
                 change_page(index, links, page, scroll_offset)?;
             }
             KeyCode::Down | KeyCode::Char('j') => {
@@ -77,9 +78,12 @@ fn change_page(
 }
 
 fn new_page(index: &mut usize, links: &[Link]) -> Paragraph<'static> {
+    if let Some(link) = links.get(*index + 1) {
+        preload(link);
+    }
     links
         .get(*index)
-        .map(|link| link.get_content())
+        .map(|link| get_content(link))
         .unwrap_or_else(|| Paragraph::new(Text::from(String::from("Index out of bounds"))))
 }
 
