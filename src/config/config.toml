@@ -75,15 +75,17 @@ bold = true
 fg = "Gray"
 
 [selectors]
-"en.wikipedia.org" = "p"
-"www.baeldung.com" = ".post-content"
-"www.w3schools.com" = "#main"
-"linuxhandbook.com" = "article"
-"docs.spring.io" = "article"
-"stackoverflow.com" = ".js-post-body, .user-details, .comment-body"
-"github.com" = ".markdown-body"
-"apnews.com" = ".RichTextStoryBody"
-"geeksforgeeks.org" = ".text"
+"*en.wikipedia.org*" = "p"
+"*www.baeldung.com*" = ".post-content"
+"*www.w3schools.com*" = "#main"
+"*linuxhandbook.com*" = "article"
+"*docs.spring.io*" = "article"
+"*stackoverflow.com*" = ".js-post-body, .user-details, .comment-body"
+"*github.com/*/blob/*" = ".react-code-line-contents"
+"*github.com/*/issues/*" = "main"
+"*github.com*" = ".markdown-body"
+"*apnews.com*" = ".RichTextStoryBody"
+"*geeksforgeeks.org*" = ".text"
 
 [format]
 ignored_tags = ["script", "style", "noscript", "head", "title", "meta", "input", "button", "svg", "nav", "footer", "header", "aside"]

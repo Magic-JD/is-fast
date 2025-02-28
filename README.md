@@ -120,17 +120,18 @@ Hello, world!
 
 ## 🔍 Selectors
 ### Definition
-Selectors allow you to **extract only relevant content** from different websites. This is useful for customizing certain sites for a better user experience. If no selector is provided for a specific site then `body` will be used.
+Selectors allow you to **extract only relevant content** from different websites. This is useful for customizing certain sites for a better user experience. If no selector is provided for a specific site then `body` will be used. Glob matching is used to match the site, or even certain urls within the site to extract the most relevant text. NOTE: If there are multiple globs that could match, the most restrictive should be placed higher in the config! Selectors are chosen from the first match only.
 
 ### Example Configuration
 ```toml
 [selectors]
-"en.wikipedia.org" = "p"
-"www.w3schools.com" = "#main"
+"*en.wikipedia.org*" = "p"
+"*github.com/*/blob/*" = ".react-code-line-contents" # Selectors will apply in this order
+"*github.com*" = ".markdown-body"
 ```
 
 ### Effect
-When processing content from Wikipedia, only `<p>` elements will be extracted. For w3schools, only elements inside `main` will be considered.
+When processing content from Wikipedia, only `<p>` elements will be extracted. For github, if the url contains the endpoint blob it will return only elements with the CSS class .react-code-line-contents. Otherwise it will return the .markdown-body.
 
 ## 🎨 Text Styles
 ### Definition

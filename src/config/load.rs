@@ -3,6 +3,7 @@ use ratatui::style::{Color, Modifier, Style};
 use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
 use std::fs;
+use globset::{Glob, GlobSet, GlobSetBuilder};
 use toml;
 use crate::config::constants::DEFAULT_CONFIG_LOCATION;
 
@@ -50,6 +51,8 @@ struct RawConfig {
 pub struct Config {
     styles: HashMap<String, Style>,
     selectors: HashMap<String, String>,
+    matcher: GlobSet,
+    globs: Vec<Glob>,
     ignored_tags: HashSet<String>,
     block_elements: HashSet<String>,
     syntax_default_language: Option<String>,
@@ -106,10 +109,20 @@ impl Config {
                 config.format = Some(format);
                 config.syntax = Some(syntax);
             });
-
+        let mut builder = GlobSetBuilder::new();
+        let mut globs = Vec::new();
+        config.selectors.iter().for_each(|(pattern, _)| {
+            if let Ok(glob) = Glob::new(&pattern) {
+                builder.add(glob.clone());
+                globs.push(glob);
+            }
+        });
+        let matcher = builder.build().unwrap(); // Should be safe as only valid globs added
         Self {
             styles: Self::convert_styles(config.styles),
             selectors: config.selectors,
+            globs,
+            matcher,
             ignored_tags: config
                 .format
                 .as_ref()
@@ -160,8 +173,13 @@ impl Config {
         &CONFIG.styles
     }
 
-    pub fn get_selectors() -> &'static HashMap<String, String> {
-        &CONFIG.selectors
+    pub fn get_selectors(url: &String) -> Option<String> {
+        CONFIG.matcher
+            .matches(url)
+            .iter()
+            .find_map(|idx| CONFIG.globs.get(*idx))
+            .map(|glob| glob.clone().to_string())
+            .and_then(|s| CONFIG.selectors.get(&s).cloned())
     }
 
     pub fn get_ignored_tags() -> &'static HashSet<String> {

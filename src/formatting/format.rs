@@ -12,11 +12,7 @@ static BLOCK_ELEMENTS: Lazy<&HashSet<String>> = Lazy::new(|| Config::get_block_e
 static TAG_STYLES: Lazy<&HashMap<String, Style>> = Lazy::new(Config::get_styles);
 
 pub fn to_display(url: &String, res: &String) -> Result<Paragraph<'static>, String> {
-    let selection_tag = Config::get_selectors()
-        .iter()
-        .find(|(k, _)| url.contains(*k))
-        .map(|(_, v)| v.clone())
-        .unwrap_or("body".to_string());
+    let selection_tag = Config::get_selectors(url).unwrap_or_else(|| "body".to_string());
     let selector =
         Selector::parse(&selection_tag).map_err(|_| "Error: Could not parse selector")?;
     let mut lines = Html::parse_document(&res)
