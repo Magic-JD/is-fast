@@ -270,28 +270,13 @@ is-fast -f example.html -u example.com
 
 **Show previously viewed pages.**
 
-If this option is provided, `is-fast` will display a list of previously visited webpages, numbered with the most recent entries at the bottom. You can scroll up and down and select to open.
+If this option is provided, `is-fast` will display a list of previously visited webpages, numbered with the most recent entries at the bottom. You can scroll up and down and select to open. The entries are stored locally in a SQLlite database.
 
 #### Example Usage:
 
 ```sh
 is-fast --history
 ```
-
-### `--select` / `-s`
-
-**Select a page from history to view.**
-
-This option works in conjunction with `--history`. It allows you to choose a specific previously viewed webpage by its index in the history list. The selected page will be loaded directly in the TUI viewer.
-
-#### Example Usage:
-
-```sh
-is-fast --history --select 2
-is-fast -s 3 --history
-```
-
-This will open the selected entry in the terminal viewer.
 
 ---
 

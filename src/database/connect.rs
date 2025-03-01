@@ -76,18 +76,6 @@ fn remove_http(link: &Link) -> String {
     url
 }
 
-pub fn get_history_item(index: usize) -> Result<HistoryData, MyError> {
-    let history = get_history()?;
-    let adjusted_index = index.saturating_sub(1);
-    history
-        .get(adjusted_index)
-        .map(|item| item.clone())
-        .ok_or(MyError::DisplayError(format!(
-            "Item {} does not exist",
-            index
-        )))
-}
-
 pub fn get_history() -> Result<Vec<HistoryData>, MyError> {
     let conn = CONNECTION.lock().unwrap();
     let mut index = 0;
