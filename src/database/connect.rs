@@ -1,3 +1,5 @@
+use std::fs;
+use std::path::PathBuf;
 use crate::errors::error::MyError;
 use crate::errors::error::MyError::DatabaseError;
 use crate::links::link::Link;
@@ -5,15 +7,24 @@ use chrono::{NaiveDateTime, Utc};
 use once_cell::sync::Lazy;
 use rusqlite::Connection;
 use std::sync::{Mutex, MutexGuard};
+use dirs::data_dir;
 
 static CONNECTION: Lazy<Mutex<Connection>> = Lazy::new(|| {
-    let conn = Connection::open("is-fast.db").expect("Failed to open database");
+    let conn = Connection::open(get_database_path()).expect("Failed to open database");
     conn.execute(
         "CREATE TABLE IF NOT EXISTS history (title TEXT, url TEXT, time DATETIME)",
         [],
     ).expect("Failed to create table");
     Mutex::new(conn)
 });
+
+fn get_database_path() -> PathBuf {
+    let mut path = data_dir().expect("Failed to determine data directory");
+    path.push("is-fast");
+    fs::create_dir_all(&path).expect("Failed to create database directory");
+    path.push("is-fast.db");
+    path
+}
 
 pub fn add_history(link: &Link) -> Result<(), MyError> {
     let conn = CONNECTION.lock().unwrap();
