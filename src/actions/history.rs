@@ -1,9 +1,9 @@
 use crate::actions::direct;
-use crate::database::connect::{get_history_item, show_history};
+use crate::database::connect::{get_history, get_history_item};
 
 pub fn run(){
-    let history = show_history().unwrap_or_else(|_| String::from("No history found"));
-    println!("{}", history);
+    let history = get_history().unwrap_or_else(|_| vec![]);
+//   history_page(history).unwrap_or_else(|_| println!("No history found"));
 }
 
 pub fn run_open(index: usize) {

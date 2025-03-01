@@ -1,6 +1,6 @@
+use once_cell::sync::Lazy;
 use reqwest::blocking::Client;
 use std::process::Command;
-use once_cell::sync::Lazy;
 
 static REQWEST_CLIENT: Lazy<Client> = Lazy::new(|| Client::builder().http1_only().build().ok().unwrap());
 

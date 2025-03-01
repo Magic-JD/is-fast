@@ -1,6 +1,6 @@
 use crate::links::link::Link;
-use crate::tui::render;
 use crate::scrapers::scrape::scrape;
+use crate::tui::browser::Browser;
 
 pub fn run(title: Option<String>, url: String) {
     let formatted_url = format_url(url);
@@ -9,7 +9,7 @@ pub fn run(title: Option<String>, url: String) {
         formatted_url.to_string(),
         move || scrape(&formatted_url.to_string())
     )];
-    render::show(&links);
+    Browser::new().browse(links);
 }
 
 fn format_url(url: String) -> String {

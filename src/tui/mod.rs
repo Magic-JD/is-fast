@@ -1,2 +1,2 @@
-pub mod render;
-pub mod events;
+mod display;
+pub mod browser;

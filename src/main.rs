@@ -8,13 +8,13 @@ mod actions;
 mod cli;
 mod database;
 
+use crate::actions::history::run_open;
+use crate::actions::{direct, history};
 use crate::cli::command::Cli;
 use actions::generate_config;
 use actions::search;
 use actions::view;
 use clap::Parser;
-use crate::actions::{direct, history};
-use crate::actions::history::run_open;
 
 fn main() {
     let args = Cli::parse();

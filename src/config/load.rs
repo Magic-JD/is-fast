@@ -1,11 +1,11 @@
+use crate::config::constants::DEFAULT_CONFIG_LOCATION;
+use globset::{Glob, GlobSet, GlobSetBuilder};
 use once_cell::sync::Lazy;
 use ratatui::style::{Color, Modifier, Style};
 use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
 use std::fs;
-use globset::{Glob, GlobSet, GlobSetBuilder};
 use toml;
-use crate::config::constants::DEFAULT_CONFIG_LOCATION;
 
 static CONFIG: Lazy<Config> = Lazy::new(Config::load);
 

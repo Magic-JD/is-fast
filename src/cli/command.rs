@@ -1,4 +1,4 @@
-use clap::{Parser, ArgAction};
+use clap::{ArgAction, Parser};
 
 /// is-fast - Internet Search Fast from the Terminal
 ///

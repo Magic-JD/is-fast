@@ -1,6 +1,6 @@
-use scraper::{Html, Selector};
 use crate::links::link::Link;
 use crate::scrapers::scrape::scrape;
+use scraper::{Html, Selector};
 
 pub fn from_html(html: &String) -> Vec<Link> {
     let document = Html::parse_document(&html);

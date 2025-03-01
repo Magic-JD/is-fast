@@ -1,0 +1,90 @@
+use crossterm::execute;
+use crossterm::terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen};
+use once_cell::sync::Lazy;
+use ratatui::backend::CrosstermBackend;
+use ratatui::layout::{Constraint, Direction, Layout};
+use ratatui::prelude::{Color, Modifier, Span, Style};
+use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
+use ratatui::Terminal;
+use std::io::{stdout, Stdout};
+use std::sync::Mutex;
+
+const TUI_BORDER_COLOR: Lazy<Style> = Lazy::new(|| Style::default().fg(Color::Green));
+
+pub struct Display {
+    terminal: Mutex<Terminal<CrosstermBackend<Stdout>>>,
+    instructions: String,
+}
+
+impl Display {
+   pub(crate) fn new(instructions: String) -> Self {
+       // This can panic if startup not handled properly.
+       enable_raw_mode().unwrap();
+       let mut out = stdout();
+       execute!(out, EnterAlternateScreen).unwrap();
+       let backend = CrosstermBackend::new(out);
+       let terminal = Terminal::new(backend).unwrap();
+        Display {
+            terminal : Mutex::new(terminal),
+            instructions,
+        }
+    }
+
+    pub fn shutdown_with_error(&mut self, error: &str) -> ! {
+        self.shutdown();
+        eprintln!("{}", error);
+        std::process::exit(1);
+    }
+
+    pub(crate) fn shutdown(&mut self) {
+        let mut terminal = self.terminal.lock().unwrap();
+        execute!(terminal.backend_mut(), LeaveAlternateScreen).unwrap();
+        disable_raw_mode().unwrap();
+    }
+
+    pub fn height(&self) -> u16 {
+        self.terminal.lock().unwrap().get_frame().area().height
+    }
+
+    pub fn loading(&self) -> std::io::Result<()> {
+        self.draw(&Paragraph::default(),
+                                 " Loading...".to_string(),
+                                 0,
+        )
+    }
+
+    pub(crate) fn draw(
+        &self,
+        page: &Paragraph,
+        title: String,
+        scroll_offset: u16,
+    ) -> std::io::Result<()> {
+        let mut terminal = self.terminal.lock().unwrap();
+        terminal.clear()?;
+        terminal.draw(|frame| {
+            let size = frame.area();
+            let layout = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([Constraint::Percentage(100)].as_ref());
+            let area = layout.split(size)[0];
+            let block = Block::default()
+                .title(self.tui_border_span(title.as_str()))
+                .title_bottom(self.tui_border_span(&self.instructions))
+                .borders(Borders::TOP)
+                .style(TUI_BORDER_COLOR.clone());
+            let paragraph = Paragraph::from(page.clone())
+                .block(block)
+                .style(Style::default().fg(Color::White))
+                .wrap(Wrap { trim: false })
+                .scroll((scroll_offset, 0));
+
+            frame.render_widget(paragraph, area);
+        })?;
+        Ok(())
+    }
+
+    fn tui_border_span<'a>(&self, text: &'a str) -> Span<'a> {
+        Span::styled(text, TUI_BORDER_COLOR.clone().add_modifier(Modifier::BOLD))
+    }
+
+}

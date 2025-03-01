@@ -1,5 +1,5 @@
-use std::fs;
 use crate::config::write::write_default_to_user;
+use std::fs;
 
 pub fn run() {
     println!("Generating config file...");
