@@ -2,10 +2,10 @@ use crate::links::link::Link;
 use crate::tui::render;
 use crate::scrapers::scrape::scrape;
 
-pub fn run(url: String) {
+pub fn run(title: Option<String>, url: String) {
     let formatted_url = format_url(url);
     let links = vec![Link::new(
-        "".to_string(),
+        title.unwrap_or_else(|| "".to_string()),
         formatted_url.to_string(),
         move || scrape(&formatted_url.to_string())
     )];

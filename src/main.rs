@@ -14,6 +14,7 @@ use actions::search;
 use actions::view;
 use clap::Parser;
 use crate::actions::{direct, history};
+use crate::actions::history::run_open;
 
 fn main() {
     let args = Cli::parse();
@@ -22,6 +23,10 @@ fn main() {
         return;
     }
     if args.history {
+        if let Some(index) = args.history_select {
+            run_open(index);
+            return;
+        }
         history::run();
         return;
     }
@@ -31,7 +36,7 @@ fn main() {
 
     }
     if let Some(url) = args.direct {
-        direct::run(url);
+        direct::run(None, url);
         return;
     }
     let search_term = args.query.map(|query| query.join(" "));

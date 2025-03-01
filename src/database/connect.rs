@@ -4,7 +4,7 @@ use crate::links::link::Link;
 use chrono::{NaiveDateTime, Utc};
 use once_cell::sync::Lazy;
 use rusqlite::Connection;
-use std::sync::Mutex;
+use std::sync::{Mutex, MutexGuard};
 
 static CONNECTION: Lazy<Mutex<Connection>> = Lazy::new(|| {
     let conn = Connection::open("is-fast.db").expect("Failed to open database");
@@ -25,27 +25,40 @@ pub fn add_history(link: &Link) -> Result<(), MyError> {
     Ok(())
 }
 
+pub fn get_history_item(index: usize) -> Result<History, MyError> {
+    let conn = CONNECTION.lock().unwrap();
+    let history = get_history(conn)?;
+    let adjusted_index = index.saturating_sub(1);
+    history.get(adjusted_index).map(|item| item.clone()).ok_or(MyError::DisplayError(format!("Item {} does not exist", index)))
+
+}
+
 pub fn show_history() -> Result<String, MyError> {
     let conn = CONNECTION.lock().unwrap();
-    let mut stmt = conn.prepare("SELECT title, url, time FROM history ORDER BY time DESC LIMIT 20")?;
-    let history = stmt.query_map([], |row| {
-        Ok(
-            History {
-                title: row.get(0)?,
-                url: row.get(1)?,
-                time: row.get(2)?,
-            }
-        )
-    }).map_err(|e| DatabaseError(e))?;
+    let history = get_history(conn)?;
     let mut result = String::new();
 
     let mut count = 1;
-    for history_item_result in history {
-        let history_item = history_item_result?;
+    for history_item in history {
         result.insert_str(0, &format!("{} | {} | {} ({})\n", count, date_to_display(history_item.time), clip_if_needed(history_item.title, 100), clip_if_needed(history_item.url, 30)));
         count += 1;
     }
     Ok(result)
+}
+
+fn get_history(conn: MutexGuard<Connection>) -> Result<Vec<History>, MyError> {
+    let mut stmt = conn.prepare("SELECT title, url, time FROM history ORDER BY time DESC LIMIT 20")?;
+    let history: Vec<History> = stmt
+        .query_map([], |row| {
+            Ok(History {
+                title: row.get(0)?,
+                url: row.get(1)?,
+                time: row.get(2)?,
+            })
+        })?
+        .collect::<Result<_, _>>()?;
+
+    Ok(history)
 }
 
 fn clip_if_needed(text: String, max_length: usize) -> String {
@@ -82,8 +95,9 @@ fn date_to_display(date: String) -> String {
         .unwrap_or_else(|_| "Date could not be displayed".to_string())
 }
 
-struct History {
-    title: String,
-    url: String,
+#[derive(Clone)]
+pub struct History {
+    pub(crate) title: String,
+    pub(crate) url: String,
     time: String,
 }

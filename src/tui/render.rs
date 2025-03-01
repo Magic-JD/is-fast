@@ -32,7 +32,9 @@ pub fn loading() -> Result<()> {
 
 pub fn show(links: &Vec<Link>) {
     if links.is_empty() {
+        shutdown();
         eprintln!("No results found");
+        return;
     }
     let mut index = 0;
     let mut page = new_page(&mut index, links);

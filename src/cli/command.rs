@@ -94,4 +94,7 @@ pub struct Cli {
 
     #[arg(long = "history", help = "Show previously viewed pages")]
     pub(crate) history: bool,
+
+    #[arg(short = 's', long = "select", help = "Select a page from the history to view")]
+    pub(crate) history_select: Option<usize>,
 }
