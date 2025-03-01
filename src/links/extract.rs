@@ -10,7 +10,6 @@ pub fn from_html(html: &String) -> Vec<Link> {
     document
         .select(&selector_title)
         .zip(document.select(&selector_url))
-        .take(5)
         .map(|(title, url)| {
             let url = url.text().collect::<Vec<_>>().join(" ").trim().to_owned();
             Link::new(
