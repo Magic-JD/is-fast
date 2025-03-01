@@ -1,9 +1,7 @@
-use crate::database::connect::HistoryData;
-use crate::links::link::Link;
-use crate::scrapers::scrape::scrape;
-use crate::tui::browser::Browser;
+use crate::actions::direct;
+use crate::database::connect::{remove_history, HistoryData};
 use crate::tui::display::Display;
-use crate::tui::history::Action::{Continue, Exit, Open};
+use crate::tui::history::Action::{Continue, Down, Exit, Open, Up};
 use chrono::{NaiveDateTime, Utc};
 use crossterm::event;
 use crossterm::event::{KeyCode, KeyEvent};
@@ -11,8 +9,9 @@ use ratatui::layout::Constraint;
 use ratatui::prelude::Modifier;
 use ratatui::style::{Color, Style};
 use ratatui::widgets::{Cell, Row, Table, TableState};
+use Action::Delete;
 
-const INSTRUCTIONS: &'static str = " Quit: q | Scroll Down: j/↓ | Scroll Up: k/↑ | Open: ↵";
+const INSTRUCTIONS: &'static str = " Quit: q | Scroll Down: j/↓ | Scroll Up: k/↑ | Open: ↵ | Delete: d";
 
 pub struct History {
     display: Display,
@@ -25,128 +24,137 @@ impl History {
         }
     }
 
-    pub fn show_history(mut self, history: Vec<HistoryData>) {
+    pub fn show_history(mut self, mut history: Vec<HistoryData>) {
         if history.is_empty() {
             self.display.shutdown();
             eprintln!("No history found");
             return;
         }
+        history.reverse();
         let mut state = TableState::default();
         state.select(Some(history.len().saturating_sub(1)));
-        let row_count = history.len() as u16;
-        let rows: Vec<Row> = history
-            .iter()
-            .map(|h| {
-                let cells = vec![
-                    Cell::from(h.index.to_string()).style(Style::default().fg(Color::Cyan)),
-                    Cell::from(date_to_display(h.time.clone()))
-                        .style(Style::default().fg(Color::Cyan)),
-                    Cell::from(clip_if_needed(h.title.clone(), 100))
-                        .style(Style::default().fg(Color::Red)),
-                    Cell::from(clip_if_needed(h.url.clone(), 60))
-                        .style(Style::default().fg(Color::Green)),
-                ];
-                Row::new(cells)
-            })
-            .rev()
-            .collect();
-
-        let table = Table::from_iter(rows)
-            .widths(&[
-                Constraint::Percentage(3),
-                Constraint::Percentage(15),
-                Constraint::Percentage(40),
-                Constraint::Percentage(40),
-            ])
-            .column_spacing(1)
-            .highlight_symbol(">> ")
-            .row_highlight_style(Style::default().add_modifier(Modifier::BOLD));
+        let mut rows = create_rows(history.clone());
+        let mut table = create_table(&mut rows);
         self.display
-            .draw_table(&table, row_count, "History".to_string(), &mut state)
+            .draw_table(&table, history.len() as u16, "History".to_string(), &mut state)
             .expect("TODO: panic message");
         loop {
-            match self.handle_input(&mut state, history.len(), &table) {
+            match handle_input() {
                 Continue => {}
                 Exit => {
                     self.display.shutdown();
                     break;
                 }
-                Open(idx) => {
+                Open => {
                     self.display.shutdown();
-                    let rev_history = history.into_iter().rev().collect::<Vec<_>>();
-                    _ = rev_history
+                    let idx = state.selected().unwrap_or_else(|| 0);
+                    history.into_iter()
+                        .collect::<Vec<_>>()
                         .get(idx)
                         .map(HistoryData::clone)
-                        .map(|history_data| {
-                            Link::new(
-                                history_data.title.clone(),
-                                history_data.url.clone(),
-                                move || {
-                                    scrape(
-                                        &format!("https://{}", history_data.url.clone())
-                                            .to_string(),
-                                    )
-                                },
-                            )
-                        })
-                        .map(|link| Browser::new().browse(vec![link]));
+                        .inspect(|history_data| {
+                            direct::run(Some(history_data.title.clone()), history_data.url.clone());
+                        });
                     break;
+                }
+                Up => {
+                    let state = &mut state;
+                    if let Some(selected) = state.selected() {
+                        if selected > 0 {
+                            state.select(Some(selected - 1));
+                            _ = self.display.draw_table(
+                                &table,
+                                history.len() as u16,
+                                "History".to_string(),
+                                state,
+                            );
+                        }
+                    }
+                }
+                Down => {
+                    let state = &mut state;
+                    if let Some(selected) = state.selected() {
+                        if selected < (history.len() - 1) as usize {
+                            state.select(Some(selected + 1));
+                            _ = self.display.draw_table(
+                                &table,
+                                history.len() as u16,
+                                "History".to_string(),
+                                state,
+                            );
+                        }
+                    }
+                }
+                Delete => {
+                    let ref_state = &mut state;
+                    let removed = history.remove(ref_state.selected().unwrap_or_else(|| 0));
+                    _ = remove_history(&removed.url);
+                    table = create_table(&mut create_rows(history.clone()));
+                    self.display
+                        .draw_table(&table, history.len() as u16, "History".to_string(), &mut state)
+                        .expect("TODO: panic message");
                 }
             }
         }
     }
+}
 
-    fn handle_input(&self, state: &mut TableState, max: usize, table: &Table) -> Action {
-        event::read()
-            .map(|event| {
-                if let event::Event::Key(KeyEvent { code, .. }) = event {
-                    return match code {
-                        KeyCode::Char('q') => Exit,
-                        KeyCode::Up | KeyCode::Char('k') => {
-                            if let Some(selected) = state.selected() {
-                                if selected > 0 {
-                                    state.select(Some(selected - 1));
-                                    _ = self.display.draw_table(
-                                        table,
-                                        max as u16,
-                                        "History".to_string(),
-                                        state,
-                                    );
-                                }
-                            }
-                            Continue
-                        }
-                        KeyCode::Down | KeyCode::Char('j') => {
-                            if let Some(selected) = state.selected() {
-                                if selected < max - 1 {
-                                    state.select(Some(selected + 1));
-                                    _ = self.display.draw_table(
-                                        table,
-                                        max as u16,
-                                        "History".to_string(),
-                                        state,
-                                    );
-                                }
-                            }
-                            Continue
-                        }
-                        KeyCode::Enter => state
-                            .selected()
-                            .map(|idx| Open(idx))
-                            .unwrap_or_else(|| Continue),
-                        _ => Continue,
-                    };
-                }
-                Continue
-            })
-            .unwrap_or(Continue)
-    }
+fn create_table<'a>(rows: &mut Vec<Row<'a>>) -> Table<'a> {
+    let table = Table::from_iter(rows.clone())
+        .widths(&[
+            Constraint::Percentage(50),
+            Constraint::Percentage(40),
+            Constraint::Percentage(10),
+        ])
+        .column_spacing(1)
+        .highlight_symbol("> ")
+        .row_highlight_style(Style::default().add_modifier(Modifier::BOLD));
+    table
+}
+
+fn create_rows(history: Vec<HistoryData>) -> Vec<Row<'static>> {
+    let rows: Vec<Row> = history
+        .iter()
+        .map(|h| {
+            let cells = vec![
+                Cell::from(clip_if_needed(h.title.clone(), 100))
+                    .style(Style::default().fg(Color::Red)),
+                Cell::from(clip_if_needed(h.url.clone(), 60))
+                    .style(Style::default().fg(Color::Green)),
+                Cell::from(date_to_display(h.time.clone()))
+                    .style(Style::default().fg(Color::Cyan)),
+            ];
+            Row::new(cells)
+        })
+        .collect();
+    rows
+}
+
+fn handle_input() -> Action {
+    event::read()
+        .map(|event| {
+            if let event::Event::Key(KeyEvent { code, .. }) = event {
+                return match code {
+                    KeyCode::Char('q') => Exit,
+                    KeyCode::Up | KeyCode::Char('k') => Up,
+                    KeyCode::Down | KeyCode::Char('j') => Down,
+                    KeyCode::Enter => Open,
+                    KeyCode::Char('d') => Delete,
+                    _ => { Continue }
+                };
+            }
+            Continue
+        })
+        .unwrap_or(Continue)
 }
 
 enum Action {
     Exit,
     Continue,
-    Open(usize),
+    Open,
+    Up,
+    Down,
+    Delete,
 }
 
 fn clip_if_needed(text: String, max_length: usize) -> String {

@@ -8,7 +8,6 @@ mod actions;
 mod cli;
 mod database;
 
-use crate::actions::history::run_open;
 use crate::actions::{direct, history};
 use crate::cli::command::Cli;
 use actions::generate_config;
@@ -23,10 +22,6 @@ fn main() {
         return;
     }
     if args.history {
-        if let Some(index) = args.history_select {
-            run_open(index);
-            return;
-        }
         history::run();
         return;
     }

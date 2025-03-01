@@ -1,9 +1,6 @@
 # 🌍 Internet Search Fast from the Terminal
 
-Ever been stuck in a **terminal-only environment** and needed to look something up? Maybe you're:
-- Using a **Raspberry Pi** with no desktop 🍓
-- Struggling with **copy-pasting** between a **local browser and sshed terminal** 📝
-- Tired of waiting for an **LLM** to generate paragraphs when you just need a quick answer ⏳
+`is-fast` is a TUI tool designed for quick and efficient internet searches directly from the terminal, ideal for environments where you don't have easy access to a browser. With simple commands, you can search the web, navigate results, and view content seamlessly in the terminal. It supports custom configurations for styling, content extraction, and syntax highlighting, and allows direct URL viewing, local HTML file rendering, and history tracking. is-fast is fast, lightweight, and perfect for developers and terminal enthusiasts.
 
 This tool makes **searching from the terminal fast and simple!** 🚀
 
@@ -273,28 +270,13 @@ is-fast -f example.html -u example.com
 
 **Show previously viewed pages.**
 
-If this option is provided, `is-fast` will display a list of previously visited webpages, numbered with the most recent entries at the bottom. You can scroll up and down and select to open.
+If this option is provided, `is-fast` will display a list of previously visited webpages, numbered with the most recent entries at the bottom. You can scroll up and down and select to open. The entries are stored locally in a SQLlite database.
 
 #### Example Usage:
 
 ```sh
 is-fast --history
 ```
-
-### `--select` / `-s`
-
-**Select a page from history to view.**
-
-This option works in conjunction with `--history`. It allows you to choose a specific previously viewed webpage by its index in the history list. The selected page will be loaded directly in the TUI viewer.
-
-#### Example Usage:
-
-```sh
-is-fast --history --select 2
-is-fast -s 3 --history
-```
-
-This will open the selected entry in the terminal viewer.
 
 ---
 
