@@ -16,8 +16,10 @@ pub struct Browser {
 
 impl Browser {
     pub fn new() -> Self {
+        let display = Display::new(INSTRUCTIONS.to_string());
+        display.loading().unwrap();
         Browser {
-            display: Display::new(INSTRUCTIONS.to_string()),
+            display,
         }
     }
 

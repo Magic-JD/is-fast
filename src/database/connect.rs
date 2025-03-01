@@ -35,21 +35,21 @@ pub fn add_history(link: &Link) -> Result<(), MyError> {
     Ok(())
 }
 
-pub fn get_history_item(index: usize) -> Result<History, MyError> {
+pub fn get_history_item(index: usize) -> Result<HistoryData, MyError> {
     let history = get_history()?;
     let adjusted_index = index.saturating_sub(1);
     history.get(adjusted_index).map(|item| item.clone()).ok_or(MyError::DisplayError(format!("Item {} does not exist", index)))
 
 }
 
-pub fn get_history() -> Result<Vec<History>, MyError> {
+pub fn get_history() -> Result<Vec<HistoryData>, MyError> {
     let conn = CONNECTION.lock().unwrap();
     let mut index = 0;
     let mut stmt = conn.prepare("SELECT title, url, time FROM history ORDER BY time DESC LIMIT 20")?;
-    let history: Vec<History> = stmt
+    let history: Vec<HistoryData> = stmt
         .query_map([], |row| {
             index += 1;
-            Ok(History {
+            Ok(HistoryData {
                 title: row.get(0)?,
                 url: row.get(1)?,
                 time: row.get(2)?,
@@ -63,7 +63,7 @@ pub fn get_history() -> Result<Vec<History>, MyError> {
 
 
 #[derive(Clone)]
-pub struct History {
+pub struct HistoryData {
     pub(crate) title: String,
     pub(crate) url: String,
     pub(crate) time: String,

@@ -4,7 +4,7 @@ use once_cell::sync::Lazy;
 use ratatui::backend::CrosstermBackend;
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::prelude::{Color, Modifier, Span, Style};
-use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
+use ratatui::widgets::{Block, Borders, Paragraph, Table, Wrap};
 use ratatui::Terminal;
 use std::io::{stdout, Stdout};
 use std::sync::Mutex;
@@ -53,6 +53,28 @@ impl Display {
         )
     }
 
+    pub(crate) fn draw_table(
+        &self,
+        table: &Table,
+        title: String,
+        scroll_offset: u16,
+    ) -> std::io::Result<()> {
+        let mut terminal = self.terminal.lock().unwrap();
+        terminal.draw(|frame| {
+            let size = frame.area();
+            let layout = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([Constraint::Percentage(100)].as_ref());
+            let area = layout.split(size)[0];
+            let block = Block::default()
+                .title(self.tui_border_span(title.as_str()))
+                .title_bottom(self.tui_border_span(&self.instructions))
+                .borders(Borders::TOP)
+                .style(TUI_BORDER_COLOR.clone());
+            frame.render_widget(table.clone().block(block), area);
+        })?;
+        Ok(())
+    }
     pub(crate) fn draw(
         &self,
         page: &Paragraph,
