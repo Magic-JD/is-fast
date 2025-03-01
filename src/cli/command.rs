@@ -92,9 +92,29 @@ pub struct Cli {
     #[arg(short = 'd', long = "direct", help = "Open the given URL directly")]
     pub(crate) direct: Option<String>,
 
+    /// Show previously viewed pages.
+    ///
+    /// This option allows you to display a list of previously visited webpages.
+    /// The history will be shown in the terminal interface, numbered, with the most recent results
+    /// at the bottom.
+    ///
+    /// Example Usage:
+    ///
+    ///   is-fast --history
     #[arg(long = "history", help = "Show previously viewed pages")]
     pub(crate) history: bool,
 
-    #[arg(short = 's', long = "select", help = "Select a page from the history to view")]
+    /// Select a page from the history to view.
+    ///
+    /// This option works in conjunction with `--history`. It allows you to
+    /// choose a specific previously viewed webpage by its index in the history list.
+    /// The selected page will be loaded directly in the TUI viewer.
+    ///
+    /// Example Usage:
+    ///
+    ///   is-fast --history --select 2
+    ///
+    ///   is-fast -s 3 --history
+    #[arg(short = 's', long = "select", requires = "history", help = "Select a page from the history to view")]
     pub(crate) history_select: Option<usize>,
 }
