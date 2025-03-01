@@ -4,8 +4,7 @@ use crate::tui::history::History;
 
 pub fn run(){
     let history = get_history().unwrap_or_else(|_| vec![]);
-    let history_page = History::new().show_history(history);
-//   history_page(history).unwrap_or_else(|_| println!("No history found"));
+    History::new().show_history(history);
 }
 
 pub fn run_open(index: usize) {
