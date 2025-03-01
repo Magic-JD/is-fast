@@ -91,4 +91,7 @@ pub struct Cli {
     ///   is-fast -d https://example.com
     #[arg(short = 'd', long = "direct", help = "Open the given URL directly")]
     pub(crate) direct: Option<String>,
+
+    #[arg(long = "history", help = "Show previously viewed pages")]
+    pub(crate) history: bool,
 }

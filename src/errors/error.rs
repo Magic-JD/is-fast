@@ -7,4 +7,7 @@ pub enum MyError {
 
     #[error("I/O errors: {0}")]
     IoError(#[from] std::io::Error),
+
+    #[error("Database errors: {0}")]
+    DatabaseError(#[from] rusqlite::Error),
 }

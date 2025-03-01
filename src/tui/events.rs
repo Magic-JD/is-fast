@@ -7,6 +7,7 @@ use open;
 use ratatui::text::Text;
 use ratatui::widgets::Paragraph;
 use std::result::Result;
+use crate::database::connect::add_history;
 use crate::links::cache::{get_content, preload};
 
 pub fn handle_input(
@@ -77,12 +78,14 @@ fn change_page(
     Ok(())
 }
 
-fn new_page(index: &mut usize, links: &[Link]) -> Paragraph<'static> {
+pub fn new_page(index: &mut usize, links: &[Link]) -> Paragraph<'static> {
     if let Some(link) = links.get(*index + 1) {
         preload(link);
     }
     links
         .get(*index)
+        .inspect(|link|
+            add_history(link).expect("Failed to add link to database"))
         .map(|link| get_content(link))
         .unwrap_or_else(|| Paragraph::new(Text::from(String::from("Index out of bounds"))))
 }

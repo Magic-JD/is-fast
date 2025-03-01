@@ -18,6 +18,7 @@ clap = { version = "4.5.31", features = ["derive"] }
 open = "5.3.2"
 dashmap = "7.0.0-rc1"
 globset = "0.4.16"
+rusqlite = {version = "0.33.0", features = ["bundled"]}
 
 [build-dependencies]
 clap = { version = "4.5.31", features = ["derive", "cargo", "env"] }

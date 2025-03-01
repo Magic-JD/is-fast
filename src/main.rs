@@ -6,18 +6,23 @@ mod config;
 mod errors;
 mod actions;
 mod cli;
+mod database;
 
 use crate::cli::command::Cli;
 use actions::generate_config;
 use actions::search;
 use actions::view;
 use clap::Parser;
-use crate::actions::direct;
+use crate::actions::{direct, history};
 
 fn main() {
     let args = Cli::parse();
     if args.generate_config {
         generate_config::run();
+        return;
+    }
+    if args.history {
+        history::run();
         return;
     }
     if let Some(file) = args.file {
