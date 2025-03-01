@@ -1,5 +1,5 @@
 use crate::actions::direct;
-use crate::database::connect::{get_history, get_history_item, HistoryData};
+use crate::database::connect::{get_history, get_history_item};
 use crate::tui::history::History;
 
 pub fn run(){

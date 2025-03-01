@@ -144,7 +144,7 @@ impl Browser {
         links
             .get(*index)
             .inspect(|link|
-                add_history(link).expect("Failed to add link to database"))
+                _ = add_history(link))
             .map(|link| get_content(link))
             .unwrap_or_else(|| Paragraph::new(Text::from(String::from("Index out of bounds"))))
     }

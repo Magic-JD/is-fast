@@ -4,7 +4,7 @@ use once_cell::sync::Lazy;
 use ratatui::backend::CrosstermBackend;
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::prelude::{Color, Modifier, Span, Style};
-use ratatui::widgets::{Block, Borders, Paragraph, Table, Wrap};
+use ratatui::widgets::{Block, Borders, Paragraph, Table, TableState, Wrap};
 use ratatui::Terminal;
 use std::io::{stdout, Stdout};
 use std::sync::Mutex;
@@ -56,25 +56,40 @@ impl Display {
     pub(crate) fn draw_table(
         &self,
         table: &Table,
+        row_count: u16,
         title: String,
-        scroll_offset: u16,
+        state: &mut TableState,
     ) -> std::io::Result<()> {
         let mut terminal = self.terminal.lock().unwrap();
         terminal.draw(|frame| {
             let size = frame.area();
+            let available_height = size.height;
+            let table_height = row_count.min(available_height);
+            let block = self.default_block(&title);
             let layout = Layout::default()
                 .direction(Direction::Vertical)
-                .constraints([Constraint::Percentage(100)].as_ref());
-            let area = layout.split(size)[0];
-            let block = Block::default()
-                .title(self.tui_border_span(title.as_str()))
-                .title_bottom(self.tui_border_span(&self.instructions))
-                .borders(Borders::TOP)
-                .style(TUI_BORDER_COLOR.clone());
-            frame.render_widget(table.clone().block(block), area);
+                .constraints([
+                    Constraint::Min(1),
+                    Constraint::Length(table_height),
+                    Constraint::Length(1),
+                ].as_ref());
+            frame.render_widget(block, frame.area());
+            let new_table = table.clone();
+            let areas = layout.split(size);
+            let area = areas[1];
+            frame.render_stateful_widget(new_table, area, state);
         })?;
         Ok(())
     }
+
+    fn default_block<'a>(&'a self, title: &'a str) -> Block<'a> {
+        Block::default()
+            .title(self.tui_border_span(title))
+            .title_bottom(self.tui_border_span(&self.instructions))
+            .borders(Borders::TOP)
+            .style(TUI_BORDER_COLOR.clone())
+    }
+
     pub(crate) fn draw(
         &self,
         page: &Paragraph,
@@ -89,11 +104,7 @@ impl Display {
                 .direction(Direction::Vertical)
                 .constraints([Constraint::Percentage(100)].as_ref());
             let area = layout.split(size)[0];
-            let block = Block::default()
-                .title(self.tui_border_span(title.as_str()))
-                .title_bottom(self.tui_border_span(&self.instructions))
-                .borders(Borders::TOP)
-                .style(TUI_BORDER_COLOR.clone());
+            let block = self.default_block(&title);
             let paragraph = Paragraph::from(page.clone())
                 .block(block)
                 .style(Style::default().fg(Color::White))

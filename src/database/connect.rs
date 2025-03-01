@@ -6,14 +6,15 @@ use once_cell::sync::Lazy;
 use rusqlite::Connection;
 use std::fs;
 use std::path::PathBuf;
-use std::sync::Mutex;
+use std::sync::{Mutex, MutexGuard};
 
 static CONNECTION: Lazy<Mutex<Connection>> = Lazy::new(|| {
     let conn = Connection::open(get_database_path()).expect("Failed to open database");
     conn.execute(
         "CREATE TABLE IF NOT EXISTS history (title TEXT, url TEXT, time DATETIME)",
         [],
-    ).expect("Failed to create table");
+    )
+    .expect("Failed to create table");
     Mutex::new(conn)
 });
 
@@ -26,26 +27,71 @@ fn get_database_path() -> PathBuf {
 }
 
 pub fn add_history(link: &Link) -> Result<(), MyError> {
+    let url = remove_http(link);
     let conn = CONNECTION.lock().unwrap();
+    if url_exists(&url, &conn) {
+        update_row(&url, &conn)?
+    } else {
+        insert_row(&link, &url, conn)?
+    }
+}
+
+fn insert_row(link: &&Link, url: &String, conn: MutexGuard<Connection>) -> Result<Result<(), MyError>, MyError> {
     conn.execute(
         "INSERT INTO history (title, url, time) VALUES (?, ?, datetime('now'))",
-        &[&link.title, &link.url],
+        &[&link.title, &url],
     )
         .map_err(|e| DatabaseError(e))?;
-    Ok(())
+    Ok(Ok(()))
+}
+
+fn update_row(url: &String, conn: &MutexGuard<Connection>) -> Result<Result<(), MyError>, MyError> {
+    conn.execute(
+        "UPDATE history SET time = datetime('now') WHERE url = ?",
+        &[&url],
+    )
+        .map_err(|e| DatabaseError(e))?;
+    Ok(Ok(()))
+}
+
+fn url_exists(url: &String, conn: &MutexGuard<Connection>) -> bool {
+    conn
+        .query_row(
+            "SELECT 1 FROM history WHERE url = ? LIMIT 1",
+            &[&url],
+            |row| row.get::<_, i32>(0),
+        )
+        .map(|_| true)
+        .unwrap_or(false)
+}
+
+fn remove_http(link: &Link) -> String {
+    let mut url = link.url.clone();
+    if url.starts_with("https") {
+        url = url[8..].to_string();
+    }
+    if url.starts_with("http") {
+        url = url[7..].to_string();
+    }
+    url
 }
 
 pub fn get_history_item(index: usize) -> Result<HistoryData, MyError> {
     let history = get_history()?;
     let adjusted_index = index.saturating_sub(1);
-    history.get(adjusted_index).map(|item| item.clone()).ok_or(MyError::DisplayError(format!("Item {} does not exist", index)))
-
+    history
+        .get(adjusted_index)
+        .map(|item| item.clone())
+        .ok_or(MyError::DisplayError(format!(
+            "Item {} does not exist",
+            index
+        )))
 }
 
 pub fn get_history() -> Result<Vec<HistoryData>, MyError> {
     let conn = CONNECTION.lock().unwrap();
     let mut index = 0;
-    let mut stmt = conn.prepare("SELECT title, url, time FROM history ORDER BY time DESC LIMIT 20")?;
+    let mut stmt = conn.prepare("SELECT title, url, time FROM history ORDER BY time DESC")?;
     let history: Vec<HistoryData> = stmt
         .query_map([], |row| {
             index += 1;
@@ -60,7 +106,6 @@ pub fn get_history() -> Result<Vec<HistoryData>, MyError> {
 
     Ok(history)
 }
-
 
 #[derive(Clone)]
 pub struct HistoryData {
