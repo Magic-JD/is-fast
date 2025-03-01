@@ -1,9 +1,6 @@
 # 🌍 Internet Search Fast from the Terminal
 
-Ever been stuck in a **terminal-only environment** and needed to look something up? Maybe you're:
-- Using a **Raspberry Pi** with no desktop 🍓
-- Struggling with **copy-pasting** between a **local browser and sshed terminal** 📝
-- Tired of waiting for an **LLM** to generate paragraphs when you just need a quick answer ⏳
+`is-fast` is a TUI tool designed for quick and efficient internet searches directly from the terminal, ideal for environments where you don't have easy access to a browser. With simple commands, you can search the web, navigate results, and view content seamlessly in the terminal. It supports custom configurations for styling, content extraction, and syntax highlighting, and allows direct URL viewing, local HTML file rendering, and history tracking. is-fast is fast, lightweight, and perfect for developers and terminal enthusiasts.
 
 This tool makes **searching from the terminal fast and simple!** 🚀
 
