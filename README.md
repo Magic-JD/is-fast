@@ -32,6 +32,30 @@ No waiting - just internet search fast in your terminal.
 
 ---
 
+### Table Of Contents
+
+- [🔧 Configuration Guide](#configuration-guide)
+    - [Default Configuration](#default-configuration)
+    - [🏷 Block Elements](#-block-elements)
+    - [🚫 Ignored Tags](#-ignored-tags)
+    - [🔍 Selectors](#-selectors)
+    - [🎨 Text Styles](#-text-styles)
+    - [🌈 Syntax Highlighting](#-syntax-highlighting)
+    - [📌 Summary](#-summary)
+- [🌐 Using `is-fast` to Open URLs Directly](#-using-is-fast-to-open-urls-directly)
+    - [`--direct` / `-d`](#--direct---d)
+- [📃 Using `is-fast` with Local HTML Files](#-using-is-fast-with-local-html-files)
+    - [`--file` / `-f`](#--file---f)
+    - [`--url` / `-u`](#--url---u)
+- [📜 Viewing History in `is-fast`](#-viewing-history-in-is-fast)
+    - [`--history`](#--history)
+    - [`--select` / `-s`](#--select---s)
+- [Running the Project 🏃](#running-the-project-)
+    - [Prerequisites](#prerequisites)
+    - [Installing the program (🐧 🍏 🪟)](#installing-the-program---)
+
+---
+
 # Configuration Guide
 
 This project supports both built-in and user-provided configurations for styles and content selection rules. Configuration is handled using a TOML file, and a default configuration is embedded within the binary. Users can override this configuration by placing a custom config file in their system's configuration directory. Changes will only take effect once the program is run again.
@@ -285,7 +309,7 @@ Before running the project, ensure you have the following installed:
 - [Rust](https://www.rust-lang.org/tools/install) (latest stable version) 🦀
 - [Cargo](https://doc.rust-lang.org/cargo/) (comes with Rust) 📦
 
-## Installing the program (🐧 🍏 🪟)
+## Installing the program 🐧 🍏 🪟
 
 Run the following command to clone the repository and install it on your system:
 
