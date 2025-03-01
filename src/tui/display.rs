@@ -4,6 +4,7 @@ use once_cell::sync::Lazy;
 use ratatui::backend::CrosstermBackend;
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::prelude::{Color, Modifier, Span, Style};
+use ratatui::text::Line;
 use ratatui::widgets::{Block, Borders, Paragraph, Table, TableState, Wrap};
 use ratatui::Terminal;
 use std::io::{stdout, Stdout};
@@ -59,6 +60,7 @@ impl Display {
         row_count: u16,
         title: String,
         state: &mut TableState,
+        user_input: &mut String,
     ) -> std::io::Result<()> {
         let mut terminal = self.terminal.lock().unwrap();
         terminal.draw(|frame| {
@@ -71,13 +73,14 @@ impl Display {
                 .constraints([
                     Constraint::Min(1),
                     Constraint::Length(table_height),
-                    Constraint::Length(1),
+                    Constraint::Length(2),
                 ].as_ref());
             frame.render_widget(block, frame.area());
             let new_table = table.clone();
             let areas = layout.split(size);
             let area = areas[1];
             frame.render_stateful_widget(new_table, area, state);
+            frame.render_widget(Paragraph::new(Line::from(format!(" [SEARCH] {}", user_input)).style(Style::default().fg(Color::LightBlue).add_modifier(Modifier::BOLD))), areas[2]);
         })?;
         Ok(())
     }

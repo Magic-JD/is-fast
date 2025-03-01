@@ -1,17 +1,21 @@
 use crate::actions::direct;
 use crate::database::connect::{remove_history, HistoryData};
 use crate::tui::display::Display;
-use crate::tui::history::Action::{Continue, Down, Exit, Open, Up};
+use crate::tui::history::Action::{Backspace, Continue, Down, Exit, Open, Text, Up};
 use chrono::{NaiveDateTime, Utc};
 use crossterm::event;
 use crossterm::event::{KeyCode, KeyEvent};
+use nucleo_matcher::pattern::{CaseMatching, Normalization, Pattern};
+use nucleo_matcher::{Config, Matcher, Utf32Str};
 use ratatui::layout::Constraint;
 use ratatui::prelude::Modifier;
 use ratatui::style::{Color, Style};
 use ratatui::widgets::{Cell, Row, Table, TableState};
+use std::cmp::Ordering;
 use Action::Delete;
 
-const INSTRUCTIONS: &'static str = " Quit: q | Scroll Down: j/↓ | Scroll Up: k/↑ | Open: ↵ | Delete: d";
+const INSTRUCTIONS: &'static str =
+    " Quit: Esc | Scroll Down: ↓ | Scroll Up: ↑ | Open: ↵ | Delete: Delete ";
 
 pub struct History {
     display: Display,
@@ -31,12 +35,20 @@ impl History {
             return;
         }
         history.reverse();
+        let mut user_search = String::from("");
+        history = order_by_match(&mut history, &mut user_search);
         let mut state = TableState::default();
         state.select(Some(history.len().saturating_sub(1)));
         let mut rows = create_rows(history.clone());
         let mut table = create_table(&mut rows);
         self.display
-            .draw_table(&table, history.len() as u16, "History".to_string(), &mut state)
+            .draw_table(
+                &table,
+                history.len() as u16,
+                "History".to_string(),
+                &mut state,
+                &mut user_search,
+            )
             .expect("TODO: panic message");
         loop {
             match handle_input() {
@@ -48,7 +60,8 @@ impl History {
                 Open => {
                     self.display.shutdown();
                     let idx = state.selected().unwrap_or_else(|| 0);
-                    history.into_iter()
+                    history
+                        .into_iter()
                         .collect::<Vec<_>>()
                         .get(idx)
                         .map(HistoryData::clone)
@@ -67,6 +80,7 @@ impl History {
                                 history.len() as u16,
                                 "History".to_string(),
                                 state,
+                                &mut user_search,
                             );
                         }
                     }
@@ -81,6 +95,7 @@ impl History {
                                 history.len() as u16,
                                 "History".to_string(),
                                 state,
+                                &mut user_search,
                             );
                         }
                     }
@@ -91,12 +106,64 @@ impl History {
                     _ = remove_history(&removed.url);
                     table = create_table(&mut create_rows(history.clone()));
                     self.display
-                        .draw_table(&table, history.len() as u16, "History".to_string(), &mut state)
+                        .draw_table(
+                            &table,
+                            history.len() as u16,
+                            "History".to_string(),
+                            &mut state,
+                            &mut user_search,
+                        )
                         .expect("TODO: panic message");
+                }
+                Text(char) => {
+                    user_search.push(char);
+                    history = order_by_match(&mut history, &mut user_search);
+                    table = create_table(&mut create_rows(history.clone()));
+                    _ = self.display.draw_table(
+                        &table,
+                        history.len() as u16,
+                        "History".to_string(),
+                        &mut state,
+                        &mut user_search,
+                    );
+                }
+                Backspace => {
+                    user_search.pop();
+                    history = order_by_match(&mut history, &mut user_search);
+                    table = create_table(&mut create_rows(history.clone()));
+                    _ = self.display.draw_table(
+                        &table,
+                        history.len() as u16,
+                        "History".to_string(),
+                        &mut state,
+                        &mut user_search,
+                    );
                 }
             }
         }
     }
+}
+
+fn order_by_match(history: &mut Vec<HistoryData>, user_search: &mut String) -> Vec<HistoryData> {
+    let mut matcher = Matcher::new(Config::DEFAULT);
+    let pattern = Pattern::parse(&*user_search, CaseMatching::Ignore, Normalization::Smart);
+    let mut data_2_score = history
+        .iter()
+        .map(|h| {
+            (
+                h,
+                pattern.score(Utf32Str::new(&*h.title, &mut vec![]), &mut matcher),
+            )
+        })
+        .collect::<Vec<(&HistoryData, Option<u32>)>>();
+    data_2_score.sort_by(|(h1, a), (h2, b)| {
+        match a.unwrap_or_else(|| 0).cmp(&b.unwrap_or_else(|| 0)) {
+            Ordering::Less => Ordering::Less,
+            Ordering::Equal => h1.time.cmp(&h2.time),
+            Ordering::Greater => Ordering::Greater,
+        }
+    });
+    data_2_score.into_iter().map(|(a, _)| a.clone()).collect()
 }
 
 fn create_table<'a>(rows: &mut Vec<Row<'a>>) -> Table<'a> {
@@ -121,8 +188,7 @@ fn create_rows(history: Vec<HistoryData>) -> Vec<Row<'static>> {
                     .style(Style::default().fg(Color::Red)),
                 Cell::from(clip_if_needed(h.url.clone(), 60))
                     .style(Style::default().fg(Color::Green)),
-                Cell::from(date_to_display(h.time.clone()))
-                    .style(Style::default().fg(Color::Cyan)),
+                Cell::from(date_to_display(h.time.clone())).style(Style::default().fg(Color::Cyan)),
             ];
             Row::new(cells)
         })
@@ -135,12 +201,14 @@ fn handle_input() -> Action {
         .map(|event| {
             if let event::Event::Key(KeyEvent { code, .. }) = event {
                 return match code {
-                    KeyCode::Char('q') => Exit,
-                    KeyCode::Up | KeyCode::Char('k') => Up,
-                    KeyCode::Down | KeyCode::Char('j') => Down,
+                    KeyCode::Esc => Exit,
+                    KeyCode::Up => Up,
+                    KeyCode::Down => Down,
                     KeyCode::Enter => Open,
-                    KeyCode::Char('d') => Delete,
-                    _ => { Continue }
+                    KeyCode::Delete => Delete,
+                    KeyCode::Char(char) => Text(char),
+                    KeyCode::Backspace => Backspace,
+                    _ => Continue,
                 };
             }
             Continue
@@ -155,6 +223,8 @@ enum Action {
     Up,
     Down,
     Delete,
+    Text(char),
+    Backspace,
 }
 
 fn clip_if_needed(text: String, max_length: usize) -> String {

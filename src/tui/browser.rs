@@ -8,7 +8,7 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::prelude::Text;
 use ratatui::widgets::Paragraph;
 
-const INSTRUCTIONS: &'static str = " Quit: q | Scroll Down: j/↓ | Scroll Up: k/↑ | Page Down: CTRL+d | Page Up: CTRL+u | Next: n/→ | Back: b/← | Open in Browser: o";
+const INSTRUCTIONS: &'static str = " Quit: q/Esc | Scroll Down: j/↓ | Scroll Up: k/↑ | Page Down: CTRL+d | Page Up: CTRL+u | Next: n/→ | Back: b/← | Open in Browser: o";
 
 pub struct Browser {
     display: Display
@@ -80,7 +80,7 @@ impl Browser {
                                  }) = event::read()?
         {
             match code {
-                KeyCode::Char('q') => return Ok(true),
+                KeyCode::Char('q') | KeyCode::Esc => return Ok(true),
                 KeyCode::Char('n') | KeyCode::Right => {
                     *index = (*index + 1).min(links.len().saturating_sub(1));
                     self.change_page(index, links, page, scroll_offset)?;
