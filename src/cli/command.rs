@@ -5,24 +5,6 @@ use clap::{ArgAction, Parser};
 /// is-fast is a command-line tool that allows you to quickly search the internet
 /// from a terminal-only environment. Instead of loading a full web browser,
 /// it fetches the first search result and presents only the key information.
-///
-/// Navigation Controls default keybindings:
-///
-/// - Next result: n / →
-///
-/// - Go back: b / ←
-///
-/// - Scroll down: j / ↓
-///
-/// - Scroll up: k / ↑
-///
-/// - Page down: CTRL + d
-///
-/// - Page up: CTRL + u
-///
-/// - Open in browser: o
-///
-/// - Quit: q
 #[derive(Parser)]
 #[command(name = "is-fast")]
 #[command(about = "A fast content extractor for terminal-based internet searches")]

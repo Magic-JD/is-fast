@@ -249,22 +249,12 @@ is-fast -f example.html -u example.com
 
 **Show previously viewed pages.**
 
-If this option is provided, `is-fast` will display a list of previously visited webpages, numbered with the most recent entries at the bottom.
+If this option is provided, `is-fast` will display a list of previously visited webpages, numbered with the most recent entries at the bottom. You can scroll up and down and select to open.
 
 #### Example Usage:
 
 ```sh
 is-fast --history
-```
-
-#### Example Output:
-
-```
-5 | 3 weeks    | Rust String Manipulation - Rust Docs (doc.rust-lang.org/...)
-4 | 4 days     | SQL Joins Explained - Database Guide (www.databaseguide.com/sql-joins...)
-3 | 8 hours    | Unicode in Rust - Programming Reference (www.rustprogramming.org/unicode...)
-2 | 50 minutes | Ratatui UI Components - Terminal UI (ratatui.rs/docs/...)
-1 | 32 seconds | Mutex in Rust - Concurrency Explained (www.rust-lang.org/mutex...)
 ```
 
 ### `--select` / `-s`

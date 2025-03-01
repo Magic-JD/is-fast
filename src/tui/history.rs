@@ -12,7 +12,7 @@ use ratatui::prelude::Modifier;
 use ratatui::style::{Color, Style};
 use ratatui::widgets::{Cell, Row, Table, TableState};
 
-const INSTRUCTIONS: &'static str = " Quit: q | Scroll Down: j/↓ | Scroll Up: k/↑";
+const INSTRUCTIONS: &'static str = " Quit: q | Scroll Down: j/↓ | Scroll Up: k/↑ | Open: ↵";
 
 pub struct History {
     display: Display,
