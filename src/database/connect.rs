@@ -1,5 +1,5 @@
-use crate::errors::error::MyError;
-use crate::errors::error::MyError::DatabaseError;
+use crate::errors::error::IsError;
+use crate::errors::error::IsError::Database;
 use crate::links::link::Link;
 use dirs::data_dir;
 use once_cell::sync::Lazy;
@@ -26,42 +26,42 @@ fn get_database_path() -> PathBuf {
     path
 }
 
-pub fn add_history(link: &Link) -> Result<(), MyError> {
+pub fn add_history(link: &Link) -> Result<(), IsError> {
     let url = remove_http(link);
     let conn = CONNECTION.lock().unwrap();
     if url_exists(&url, &conn) {
         update_row(&url, &conn)?
     } else {
-        insert_row(&link, &url, conn)?
+        insert_row(link, &url, conn)?
     }
 }
 
 fn insert_row(
-    link: &&Link,
-    url: &String,
+    link: &Link,
+    url: &str,
     conn: MutexGuard<Connection>,
-) -> Result<Result<(), MyError>, MyError> {
+) -> Result<Result<(), IsError>, IsError> {
     conn.execute(
         "INSERT INTO history (title, url, time) VALUES (?, ?, datetime('now'))",
-        &[&link.title, &url],
+        [&link.title, url],
     )
-    .map_err(|e| DatabaseError(e))?;
+    .map_err(Database)?;
     Ok(Ok(()))
 }
 
-fn update_row(url: &String, conn: &MutexGuard<Connection>) -> Result<Result<(), MyError>, MyError> {
+fn update_row(url: &str, conn: &MutexGuard<Connection>) -> Result<Result<(), IsError>, IsError> {
     conn.execute(
         "UPDATE history SET time = datetime('now') WHERE url = ?",
-        &[&url],
+        [url],
     )
-    .map_err(|e| DatabaseError(e))?;
+    .map_err(Database)?;
     Ok(Ok(()))
 }
 
-fn url_exists(url: &String, conn: &MutexGuard<Connection>) -> bool {
+fn url_exists(url: &str, conn: &MutexGuard<Connection>) -> bool {
     conn.query_row(
         "SELECT 1 FROM history WHERE url = ? LIMIT 1",
-        &[&url],
+        [url],
         |row| row.get::<_, i32>(0),
     )
     .map(|_| true)
@@ -79,7 +79,7 @@ fn remove_http(link: &Link) -> String {
     url
 }
 
-pub fn get_history() -> Result<Vec<HistoryData>, MyError> {
+pub fn get_history() -> Result<Vec<HistoryData>, IsError> {
     let conn = CONNECTION.lock().unwrap();
     let mut stmt = conn.prepare("SELECT title, url, time FROM history ORDER BY time DESC")?;
     let history: Vec<HistoryData> = stmt
@@ -95,10 +95,10 @@ pub fn get_history() -> Result<Vec<HistoryData>, MyError> {
     Ok(history)
 }
 
-pub fn remove_history(url: &String) -> Result<(), MyError> {
+pub fn remove_history(url: &str) -> Result<(), IsError> {
     let conn = CONNECTION.lock().unwrap();
-    conn.execute("DELETE FROM history WHERE url = ?", &[&url])
-        .map_err(|e| DatabaseError(e))?;
+    conn.execute("DELETE FROM history WHERE url = ?", [url])
+        .map_err(Database)?;
     Ok(())
 }
 

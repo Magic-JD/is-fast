@@ -15,7 +15,7 @@ use ratatui::widgets::{Cell, Row, Table, TableState};
 use std::cmp::Ordering;
 use Action::Delete;
 
-const INSTRUCTIONS: &'static str =
+const INSTRUCTIONS: &str =
     " Quit: Esc | Scroll Down: ↓ | Scroll Up: ↑ | Open: ↵ | Delete: Delete ";
 
 pub struct History {
@@ -61,12 +61,11 @@ impl History {
                 }
                 Open => {
                     self.display.shutdown();
-                    let idx = state.selected().unwrap_or_else(|| 0);
+                    let idx = state.selected().unwrap_or(0);
                     history
                         .into_iter()
                         .collect::<Vec<_>>()
                         .get(idx)
-                        .map(HistoryData::clone)
                         .inspect(|history_data| {
                             direct::run(
                                 Some(history_data.title.clone()),
@@ -95,7 +94,7 @@ impl History {
                 Down => {
                     let state = &mut state;
                     if let Some(selected) = state.selected() {
-                        if selected < (history.len() - 1) as usize {
+                        if selected < (history.len() - 1) {
                             state.select(Some(selected + 1));
                             _ = self.display.draw_table(
                                 &table,
@@ -110,7 +109,7 @@ impl History {
                 }
                 Delete => {
                     let ref_state = &mut state;
-                    let removed = history.remove(ref_state.selected().unwrap_or_else(|| 0));
+                    let removed = history.remove(ref_state.selected().unwrap_or(0));
                     _ = remove_history(&removed.url);
                     total_history.retain(|item| *item != removed);
                     table = create_table(&mut create_rows(history.clone(), &user_search));
@@ -159,7 +158,7 @@ impl History {
     }
 }
 
-fn order_by_match(history: &mut Vec<HistoryData>, user_search: &mut String) -> Vec<HistoryData> {
+fn order_by_match(history: &mut [HistoryData], user_search: &mut String) -> Vec<HistoryData> {
     let mut matcher = Matcher::new(Config::DEFAULT);
     let pattern = Pattern::parse(&*user_search, CaseMatching::Ignore, Normalization::Smart);
     let mut data_2_score = history
@@ -167,7 +166,7 @@ fn order_by_match(history: &mut Vec<HistoryData>, user_search: &mut String) -> V
         .map(|h| {
             (
                 h,
-                pattern.score(Utf32Str::new(&*h.title, &mut vec![]), &mut matcher),
+                pattern.score(Utf32Str::new(&h.title, &mut vec![]), &mut matcher),
             )
         })
         .filter(|(_, score)| score.is_some())
@@ -182,9 +181,9 @@ fn order_by_match(history: &mut Vec<HistoryData>, user_search: &mut String) -> V
     data_2_score.into_iter().map(|(a, _)| a.clone()).collect()
 }
 
-fn create_table<'a>(rows: &mut Vec<Row<'a>>) -> Table<'a> {
-    let table = Table::from_iter(rows.clone())
-        .widths(&[
+fn create_table<'a>(rows: &mut [Row<'a>]) -> Table<'a> {
+    let table = Table::from_iter(rows.to_owned())
+        .widths([
             Constraint::Percentage(50),
             Constraint::Percentage(40),
             Constraint::Percentage(10),
@@ -195,14 +194,14 @@ fn create_table<'a>(rows: &mut Vec<Row<'a>>) -> Table<'a> {
     table
 }
 
-fn create_rows(history: Vec<HistoryData>, user_search: &String) -> Vec<Row<'static>> {
+fn create_rows(history: Vec<HistoryData>, user_search: &str) -> Vec<Row<'static>> {
     let rows: Vec<Row> = history
         .iter()
         .map(|h| {
             let cells = vec![
                 Cell::from(highlight_title(
                     clip_if_needed(h.title.clone(), 100),
-                    user_search.clone(),
+                    user_search.to_owned(),
                 ))
                 .style(Style::default().fg(Color::Yellow)),
                 Cell::from(clip_if_needed(h.url.clone(), 60))
@@ -235,16 +234,14 @@ fn highlight_title(plain_text: String, user_search: String) -> Line<'static> {
     let mut current = String::new();
     let mut spans = vec![];
     let mut found = false;
-    for (c, i) in plain_text.chars().into_iter().zip(0..) {
-        if found {
-            current.push(char::try_from(c).unwrap());
-        } else if i < idx {
-            current.push(char::try_from(c).unwrap());
+    for (c, i) in plain_text.chars().zip(0..) {
+        if found || i < idx {
+            current.push(c);
         } else {
             spans.push(Span::from(current.clone()));
             current = String::new();
             spans.push(Span::styled(
-                String::from(char::try_from(c).unwrap()),
+                String::from(c),
                 Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
             ));
             if indices.is_empty() {
@@ -298,7 +295,7 @@ fn clip_if_needed(text: String, max_length: usize) -> String {
 
 fn date_to_display(date: String) -> String {
     let now = Utc::now();
-    NaiveDateTime::parse_from_str(&*date, "%Y-%m-%d %H:%M:%S")
+    NaiveDateTime::parse_from_str(&date, "%Y-%m-%d %H:%M:%S")
         .map(|parsed_datetime| parsed_datetime.and_utc())
         .map(|datetime_utc| now.signed_duration_since(datetime_utc))
         .map(|duration| {

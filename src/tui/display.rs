@@ -12,7 +12,7 @@ use ratatui::Terminal;
 use std::io::{stdout, Stdout};
 use std::sync::Mutex;
 
-const TUI_BORDER_COLOR: Lazy<Style> = Lazy::new(|| Style::default().fg(Color::Green));
+static TUI_BORDER_COLOR: Lazy<Style> = Lazy::new(|| Style::default().fg(Color::Green));
 
 pub struct Display {
     terminal: Mutex<Terminal<CrosstermBackend<Stdout>>>,
@@ -107,7 +107,7 @@ impl Display {
             .title(self.tui_border_span(title))
             .title_bottom(self.tui_border_span(&self.instructions))
             .borders(Borders::TOP)
-            .style(TUI_BORDER_COLOR.clone())
+            .style(*TUI_BORDER_COLOR)
     }
 
     pub(crate) fn draw(
@@ -135,6 +135,6 @@ impl Display {
     }
 
     fn tui_border_span<'a>(&self, text: &'a str) -> Span<'a> {
-        Span::styled(text, TUI_BORDER_COLOR.clone().add_modifier(Modifier::BOLD))
+        Span::styled(text, (*TUI_BORDER_COLOR).add_modifier(Modifier::BOLD))
     }
 }

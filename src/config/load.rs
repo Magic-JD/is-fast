@@ -62,7 +62,7 @@ pub struct Config {
 impl Config {
     fn load() -> Self {
         let mut config: RawConfig = toml::from_str(DEFAULT_CONFIG_LOCATION)
-            .map_err(|e| println!("{}", e.to_string()))
+            .map_err(|e| println!("{}", e))
             .unwrap_or(RawConfig {
                 styles: HashMap::new(),
                 selectors: HashMap::new(),
@@ -111,7 +111,7 @@ impl Config {
         let mut builder = GlobSetBuilder::new();
         let mut globs = Vec::new();
         config.selectors.iter().for_each(|(pattern, _)| {
-            if let Ok(glob) = Glob::new(&pattern) {
+            if let Ok(glob) = Glob::new(pattern) {
                 builder.add(glob.clone());
                 globs.push(glob);
             }
@@ -126,12 +126,12 @@ impl Config {
                 .format
                 .as_ref()
                 .map(|format| format.ignored_tags.iter().cloned().collect())
-                .unwrap_or_else(|| HashSet::new()),
+                .unwrap_or_default(),
             block_elements: config
                 .format
                 .as_ref()
                 .map(|format| format.block_elements.iter().cloned().collect())
-                .unwrap_or_else(|| HashSet::new()),
+                .unwrap_or_default(),
             syntax_default_language: config
                 .syntax
                 .as_ref()
@@ -178,7 +178,7 @@ impl Config {
         &CONFIG.styles
     }
 
-    pub fn get_selectors(url: &String) -> Option<String> {
+    pub fn get_selectors(url: &str) -> Option<String> {
         CONFIG
             .matcher
             .matches(url)
@@ -200,7 +200,7 @@ impl Config {
         CONFIG
             .syntax_default_language
             .clone()
-            .unwrap_or_else(|| "".to_string())
+            .unwrap_or_default()
     }
 
     pub fn get_syntax_highlighting_theme() -> String {

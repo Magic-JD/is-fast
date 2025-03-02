@@ -9,9 +9,9 @@ pub fn scrape(url: &String) -> Result<String, String> {
     reqwest_scrape(url).or_else(|_| curl_scrape(url))
 }
 
-fn curl_scrape(url: &String) -> Result<String, String> {
+fn curl_scrape(url: &str) -> Result<String, String> {
     let output = Command::new("curl")
-        .args(&[
+        .args([
             "-A",
             "Mozilla/5.0 (compatible; MSIE 7.01; Windows NT 5.0)",
             url,
@@ -19,7 +19,7 @@ fn curl_scrape(url: &String) -> Result<String, String> {
         .output()
         .map_err(|e| format!("Failed to execute curl: {}", e))?;
 
-    Ok(String::from_utf8_lossy(&output.stdout).to_string().into())
+    Ok(String::from_utf8_lossy(&output.stdout).parse().unwrap())
 }
 
 fn reqwest_scrape(url: &String) -> Result<String, String> {

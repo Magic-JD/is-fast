@@ -1,4 +1,4 @@
-use crate::errors::error::MyError;
+use crate::errors::error::IsError;
 use crate::links::cache::new_page;
 use crate::links::link::Link;
 use crate::tui::display::Display;
@@ -6,7 +6,7 @@ use crossterm::event;
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::widgets::Paragraph;
 
-const INSTRUCTIONS: &'static str = " Quit: q/Esc | Scroll Down: j/↓ | Scroll Up: k/↑ | Page Down: CTRL+d | Page Up: CTRL+u | Next: n/→ | Back: b/← | Open in Browser: o";
+const INSTRUCTIONS: &str = " Quit: q/Esc | Scroll Down: j/↓ | Scroll Up: k/↑ | Page Down: CTRL+d | Page Up: CTRL+u | Next: n/→ | Back: b/← | Open in Browser: o";
 
 pub struct Browser {
     display: Display,
@@ -73,7 +73,7 @@ impl Browser {
         scroll_offset: &mut u16,
         page_height: u16,
         history_active: bool,
-    ) -> Result<bool, MyError> {
+    ) -> Result<bool, IsError> {
         if let event::Event::Key(KeyEvent {
                                      code,
                                      modifiers,
@@ -92,7 +92,7 @@ impl Browser {
                     self.change_page(index, links, page, scroll_offset, history_active)?;
                 }
                 KeyCode::Down | KeyCode::Char('j') => {
-                    *scroll_offset = *scroll_offset + 1;
+                    *scroll_offset += 1;
                     self.draw(index, links, page, scroll_offset)?;
                 }
                 KeyCode::Up | KeyCode::Char('k') => {
@@ -104,7 +104,7 @@ impl Browser {
                     self.draw(index, links, page, scroll_offset)?;
                 }
                 KeyCode::Char('d') if modifiers.contains(KeyModifiers::CONTROL) => {
-                    *scroll_offset = *scroll_offset + (page_height / 2);
+                    *scroll_offset += page_height / 2;
                     self.draw(index, links, page, scroll_offset)?;
                 }
                 KeyCode::Char('o') => {
@@ -132,7 +132,7 @@ impl Browser {
         page: &mut Paragraph,
         scroll_offset: &mut u16,
         history_active: bool,
-    ) -> Result<(), MyError> {
+    ) -> Result<(), IsError> {
         self.display.loading()?;
         *page = new_page(index, links, history_active);
         *scroll_offset = 0;
@@ -146,9 +146,9 @@ impl Browser {
         links: &[Link],
         page: &mut Paragraph,
         scroll_offset: &mut u16,
-    ) -> Result<(), MyError> {
+    ) -> Result<(), IsError> {
         self.results_page(page, links.get(*index), *scroll_offset)
-            .map_err(|e| MyError::DisplayError(e.to_string()))?;
+            .map_err(|e| IsError::Display(e.to_string()))?;
         Ok(())
     }
 }

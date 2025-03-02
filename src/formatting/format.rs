@@ -6,15 +6,15 @@ use ratatui::text::{Line, Span, Text};
 use scraper::{ElementRef, Html, Node, Selector};
 use std::collections::{HashMap, HashSet};
 
-static IGNORED_TAGS: Lazy<&HashSet<String>> = Lazy::new(|| Config::get_ignored_tags());
-static BLOCK_ELEMENTS: Lazy<&HashSet<String>> = Lazy::new(|| Config::get_block_elements());
+static IGNORED_TAGS: Lazy<&HashSet<String>> = Lazy::new(Config::get_ignored_tags);
+static BLOCK_ELEMENTS: Lazy<&HashSet<String>> = Lazy::new(Config::get_block_elements);
 static TAG_STYLES: Lazy<&HashMap<String, Style>> = Lazy::new(Config::get_styles);
 
-pub fn to_display(url: &String, res: &String) -> Result<Text<'static>, String> {
+pub fn to_display(url: &str, res: &str) -> Result<Text<'static>, String> {
     let selection_tag = Config::get_selectors(url).unwrap_or_else(|| "body".to_string());
     let selector =
         Selector::parse(&selection_tag).map_err(|_| "Error: Could not parse selector")?;
-    let mut lines = Html::parse_document(&res)
+    let mut lines = Html::parse_document(res)
         .select(&selector)
         .flat_map(|e| to_lines(e, e.value().name() == "pre"))
         .map(|line| standardize_empty(line))
@@ -66,13 +66,13 @@ fn to_lines(element: ElementRef, pre_formatted: bool) -> Vec<Line<'static>> {
 
     element.children().for_each(|node| match node.value() {
         Node::Text(text) => {
-            let mut lines1 = &mut lines;
+            let lines1 = &mut lines;
             if pre_formatted || tag_name == "pre" || !text.trim().is_empty() {
                 let mut current_lines = text
                     .split_inclusive('\n')
-                    .map(|line| create_optionally_styled_line(&*line.to_string(), style))
+                    .map(|line| create_optionally_styled_line(line, style))
                     .collect::<Vec<Line>>();
-                merge_with_previous_line(&mut lines1, &mut current_lines);
+                merge_with_previous_line(lines1, &mut current_lines);
             }
         }
         Node::Element(_) => ElementRef::wrap(node).iter().for_each(|element| {
@@ -166,6 +166,6 @@ fn merge_with_previous_line(lines: &mut Vec<Line<'static>>, new_lines: &mut Vec<
         lines.push(Line::from(spans));
         lines.extend(new_lines.drain(1..));
     } else {
-        lines.extend(new_lines.drain(..));
+        lines.append(new_lines);
     }
 }

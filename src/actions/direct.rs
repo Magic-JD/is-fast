@@ -8,7 +8,7 @@ use ratatui::text::Text;
 pub fn run(title: Option<String>, url: String, piped: bool) {
     let formatted_url = format_url(url);
     let link = Link::new(
-        title.unwrap_or_else(|| "".to_string()),
+        title.unwrap_or_default(),
         formatted_url.to_string(),
         move || scrape(&formatted_url.to_string()),
     );

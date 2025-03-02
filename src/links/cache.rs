@@ -16,12 +16,12 @@ pub fn get_content(link: &Link) -> Paragraph<'static> {
         .unwrap_or_else(|| {
             (link.convert_to_html)()
                 .and_then(|html| to_display(&link.url, &html))
-                .and_then(|result| {
+                .map(|result| {
                     let paragraph = Paragraph::new(result);
                     CACHE.insert(link.clone().url, paragraph.clone());
-                    Ok(paragraph.clone())
+                    paragraph
                 })
-                .unwrap_or_else(|e| Paragraph::new(Text::from(e.clone())).into())
+                .unwrap_or_else(|e| Paragraph::new(Text::from(e.clone())))
         })
 }
 

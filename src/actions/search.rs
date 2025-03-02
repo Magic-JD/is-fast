@@ -9,7 +9,7 @@ pub fn run(search_term: String) {
     let browser = Browser::new();
     let mut links = get_links(&search_term);
     let mut retry_count = 3;
-    while links.len() == 0 && retry_count > 0 {
+    while links.is_empty() && retry_count > 0 {
         //Intermittent ddg failure -> sleep and retry
         sleep(Duration::from_secs(2));
         retry_count -= 1;
@@ -19,11 +19,10 @@ pub fn run(search_term: String) {
 }
 
 fn get_links(search_term: &String) -> Vec<Link> {
-    let links = scrape(&format!(
+    scrape(&format!(
         "https://html.duckduckgo.com/html/?q={}",
         &search_term
     ))
         .map(|html| from_html(&html))
-        .unwrap_or_else(|_| vec![]);
-    links
+        .unwrap_or_else(|_| vec![])
 }

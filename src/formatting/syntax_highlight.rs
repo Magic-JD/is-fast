@@ -9,7 +9,7 @@ use syntect::util::LinesWithEndings;
 static DEFAULT_LANGUAGE: Lazy<String> = Lazy::new(Config::get_default_language);
 static SYNTAX_HIGHLIGHTING_THEME: Lazy<String> = Lazy::new(Config::get_syntax_highlighting_theme);
 static THEME_SET: Lazy<ThemeSet> = Lazy::new(ThemeSet::load_defaults);
-static DEFAULT_THEME: Lazy<Theme> = Lazy::new(|| Theme::default());
+static DEFAULT_THEME: Lazy<Theme> = Lazy::new(Theme::default);
 static SYNTAX_SET: Lazy<SyntaxSet> = Lazy::new(SyntaxSet::load_defaults_newlines);
 
 pub fn highlight_code(text: &str, language: &str) -> Vec<Line<'static>> {
@@ -23,7 +23,7 @@ pub fn highlight_code(text: &str, language: &str) -> Vec<Line<'static>> {
     let theme = theme_set
         .themes
         .get(SYNTAX_HIGHLIGHTING_THEME.as_str())
-        .unwrap_or_else(|| &default_theme);
+        .unwrap_or_else(|| default_theme);
 
     let mut highlighter = HighlightLines::new(syntax, theme);
 
