@@ -2,7 +2,8 @@ use once_cell::sync::Lazy;
 use reqwest::blocking::Client;
 use std::process::Command;
 
-static REQWEST_CLIENT: Lazy<Client> = Lazy::new(|| Client::builder().http1_only().build().ok().unwrap());
+static REQWEST_CLIENT: Lazy<Client> =
+    Lazy::new(|| Client::builder().http1_only().build().ok().unwrap());
 
 pub fn scrape(url: &String) -> Result<String, String> {
     reqwest_scrape(url).or_else(|_| curl_scrape(url))

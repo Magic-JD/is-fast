@@ -1,5 +1,7 @@
 use crossterm::execute;
-use crossterm::terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen};
+use crossterm::terminal::{
+    disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
+};
 use once_cell::sync::Lazy;
 use ratatui::backend::CrosstermBackend;
 use ratatui::layout::{Constraint, Direction, Layout};
@@ -18,15 +20,15 @@ pub struct Display {
 }
 
 impl Display {
-   pub(crate) fn new(instructions: String) -> Self {
-       // This can panic if startup not handled properly.
-       enable_raw_mode().unwrap();
-       let mut out = stdout();
-       execute!(out, EnterAlternateScreen).unwrap();
-       let backend = CrosstermBackend::new(out);
-       let terminal = Terminal::new(backend).unwrap();
+    pub(crate) fn new(instructions: String) -> Self {
+        // This can panic if startup not handled properly.
+        enable_raw_mode().unwrap();
+        let mut out = stdout();
+        execute!(out, EnterAlternateScreen).unwrap();
+        let backend = CrosstermBackend::new(out);
+        let terminal = Terminal::new(backend).unwrap();
         Display {
-            terminal : Mutex::new(terminal),
+            terminal: Mutex::new(terminal),
             instructions,
         }
     }
@@ -48,10 +50,7 @@ impl Display {
     }
 
     pub fn loading(&self) -> std::io::Result<()> {
-        self.draw(&Paragraph::default(),
-                                 " Loading...".to_string(),
-                                 0,
-        )
+        self.draw(&Paragraph::default(), " Loading...".to_string(), 0)
     }
 
     pub(crate) fn draw_table(
@@ -69,23 +68,36 @@ impl Display {
             let available_height = size.height;
             let table_height = row_count.min(available_height);
             if should_reset_position {
+                //Set the offset to 0, then select the last item to correctly scroll the page.
                 *state.offset_mut() = 0;
                 state.select_last();
             }
             let block = self.default_block(&title);
             let layout = Layout::default()
                 .direction(Direction::Vertical)
-                .constraints([
-                    Constraint::Min(1),
-                    Constraint::Length(table_height),
-                    Constraint::Length(2),
-                ].as_ref());
+                .constraints(
+                    [
+                        Constraint::Min(1),
+                        Constraint::Length(table_height),
+                        Constraint::Length(2),
+                    ]
+                    .as_ref(),
+                );
             frame.render_widget(block, frame.area());
             let new_table = table.clone();
             let areas = layout.split(size);
             let area = areas[1];
             frame.render_stateful_widget(new_table, area, state);
-            frame.render_widget(Paragraph::new(Line::from(format!(" [SEARCH] {}", user_input)).style(Style::default().fg(Color::LightBlue).add_modifier(Modifier::BOLD))), areas[2]);
+            frame.render_widget(
+                Paragraph::new(
+                    Line::from(format!(" [SEARCH] {}", user_input)).style(
+                        Style::default()
+                            .fg(Color::LightBlue)
+                            .add_modifier(Modifier::BOLD),
+                    ),
+                ),
+                areas[2],
+            );
         })?;
         Ok(())
     }
@@ -127,5 +139,4 @@ impl Display {
     fn tui_border_span<'a>(&self, text: &'a str) -> Span<'a> {
         Span::styled(text, TUI_BORDER_COLOR.clone().add_modifier(Modifier::BOLD))
     }
-
 }

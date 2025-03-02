@@ -3,7 +3,6 @@ use crate::formatting::syntax_highlight::highlight_code;
 use once_cell::sync::Lazy;
 use ratatui::style::{Style, Styled};
 use ratatui::text::{Line, Span, Text};
-use ratatui::widgets::Paragraph;
 use scraper::{ElementRef, Html, Node, Selector};
 use std::collections::{HashMap, HashSet};
 
@@ -11,7 +10,7 @@ static IGNORED_TAGS: Lazy<&HashSet<String>> = Lazy::new(|| Config::get_ignored_t
 static BLOCK_ELEMENTS: Lazy<&HashSet<String>> = Lazy::new(|| Config::get_block_elements());
 static TAG_STYLES: Lazy<&HashMap<String, Style>> = Lazy::new(Config::get_styles);
 
-pub fn to_display(url: &String, res: &String) -> Result<Paragraph<'static>, String> {
+pub fn to_display(url: &String, res: &String) -> Result<Text<'static>, String> {
     let selection_tag = Config::get_selectors(url).unwrap_or_else(|| "body".to_string());
     let selector =
         Selector::parse(&selection_tag).map_err(|_| "Error: Could not parse selector")?;
@@ -22,14 +21,18 @@ pub fn to_display(url: &String, res: &String) -> Result<Paragraph<'static>, Stri
         .collect::<Vec<Line>>();
     lines.dedup();
     if let Some(first) = lines.first() {
-        if first.spans.iter().all(|span| span.content.trim().is_empty()) {
+        if first
+            .spans
+            .iter()
+            .all(|span| span.content.trim().is_empty())
+        {
             lines.remove(0);
         }
     }
     if lines.is_empty() {
         return Err("No content found".to_string());
     }
-    Ok(Paragraph::new(Text::from(lines)))
+    Ok(Text::from(lines))
 }
 
 fn to_lines(element: ElementRef, pre_formatted: bool) -> Vec<Line<'static>> {
@@ -54,7 +57,8 @@ fn to_lines(element: ElementRef, pre_formatted: bool) -> Vec<Line<'static>> {
 
     let style = TAG_STYLES.get(tag_name);
 
-    if tag_name == "img" { // Show there is an image without rendering the image.
+    if tag_name == "img" {
+        // Show there is an image without rendering the image.
         return vec![create_optionally_styled_line("IMAGE", style)];
     }
 
@@ -110,7 +114,9 @@ fn to_lines(element: ElementRef, pre_formatted: bool) -> Vec<Line<'static>> {
 }
 
 fn extract_language_type(element: ElementRef) -> String {
-    element.value().attr("class")
+    element
+        .value()
+        .attr("class")
         .into_iter()
         .flat_map(|class_attr| class_attr.split_whitespace())
         .filter(|class_name| class_name.starts_with("language-") || class_name.starts_with("lang-"))

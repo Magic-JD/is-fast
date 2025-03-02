@@ -22,7 +22,6 @@ pub struct History {
     display: Display,
 }
 
-
 impl History {
     pub fn new() -> Self {
         History {
@@ -69,7 +68,11 @@ impl History {
                         .get(idx)
                         .map(HistoryData::clone)
                         .inspect(|history_data| {
-                            direct::run(Some(history_data.title.clone()), history_data.url.clone());
+                            direct::run(
+                                Some(history_data.title.clone()),
+                                history_data.url.clone(),
+                                false,
+                            );
                         });
                     break;
                 }
@@ -133,7 +136,7 @@ impl History {
                         "History".to_string(),
                         &mut state,
                         &mut user_search,
-                        true
+                        true,
                     );
                 }
                 Backspace => {
@@ -148,7 +151,7 @@ impl History {
                         "History".to_string(),
                         &mut state,
                         &mut user_search,
-                        true
+                        true,
                     );
                 }
             }
@@ -197,8 +200,11 @@ fn create_rows(history: Vec<HistoryData>, user_search: &String) -> Vec<Row<'stat
         .iter()
         .map(|h| {
             let cells = vec![
-                Cell::from(highlight_title(clip_if_needed(h.title.clone(), 100), user_search.clone()))
-                    .style(Style::default().fg(Color::Yellow)),
+                Cell::from(highlight_title(
+                    clip_if_needed(h.title.clone(), 100),
+                    user_search.clone(),
+                ))
+                .style(Style::default().fg(Color::Yellow)),
                 Cell::from(clip_if_needed(h.url.clone(), 60))
                     .style(Style::default().fg(Color::Green)),
                 Cell::from(date_to_display(h.time.clone())).style(Style::default().fg(Color::Cyan)),
@@ -225,7 +231,7 @@ fn highlight_title(plain_text: String, user_search: String) -> Line<'static> {
         return Line::from(plain_text);
     }
     let mut idx = indices.remove(0);
-    let mut current  = String::new();
+    let mut current = String::new();
     let mut spans = vec![];
     let mut found = false;
     for (c, i) in plain_text.chars().into_iter().zip(0..) {
@@ -236,7 +242,10 @@ fn highlight_title(plain_text: String, user_search: String) -> Line<'static> {
         } else {
             spans.push(Span::from(current.clone()));
             current = String::new();
-            spans.push(Span::styled(String::from(char::try_from(c).unwrap()), Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)));
+            spans.push(Span::styled(
+                String::from(char::try_from(c).unwrap()),
+                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+            ));
             if indices.is_empty() {
                 found = true;
             } else {

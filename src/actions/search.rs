@@ -12,4 +12,3 @@ pub fn run(search_term: String) {
     .unwrap_or_else(|_| vec![]);
     browser.browse(links);
 }
-

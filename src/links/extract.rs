@@ -15,7 +15,7 @@ pub fn from_html(html: &String) -> Vec<Link> {
             Link::new(
                 title.text().collect::<Vec<_>>().join(" ").trim().to_owned(),
                 url.clone(),
-                move || scrape(&format!("https://{}", url).to_string())
+                move || scrape(&format!("https://{}", url).to_string()),
             )
         })
         .collect()

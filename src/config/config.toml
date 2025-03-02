@@ -12,7 +12,7 @@ fg = "Cyan"
 
 [styles.img]
 fg = "Red"
-bold=true
+bold = true
 
 [styles.em]
 italic = true

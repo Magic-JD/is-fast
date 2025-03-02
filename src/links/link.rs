@@ -9,7 +9,7 @@ pub struct Link {
 impl Link {
     pub fn new<F>(title: String, url: String, convert_to_html: F) -> Self
     where
-        F: Fn() -> Result<String, String> + Send + Sync + 'static
+        F: Fn() -> Result<String, String> + Send + Sync + 'static,
     {
         Self {
             url,

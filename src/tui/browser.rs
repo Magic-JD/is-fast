@@ -1,29 +1,25 @@
-use crate::database::connect::add_history;
 use crate::errors::error::MyError;
-use crate::links::cache::{get_content, preload};
+use crate::links::cache::new_page;
 use crate::links::link::Link;
 use crate::tui::display::Display;
 use crossterm::event;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-use ratatui::prelude::Text;
 use ratatui::widgets::Paragraph;
 
 const INSTRUCTIONS: &'static str = " Quit: q/Esc | Scroll Down: j/↓ | Scroll Up: k/↑ | Page Down: CTRL+d | Page Up: CTRL+u | Next: n/→ | Back: b/← | Open in Browser: o";
 
 pub struct Browser {
-    display: Display
+    display: Display,
 }
 
 impl Browser {
     pub fn new() -> Self {
         let display = Display::new(INSTRUCTIONS.to_string());
         display.loading().unwrap();
-        Browser {
-            display,
-        }
+        Browser { display }
     }
 
-    pub fn browse(mut self, links: Vec<Link>){
+    pub fn browse(mut self, links: Vec<Link>) {
         let height = self.display.height();
         if links.is_empty() {
             self.display.shutdown();
@@ -31,18 +27,19 @@ impl Browser {
             return;
         }
         let mut index = 0;
-        let mut page = self.new_page(&mut index, &links);
+        let mut page = new_page(&mut index, &links);
         let mut scroll_offset = 0;
         self.results_page(&page, links.get(index), scroll_offset)
             .unwrap_or_else(|err| self.display.shutdown_with_error(&err.to_string()));
         loop {
-            if self.handle_input(
-                &mut index,
-                &links,
-                &mut page,
-                &mut scroll_offset,
-                height - 5,
-            )
+            if self
+                .handle_input(
+                    &mut index,
+                    &links,
+                    &mut page,
+                    &mut scroll_offset,
+                    height - 5,
+                )
                 .map_err(|e| {
                     eprintln!("Error: {}", e);
                     true
@@ -76,8 +73,8 @@ impl Browser {
         page_height: u16,
     ) -> Result<bool, MyError> {
         if let event::Event::Key(KeyEvent {
-                                     code, modifiers, ..
-                                 }) = event::read()?
+            code, modifiers, ..
+        }) = event::read()?
         {
             match code {
                 KeyCode::Char('q') | KeyCode::Esc => return Ok(true),
@@ -131,22 +128,10 @@ impl Browser {
         scroll_offset: &mut u16,
     ) -> Result<(), MyError> {
         self.display.loading()?;
-        *page = self.new_page(index, links);
+        *page = new_page(index, links);
         *scroll_offset = 0;
         self.draw(index, links, page, scroll_offset)?;
         Ok(())
-    }
-
-    pub fn new_page(&self, index: &mut usize, links: &[Link]) -> Paragraph<'static> {
-        if let Some(link) = links.get(*index + 1) {
-            preload(link);
-        }
-        links
-            .get(*index)
-            .inspect(|link|
-                _ = add_history(link))
-            .map(|link| get_content(link))
-            .unwrap_or_else(|| Paragraph::new(Text::from(String::from("Index out of bounds"))))
     }
 
     fn draw(
@@ -160,5 +145,4 @@ impl Browser {
             .map_err(|e| MyError::DisplayError(e.to_string()))?;
         Ok(())
     }
-
 }

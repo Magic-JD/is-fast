@@ -32,7 +32,11 @@ pub fn highlight_code(text: &str, language: &str) -> Vec<Line<'static>> {
         .collect()
 }
 
-fn highlight_line(syntax_set: &SyntaxSet, highlighter: &mut HighlightLines, line: &str) -> Line<'static> {
+fn highlight_line(
+    syntax_set: &SyntaxSet,
+    highlighter: &mut HighlightLines,
+    line: &str,
+) -> Line<'static> {
     let highlighted = highlighter.highlight_line(line, syntax_set).unwrap();
     let styled_spans = highlighted
         .iter()

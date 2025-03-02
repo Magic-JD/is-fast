@@ -36,12 +36,16 @@ pub fn add_history(link: &Link) -> Result<(), MyError> {
     }
 }
 
-fn insert_row(link: &&Link, url: &String, conn: MutexGuard<Connection>) -> Result<Result<(), MyError>, MyError> {
+fn insert_row(
+    link: &&Link,
+    url: &String,
+    conn: MutexGuard<Connection>,
+) -> Result<Result<(), MyError>, MyError> {
     conn.execute(
         "INSERT INTO history (title, url, time) VALUES (?, ?, datetime('now'))",
         &[&link.title, &url],
     )
-        .map_err(|e| DatabaseError(e))?;
+    .map_err(|e| DatabaseError(e))?;
     Ok(Ok(()))
 }
 
@@ -50,19 +54,18 @@ fn update_row(url: &String, conn: &MutexGuard<Connection>) -> Result<Result<(), 
         "UPDATE history SET time = datetime('now') WHERE url = ?",
         &[&url],
     )
-        .map_err(|e| DatabaseError(e))?;
+    .map_err(|e| DatabaseError(e))?;
     Ok(Ok(()))
 }
 
 fn url_exists(url: &String, conn: &MutexGuard<Connection>) -> bool {
-    conn
-        .query_row(
-            "SELECT 1 FROM history WHERE url = ? LIMIT 1",
-            &[&url],
-            |row| row.get::<_, i32>(0),
-        )
-        .map(|_| true)
-        .unwrap_or(false)
+    conn.query_row(
+        "SELECT 1 FROM history WHERE url = ? LIMIT 1",
+        &[&url],
+        |row| row.get::<_, i32>(0),
+    )
+    .map(|_| true)
+    .unwrap_or(false)
 }
 
 fn remove_http(link: &Link) -> String {
@@ -94,10 +97,7 @@ pub fn get_history() -> Result<Vec<HistoryData>, MyError> {
 
 pub fn remove_history(url: &String) -> Result<(), MyError> {
     let conn = CONNECTION.lock().unwrap();
-    conn.execute(
-        "DELETE FROM history WHERE url = ?",
-        &[&url],
-    )
+    conn.execute("DELETE FROM history WHERE url = ?", &[&url])
         .map_err(|e| DatabaseError(e))?;
     Ok(())
 }

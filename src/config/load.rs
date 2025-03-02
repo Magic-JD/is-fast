@@ -93,11 +93,10 @@ impl Config {
                         format.block_elements = u_format.block_elements;
                     }
                 }
-                let mut syntax = config.syntax.take().unwrap_or(
-                    SyntaxHighlightingSection {
-                        theme: None,
-                        default_language: None,
-                    },);
+                let mut syntax = config.syntax.take().unwrap_or(SyntaxHighlightingSection {
+                    theme: None,
+                    default_language: None,
+                });
                 if let Some(u_syntax) = u_config.syntax {
                     if let Some(theme) = u_syntax.theme {
                         syntax.theme = Some(theme);
@@ -133,8 +132,14 @@ impl Config {
                 .as_ref()
                 .map(|format| format.block_elements.iter().cloned().collect())
                 .unwrap_or_else(|| HashSet::new()),
-            syntax_default_language: config.syntax.as_ref().and_then(|syntax| syntax.default_language.clone()),
-            syntax_highlighting_theme: config.syntax.as_ref().and_then(|syntax| syntax.theme.clone()),
+            syntax_default_language: config
+                .syntax
+                .as_ref()
+                .and_then(|syntax| syntax.default_language.clone()),
+            syntax_highlighting_theme: config
+                .syntax
+                .as_ref()
+                .and_then(|syntax| syntax.theme.clone()),
         }
     }
 
@@ -174,7 +179,8 @@ impl Config {
     }
 
     pub fn get_selectors(url: &String) -> Option<String> {
-        CONFIG.matcher
+        CONFIG
+            .matcher
             .matches(url)
             .iter()
             .find_map(|idx| CONFIG.globs.get(*idx))
@@ -226,4 +232,3 @@ fn parse_color(color: &str) -> Color {
         _ => Color::Reset,
     }
 }
-

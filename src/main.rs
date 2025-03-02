@@ -1,12 +1,13 @@
-mod scrapers;
-mod formatting;
-mod links;
-mod tui;
-mod config;
-mod errors;
 mod actions;
 mod cli;
+mod config;
 mod database;
+mod errors;
+mod formatting;
+mod links;
+mod scrapers;
+mod stout;
+mod tui;
 
 use crate::actions::{direct, history};
 use crate::cli::command::Cli;
@@ -26,12 +27,11 @@ fn main() {
         return;
     }
     if let Some(file) = args.file {
-        view::run(file, args.url);
+        view::run(file, args.url, args.piped);
         return;
-
     }
     if let Some(url) = args.direct {
-        direct::run(None, url);
+        direct::run(None, url, args.piped);
         return;
     }
     let search_term = args.query.map(|query| query.join(" "));
