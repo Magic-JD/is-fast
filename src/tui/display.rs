@@ -117,20 +117,18 @@ impl Display {
         scroll_offset: u16,
     ) -> std::io::Result<()> {
         let mut terminal = self.terminal.lock().unwrap();
-        terminal.clear()?;
+        let block = self.default_block(&title);
+        let paragraph = page.to_owned()
+            .block(block)
+            .style(Style::default().fg(Color::White))
+            .wrap(Wrap { trim: false })
+            .scroll((scroll_offset, 0));
         terminal.draw(|frame| {
             let size = frame.area();
             let layout = Layout::default()
                 .direction(Direction::Vertical)
                 .constraints([Constraint::Percentage(100)].as_ref());
             let area = layout.split(size)[0];
-            let block = self.default_block(&title);
-            let paragraph = Paragraph::from(page.clone())
-                .block(block)
-                .style(Style::default().fg(Color::White))
-                .wrap(Wrap { trim: false })
-                .scroll((scroll_offset, 0));
-
             frame.render_widget(paragraph, area);
         })?;
         Ok(())
