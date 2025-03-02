@@ -102,7 +102,7 @@ pub fn remove_history(url: &String) -> Result<(), MyError> {
     Ok(())
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct HistoryData {
     pub(crate) title: String,
     pub(crate) url: String,

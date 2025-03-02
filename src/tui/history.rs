@@ -21,6 +21,7 @@ pub struct History {
     display: Display,
 }
 
+
 impl History {
     pub fn new() -> Self {
         History {
@@ -34,10 +35,10 @@ impl History {
             eprintln!("No history found");
             return;
         }
-        history.reverse();
+        let mut total_history = history.clone();
         let mut user_search = String::from("");
-        history = order_by_match(&mut history, &mut user_search);
         let mut state = TableState::default();
+        history = order_by_match(&mut history, &mut user_search);
         state.select(Some(history.len().saturating_sub(1)));
         let mut rows = create_rows(history.clone());
         let mut table = create_table(&mut rows);
@@ -104,6 +105,7 @@ impl History {
                     let ref_state = &mut state;
                     let removed = history.remove(ref_state.selected().unwrap_or_else(|| 0));
                     _ = remove_history(&removed.url);
+                    total_history.retain(|item| *item != removed);
                     table = create_table(&mut create_rows(history.clone()));
                     self.display
                         .draw_table(
@@ -119,6 +121,7 @@ impl History {
                     user_search.push(char);
                     history = order_by_match(&mut history, &mut user_search);
                     table = create_table(&mut create_rows(history.clone()));
+                    state.select(Some(history.len().saturating_sub(1)));
                     _ = self.display.draw_table(
                         &table,
                         history.len() as u16,
@@ -129,8 +132,10 @@ impl History {
                 }
                 Backspace => {
                     user_search.pop();
+                    history = total_history.clone();
                     history = order_by_match(&mut history, &mut user_search);
                     table = create_table(&mut create_rows(history.clone()));
+                    state.select(Some(history.len().saturating_sub(1)));
                     _ = self.display.draw_table(
                         &table,
                         history.len() as u16,
@@ -155,6 +160,7 @@ fn order_by_match(history: &mut Vec<HistoryData>, user_search: &mut String) -> V
                 pattern.score(Utf32Str::new(&*h.title, &mut vec![]), &mut matcher),
             )
         })
+        .filter(|(_, score)| score.is_some())
         .collect::<Vec<(&HistoryData, Option<u32>)>>();
     data_2_score.sort_by(|(h1, a), (h2, b)| {
         match a.unwrap_or_else(|| 0).cmp(&b.unwrap_or_else(|| 0)) {
