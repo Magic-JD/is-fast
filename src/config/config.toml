@@ -86,6 +86,7 @@ fg = "Gray"
 "*github.com*" = ".markdown-body"
 "*apnews.com*" = ".RichTextStoryBody"
 "*geeksforgeeks.org*" = ".text"
+"*programiz.com*" = ".editor-contents"
 
 [format]
 ignored_tags = ["script", "style", "noscript", "head", "title", "meta", "input", "button", "svg", "nav", "footer", "header", "aside"]
