@@ -17,7 +17,7 @@ pub fn to_display(url: &str, res: &str) -> Result<Text<'static>, String> {
     let mut lines = Html::parse_document(res)
         .select(&selector)
         .flat_map(|e| to_lines(e, e.value().name() == "pre"))
-        .map(|line| standardize_empty(line))
+        .map(standardize_empty)
         .collect::<Vec<Line>>();
     lines.dedup();
     if let Some(first) = lines.first() {
@@ -70,8 +70,7 @@ fn to_lines(element: ElementRef, pre_formatted: bool) -> Vec<Line<'static>> {
             if pre_formatted || tag_name == "pre" || !text.trim().is_empty() {
                 let mut current_lines = text
                     .split_inclusive('\n')
-                    .map(|line| line.replace("\t", "    "))
-                    .map(|line| create_optionally_styled_line(&line, style))
+                    .map(|line| create_optionally_styled_line(line, style))
                     .collect::<Vec<Line>>();
                 merge_with_previous_line(lines1, &mut current_lines);
             }

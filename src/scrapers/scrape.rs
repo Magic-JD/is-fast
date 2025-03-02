@@ -6,7 +6,13 @@ static REQWEST_CLIENT: Lazy<Client> =
     Lazy::new(|| Client::builder().http1_only().build().ok().unwrap());
 
 pub fn scrape(url: &String) -> Result<String, String> {
-    reqwest_scrape(url).or_else(|_| curl_scrape(url))
+    reqwest_scrape(url)
+        .or_else(|_| curl_scrape(url))
+        .map(|html| sanitize(&html))
+}
+
+pub fn sanitize(html: &str) -> String {
+    html.replace("\t", "    ").replace("\r", "")
 }
 
 fn curl_scrape(url: &str) -> Result<String, String> {
