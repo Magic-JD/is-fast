@@ -10,6 +10,7 @@ use nucleo_matcher::{Config, Matcher, Utf32Str};
 use ratatui::layout::Constraint;
 use ratatui::prelude::Modifier;
 use ratatui::style::{Color, Style};
+use ratatui::text::{Line, Span};
 use ratatui::widgets::{Cell, Row, Table, TableState};
 use std::cmp::Ordering;
 use Action::Delete;
@@ -40,7 +41,7 @@ impl History {
         let mut state = TableState::default();
         history = order_by_match(&mut history, &mut user_search);
         state.select(Some(history.len().saturating_sub(1)));
-        let mut rows = create_rows(history.clone());
+        let mut rows = create_rows(history.clone(), &user_search);
         let mut table = create_table(&mut rows);
         self.display
             .draw_table(
@@ -49,6 +50,7 @@ impl History {
                 "History".to_string(),
                 &mut state,
                 &mut user_search,
+                true,
             )
             .expect("TODO: panic message");
         loop {
@@ -82,6 +84,7 @@ impl History {
                                 "History".to_string(),
                                 state,
                                 &mut user_search,
+                                false,
                             );
                         }
                     }
@@ -97,6 +100,7 @@ impl History {
                                 "History".to_string(),
                                 state,
                                 &mut user_search,
+                                false,
                             );
                         }
                     }
@@ -106,7 +110,7 @@ impl History {
                     let removed = history.remove(ref_state.selected().unwrap_or_else(|| 0));
                     _ = remove_history(&removed.url);
                     total_history.retain(|item| *item != removed);
-                    table = create_table(&mut create_rows(history.clone()));
+                    table = create_table(&mut create_rows(history.clone(), &user_search));
                     self.display
                         .draw_table(
                             &table,
@@ -114,13 +118,14 @@ impl History {
                             "History".to_string(),
                             &mut state,
                             &mut user_search,
+                            false,
                         )
                         .expect("TODO: panic message");
                 }
                 Text(char) => {
                     user_search.push(char);
                     history = order_by_match(&mut history, &mut user_search);
-                    table = create_table(&mut create_rows(history.clone()));
+                    table = create_table(&mut create_rows(history.clone(), &user_search));
                     state.select(Some(history.len().saturating_sub(1)));
                     _ = self.display.draw_table(
                         &table,
@@ -128,13 +133,14 @@ impl History {
                         "History".to_string(),
                         &mut state,
                         &mut user_search,
+                        true
                     );
                 }
                 Backspace => {
                     user_search.pop();
                     history = total_history.clone();
                     history = order_by_match(&mut history, &mut user_search);
-                    table = create_table(&mut create_rows(history.clone()));
+                    table = create_table(&mut create_rows(history.clone(), &user_search));
                     state.select(Some(history.len().saturating_sub(1)));
                     _ = self.display.draw_table(
                         &table,
@@ -142,6 +148,7 @@ impl History {
                         "History".to_string(),
                         &mut state,
                         &mut user_search,
+                        true
                     );
                 }
             }
@@ -185,13 +192,13 @@ fn create_table<'a>(rows: &mut Vec<Row<'a>>) -> Table<'a> {
     table
 }
 
-fn create_rows(history: Vec<HistoryData>) -> Vec<Row<'static>> {
+fn create_rows(history: Vec<HistoryData>, user_search: &String) -> Vec<Row<'static>> {
     let rows: Vec<Row> = history
         .iter()
         .map(|h| {
             let cells = vec![
-                Cell::from(clip_if_needed(h.title.clone(), 100))
-                    .style(Style::default().fg(Color::Red)),
+                Cell::from(highlight_title(clip_if_needed(h.title.clone(), 100), user_search.clone()))
+                    .style(Style::default().fg(Color::Yellow)),
                 Cell::from(clip_if_needed(h.url.clone(), 60))
                     .style(Style::default().fg(Color::Green)),
                 Cell::from(date_to_display(h.time.clone())).style(Style::default().fg(Color::Cyan)),
@@ -200,6 +207,45 @@ fn create_rows(history: Vec<HistoryData>) -> Vec<Row<'static>> {
         })
         .collect();
     rows
+}
+
+fn highlight_title(plain_text: String, user_search: String) -> Line<'static> {
+    if user_search.is_empty() || plain_text.is_empty() {
+        return Line::from(plain_text);
+    }
+    let mut matcher = Matcher::new(Config::DEFAULT);
+
+    let mut indices = vec![];
+    let mut binding1 = vec![];
+    let mut binding2 = vec![];
+    let haystack = Utf32Str::new(&plain_text, &mut binding1);
+    let needle = Utf32Str::new(&user_search, &mut binding2);
+    matcher.fuzzy_indices(haystack, needle, &mut indices);
+    if indices.is_empty() {
+        return Line::from(plain_text);
+    }
+    let mut idx = indices.remove(0);
+    let mut current  = String::new();
+    let mut spans = vec![];
+    let mut found = false;
+    for (c, i) in plain_text.chars().into_iter().zip(0..) {
+        if found {
+            current.push(char::try_from(c).unwrap());
+        } else if i < idx {
+            current.push(char::try_from(c).unwrap());
+        } else {
+            spans.push(Span::from(current.clone()));
+            current = String::new();
+            spans.push(Span::styled(String::from(char::try_from(c).unwrap()), Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)));
+            if indices.is_empty() {
+                found = true;
+            } else {
+                idx = indices.remove(0);
+            }
+        }
+    }
+    spans.push(Span::from(current));
+    Line::from(spans)
 }
 
 fn handle_input() -> Action {

@@ -61,12 +61,17 @@ impl Display {
         title: String,
         state: &mut TableState,
         user_input: &mut String,
+        should_reset_position: bool,
     ) -> std::io::Result<()> {
         let mut terminal = self.terminal.lock().unwrap();
         terminal.draw(|frame| {
             let size = frame.area();
             let available_height = size.height;
             let table_height = row_count.min(available_height);
+            if should_reset_position {
+                *state.offset_mut() = 0;
+                state.select_last();
+            }
             let block = self.default_block(&title);
             let layout = Layout::default()
                 .direction(Direction::Vertical)
