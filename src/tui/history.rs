@@ -4,7 +4,7 @@ use crate::tui::display::Display;
 use crate::tui::history::Action::{Backspace, Continue, Down, Exit, Open, Text, Up};
 use chrono::{NaiveDateTime, Utc};
 use crossterm::event;
-use crossterm::event::{KeyCode, KeyEvent};
+use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
 use nucleo_matcher::pattern::{CaseMatching, Normalization, Pattern};
 use nucleo_matcher::{Config, Matcher, Utf32Str};
 use ratatui::layout::Constraint;
@@ -261,7 +261,7 @@ fn highlight_title(plain_text: String, user_search: String) -> Line<'static> {
 fn handle_input() -> Action {
     event::read()
         .map(|event| {
-            if let event::Event::Key(KeyEvent { code, .. }) = event {
+            if let event::Event::Key(KeyEvent { code, kind: KeyEventKind::Press, .. }) = event {
                 return match code {
                     KeyCode::Esc => Exit,
                     KeyCode::Up => Up,

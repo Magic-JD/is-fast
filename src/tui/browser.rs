@@ -3,7 +3,7 @@ use crate::links::cache::new_page;
 use crate::links::link::Link;
 use crate::tui::display::Display;
 use crossterm::event;
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::widgets::Paragraph;
 
 const INSTRUCTIONS: &'static str = " Quit: q/Esc | Scroll Down: j/↓ | Scroll Up: k/↑ | Page Down: CTRL+d | Page Up: CTRL+u | Next: n/→ | Back: b/← | Open in Browser: o";
@@ -75,8 +75,11 @@ impl Browser {
         history_active: bool,
     ) -> Result<bool, MyError> {
         if let event::Event::Key(KeyEvent {
-            code, modifiers, ..
-        }) = event::read()?
+                                     code,
+                                     modifiers,
+                                     kind: KeyEventKind::Press,
+                                     ..
+                                 }) = event::read()?
         {
             match code {
                 KeyCode::Char('q') | KeyCode::Esc => return Ok(true),
