@@ -262,6 +262,34 @@ is-fast -f example.html -u example.com
 
 ---
 
+# 🔄 Using `--piped` to Output to Standard Output
+
+Instead of rendering the content inside the TUI viewer, `is-fast` provides an option to output the processed result directly to **standard output (stdout)**. This allows you to **pipe the output** to other commands or **write it to a file**.
+
+### `--piped`
+**Output the result to standard output instead of rendering in the TUI.**
+
+This option requires either `--file` or `--direct` to specify the input source.
+
+#### Example Usage:
+```sh
+# Output the contents of a local file to stdout
+is-fast --file example.html --piped
+
+# Fetch and output the contents of a URL to stdout
+is-fast --direct "https://example.com" --piped
+
+# Save the output to a file
+is-fast --file example.html --piped > output.txt
+
+# Pipe the output into another command
+is-fast --direct "https://example.com" --piped | grep "keyword"
+```
+
+Using `--piped` makes `is-fast` behave more like a **command-line utility** for extracting and processing content, rather than an interactive TUI viewer.
+
+---
+
 # 📜 Viewing History in `is-fast`
 
 `is-fast` allows you to view and select previously visited pages using the `--history` option.
