@@ -13,5 +13,5 @@ pub fn run(file: String, url: Option<String>, piped: bool) {
         return;
     }
     let link = Link::new(file, url, move || Ok(html.clone()));
-    Browser::new().browse(vec![link]);
+    Browser::new().browse(vec![link], false);
 }

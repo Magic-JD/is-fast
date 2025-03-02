@@ -225,7 +225,8 @@ fn highlight_title(plain_text: String, user_search: String) -> Line<'static> {
     let mut binding1 = vec![];
     let mut binding2 = vec![];
     let haystack = Utf32Str::new(&plain_text, &mut binding1);
-    let needle = Utf32Str::new(&user_search, &mut binding2);
+    let lowercase = user_search.to_lowercase(); // Panics with uppercase??? Lowercase still matches
+    let needle = Utf32Str::new(&lowercase, &mut binding2);
     matcher.fuzzy_indices(haystack, needle, &mut indices);
     if indices.is_empty() {
         return Line::from(plain_text);

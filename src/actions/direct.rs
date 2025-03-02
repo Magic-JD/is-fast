@@ -20,7 +20,7 @@ pub fn run(title: Option<String>, url: String, piped: bool) {
         );
         return;
     }
-    Browser::new().browse(vec![link]);
+    Browser::new().browse(vec![link], false);
 }
 
 fn format_url(url: String) -> String {

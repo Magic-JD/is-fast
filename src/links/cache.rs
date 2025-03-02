@@ -32,13 +32,13 @@ pub fn preload(link: &Link) {
     });
 }
 
-pub fn new_page(index: &mut usize, links: &[Link]) -> Paragraph<'static> {
+pub fn new_page(index: &mut usize, links: &[Link], history_active: bool) -> Paragraph<'static> {
     if let Some(link) = links.get(*index + 1) {
         preload(link);
     }
     links
         .get(*index)
-        .inspect(|link| _ = add_history(link))
+        .inspect(|link| if history_active { _ = add_history(link) })
         .map(|link| get_content(link))
         .unwrap_or_else(|| Paragraph::new(Text::from(String::from("Index out of bounds"))))
 }

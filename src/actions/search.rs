@@ -10,5 +10,5 @@ pub fn run(search_term: String) {
     ))
     .map(|html| from_html(&html))
     .unwrap_or_else(|_| vec![]);
-    browser.browse(links);
+    browser.browse(links, true);
 }

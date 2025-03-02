@@ -19,7 +19,7 @@ impl Browser {
         Browser { display }
     }
 
-    pub fn browse(mut self, links: Vec<Link>) {
+    pub fn browse(mut self, links: Vec<Link>, history_active: bool) {
         let height = self.display.height();
         if links.is_empty() {
             self.display.shutdown();
@@ -27,7 +27,7 @@ impl Browser {
             return;
         }
         let mut index = 0;
-        let mut page = new_page(&mut index, &links);
+        let mut page = new_page(&mut index, &links, history_active);
         let mut scroll_offset = 0;
         self.results_page(&page, links.get(index), scroll_offset)
             .unwrap_or_else(|err| self.display.shutdown_with_error(&err.to_string()));
@@ -39,6 +39,7 @@ impl Browser {
                     &mut page,
                     &mut scroll_offset,
                     height - 5,
+                    history_active,
                 )
                 .map_err(|e| {
                     eprintln!("Error: {}", e);
@@ -71,6 +72,7 @@ impl Browser {
         page: &mut Paragraph<'static>,
         scroll_offset: &mut u16,
         page_height: u16,
+        history_active: bool,
     ) -> Result<bool, MyError> {
         if let event::Event::Key(KeyEvent {
             code, modifiers, ..
@@ -80,11 +82,11 @@ impl Browser {
                 KeyCode::Char('q') | KeyCode::Esc => return Ok(true),
                 KeyCode::Char('n') | KeyCode::Right => {
                     *index = (*index + 1).min(links.len().saturating_sub(1));
-                    self.change_page(index, links, page, scroll_offset)?;
+                    self.change_page(index, links, page, scroll_offset, history_active)?;
                 }
                 KeyCode::Char('b') | KeyCode::Left if *index > 0 => {
                     *index = index.saturating_sub(1);
-                    self.change_page(index, links, page, scroll_offset)?;
+                    self.change_page(index, links, page, scroll_offset, history_active)?;
                 }
                 KeyCode::Down | KeyCode::Char('j') => {
                     *scroll_offset = *scroll_offset + 1;
@@ -126,9 +128,10 @@ impl Browser {
         links: &[Link],
         page: &mut Paragraph,
         scroll_offset: &mut u16,
+        history_active: bool,
     ) -> Result<(), MyError> {
         self.display.loading()?;
-        *page = new_page(index, links);
+        *page = new_page(index, links, history_active);
         *scroll_offset = 0;
         self.draw(index, links, page, scroll_offset)?;
         Ok(())
