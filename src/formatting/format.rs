@@ -70,7 +70,8 @@ fn to_lines(element: ElementRef, pre_formatted: bool) -> Vec<Line<'static>> {
             if pre_formatted || tag_name == "pre" || !text.trim().is_empty() {
                 let mut current_lines = text
                     .split_inclusive('\n')
-                    .map(|line| create_optionally_styled_line(line, style))
+                    .map(|line| line.replace("\t", "    "))
+                    .map(|line| create_optionally_styled_line(&line, style))
                     .collect::<Vec<Line>>();
                 merge_with_previous_line(lines1, &mut current_lines);
             }

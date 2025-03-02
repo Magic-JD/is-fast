@@ -84,10 +84,9 @@ impl Display {
                     .as_ref(),
                 );
             frame.render_widget(block, frame.area());
-            let new_table = table.clone();
             let areas = layout.split(size);
             let area = areas[1];
-            frame.render_stateful_widget(new_table, area, state);
+            frame.render_stateful_widget(table, area, state);
             frame.render_widget(
                 Paragraph::new(
                     Line::from(format!(" [SEARCH] {}", user_input)).style(
