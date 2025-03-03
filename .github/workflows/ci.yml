@@ -62,7 +62,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Run tests
-        run: cargo test --all --verbose
+        run: cargo tarpaulin --out Xml --output-dir target/llvm-cov
 
       - name: Upload Coverage Report
         uses: actions/upload-artifact@v4
