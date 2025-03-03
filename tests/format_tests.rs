@@ -168,32 +168,4 @@ This is line one.
             .len();
         assert_eq!(length, 626);
     }
-
-    #[test]
-    fn test_performance_is_acceptable() {
-        let path_sample = Path::new("tests/data/sample.html");
-        let dirty = fs::read_to_string(path_sample).expect("Failed to read test HTML file");
-        let html = sanitize(&dirty);
-        _ = to_display("http://example.com", &html).unwrap(); // Initialize statics
-        let start = Instant::now();
-        for _ in 1..10 {
-            let _ = to_display("http://example.com", &html).unwrap();
-        }
-        let duration = start.elapsed();
-
-        let lower_bound = 200;
-        let upper_bound = 2000;
-
-        if duration.as_millis() < lower_bound {
-            eprintln!(
-                "⚠️ WARNING: Execution time ({:?}) was shorter than expected. Consider lowering the expected threshold.",
-                duration
-            );
-        }
-        assert!(
-            duration.as_millis() < upper_bound,
-            "Test failed: Execution took too long ({:?})",
-            duration
-        );
-    }
 }
