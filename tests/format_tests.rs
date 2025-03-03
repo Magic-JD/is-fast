@@ -8,7 +8,6 @@ mod tests {
     use ratatui::text::{Line, Span, Text};
     use std::fs;
     use std::path::Path;
-    use std::time::Instant;
 
     #[test]
     fn test_to_display_simple_html() {
