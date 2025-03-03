@@ -93,5 +93,5 @@ ignored_tags = ["script", "style", "noscript", "head", "title", "meta", "input",
 block_elements = ["p", "div", "table", "article", "img", "section", "pre", "blockquote", "ul", "ol", "dl", "dt", "dd", "li", "h1", "h2", "h3", "h4", "h5", "h6"]
 
 [syntax]
-default_language = "plain"
+default_language = "rust"
 theme = "base16-ocean.dark"
