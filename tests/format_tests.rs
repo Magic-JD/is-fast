@@ -165,6 +165,6 @@ This is line one.
             .flat_map(|line| line.spans.clone())
             .collect::<Vec<Span>>()
             .len();
-        assert_eq!(length, 626);
+        assert_eq!(length, 622);
     }
 }

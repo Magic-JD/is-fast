@@ -1,367 +1,116 @@
-Tutorial Series: How To Code in JavaScript
+Rust By Example
 
-1/37 How To Use the JavaScript Developer Console 
+for loops
 
-2/37 How To Add JavaScript to HTML 
+for and range
 
-3/37 How To Write Your First JavaScript Program 
+The for in construct can be used to iterate through an Iterator.
+                        One of the easiest ways to create an iterator is to use the range
+                        notation a..b. This yields values from a (inclusive) to b
+                        (exclusive) in steps of one.
 
-4/37 Understanding Syntax and Code Structure in JavaScript 
+Let's write FizzBuzz using for instead of while.
 
-5/37 How To Write Comments in JavaScript 
-
-6/37 Understanding Data Types in JavaScript 
-
-7/37 How To Work with Strings in JavaScript 
-
-8/37 How To Index, Split, and Manipulate Strings in JavaScript 
-
-9/37 How To Convert Data Types in JavaScript 
-
-10/37 Understanding Variables, Scope, and Hoisting in JavaScript 
-
-11/37 How To Do Math in JavaScript with Operators 
-
-12/37 Understanding Comparison and Logical Operators in JavaScript 
-
-13/37 Understanding Arrays in JavaScript 
-
-14/37 How To Use Array Methods in JavaScript: Mutator Methods 
-
-15/37 How To Use Array Methods in JavaScript: Accessor Methods 
-
-16/37 How To Use Array Methods in JavaScript: Iteration Methods 
-
-17/37 Understanding Objects in JavaScript 
-
-18/37 Understanding Date and Time in JavaScript 
-
-19/37 Understanding Events in JavaScript 
-
-20/37 How To Work with JSON in JavaScript 
-
-21/37 How To Write Conditional Statements in JavaScript 
-
-22/37 How To Use the Switch Statement in JavaScript 
-
-23/37 Using While Loops and Do...While Loops in JavaScript 
-
-24/37 JavaScript For Loops 
-
-25/37 How To Define Functions in JavaScript 
-
-26/37 Understanding Prototypes and Inheritance in JavaScript 
-
-27/37 Understanding Classes in JavaScript 
-
-28/37 How To Use Object Methods in JavaScript 
-
-29/37 Understanding This, Bind, Call, and Apply in JavaScript 
-
-30/37 Understanding Map and Set Objects in JavaScript 
-
-31/37 Understanding Generators in JavaScript 
-
-32/37 Understanding Default Parameters in JavaScript 
-
-33/37 Understanding Destructuring, Rest Parameters, and Spread Syntax in JavaScript 
-
-34/37 Understanding Template Literals in JavaScript 
-
-35/37 Understanding Arrow Functions in JavaScript 
-
-36/37 Understanding the Event Loop, Callbacks, Promises, and Async/Await in JavaScript 
-
-37/37 Understanding Modules and Import and Export Statements in JavaScript 
-
-Tutorial
-
-Using While Loops and Do...While Loops in JavaScript
-
-Updated on August 26, 2021
-
-JavaScript
-
-Development
-
-IMAGE
-
-IMAGE
-
-Tania Rascia andLisa Tagliaferri
-
-IMAGE
-
-Introduction
-
-Automation is the technique of making a system operate automatically; in programming, we use loops to automate repetitious tasks. Loops are one of the most useful features of programming languages, and in this article we will learn about the while and do...while loops in JavaScript.
-
-The while and do...while statements in JavaScript are similar to conditional statements, which are blocks of code that will execute if a specified condition results in true. Unlike an if statement, which only evaluates once, a loop will run multiple times until the condition no longer evaluates to true.
-
-Another common type of loop you will encounter is the for statement, which executes a set number of times. while and do...while loops are conditionally based, and therefore it is not necessary to know beforehand how many times the loop will run.
-
-While Loop
-
-In JavaScript, a while statement is a loop that executes as long as the specified condition evaluates to true.
-
-The syntax is very similar to an if statement, as seen below.
-
-while (condition) {
-    // execute code as long as condition is true
+fn main() {
+    // `n` will take the values: 1, 2, ..., 100 in each iteration
+    for n in 1..101 {
+        if n % 15 == 0 {
+            println!("fizzbuzz");
+        } else if n % 3 == 0 {
+            println!("fizz");
+        } else if n % 5 == 0 {
+            println!("buzz");
+        } else {
+            println!("{}", n);
+        }
+    }
 }
 
-The while statement is the most basic loop to construct in JavaScript.
+Alternatively, a..=b can be used for a range that is inclusive on both ends.
+                        The above can be written as:
 
-As an example, let’s say we have an aquarium that has a population limit. For each iteration of the loop, we will add one fish. Once the aquarium has 10 fish, the population limit will be reached, and the program will cease to add more fish.
-
-aquarium.js
-
-// Set population limit of aquarium to 10
-const popLimit = 10;
-
-// Start off with 0 fish
-let fish = 0;
-
-// Initiate while loop to run until fish reaches population limit
-while (fish < popLimit) {
-    // add one fish for each iteration
-    fish++;
-    console.log("There's room for " + (popLimit - fish) + " more fish.");
+fn main() {
+    // `n` will take the values: 1, 2, ..., 100 in each iteration
+    for n in 1..=100 {
+        if n % 15 == 0 {
+            println!("fizzbuzz");
+        } else if n % 3 == 0 {
+            println!("fizz");
+        } else if n % 5 == 0 {
+            println!("buzz");
+        } else {
+            println!("{}", n);
+        }
+    }
 }
 
-Once we run the above program, we’ll receive the following output, showing the iteration of the program through the while loop until the conditions are no longer evaluated as true.
+for and iterators
 
-OutputThere's room for 9 more fish.
-There's room for 8 more fish.
-There's room for 7 more fish.
-There's room for 6 more fish.
-There's room for 5 more fish.
-There's room for 4 more fish.
-There's room for 3 more fish.
-There's room for 2 more fish.
-There's room for 1 more fish.
-There's room for 0 more fish.
+The for in construct is able to interact with an Iterator in several ways.
+                        As discussed in the section on the Iterator trait, by default the for
+                        loop will apply the into_iter function to the collection. However, this is
+                        not the only means of converting collections into iterators.
 
-In our example, we set our while loop to run as long as the number of fish was less than the population limit of the aquarium. For each iteration, one fish is added to the aquarium until all 10 spots are filled. At that point, the loop stops running.
+into_iter, iter and iter_mut all handle the conversion of a collection
+                        into an iterator in different ways, by providing different views on the data
+                        within.
 
-Infinite Loops
+iter - This borrows each element of the collection through each iteration.
+                            Thus leaving the collection untouched and available for reuse after the loop.
 
-An infinite loop, as the name suggests, is a loop that will keep running forever. If you accidentally make an infinite loop, it could crash your browser or computer. It is important to be aware of infinite loops so you can avoid them.
+fn main() {
+    let names = vec!["Bob", "Frank", "Ferris"];
 
-A common infinite loop occurs when the condition of the while statement is set to true. Below is an example of code that will run forever. It is not necessary to test any infinite loops.
+    for name in names.iter() {
+        match name {
+            &"Ferris" => println!("There is a rustacean among us!"),
+            // TODO ^ Try deleting the & and matching just "Ferris"
+            _ => println!("Hello {}", name),
+        }
+    }
 
-infiniteLoop.js
-
-// Initiate an infinite loop
-while (true) {
-    // execute code forever
+    println!("names: {:?}", names);
 }
 
-An infinite loop will run forever, but the program can be terminated with the break keyword.
+into_iter - This consumes the collection so that on each iteration the exact
+                            data is provided. Once the collection has been consumed it is no longer
+                            available for reuse as it has been 'moved' within the loop.
 
-In the below example, we will add an if statement to the while loop, and when that condition is met, we will terminate the loop with break.
+fn main() {
+    let names = vec!["Bob", "Frank", "Ferris"];
 
-polarBears.js
+    for name in names.into_iter() {
+        match name {
+            "Ferris" => println!("There is a rustacean among us!"),
+            _ => println!("Hello {}", name),
+        }
+    }
 
-// Set a condition to true
-const iceCapsAreMelting = true;
-let polarBears = 5;
-
-// Initiate infinite loop
-while (iceCapsAreMelting) {
-  console.log(`There are ${polarBears} polar bears.`);
-  polarBears--;
-  // Terminate infinite loop when following condition is true
-  if (polarBears === 0) {
-    console.log("There are no polar bears left.");
-      break;
-  }
+    println!("names: {:?}", names);
+    // FIXME ^ Comment out this line
 }
 
-When we run the code above, the output will be as follows.
+iter_mut - This mutably borrows each element of the collection, allowing for
+                            the collection to be modified in place.
 
-OutputThere are 5 polar bears.
-There are 4 polar bears.
-There are 3 polar bears.
-There are 2 polar bears.
-There are 1 polar bears.
-There are no polar bears left.
+fn main() {
+    let mut names = vec!["Bob", "Frank", "Ferris"];
 
-Note that this is not necessarily a practical method of creating and terminating a loop, but break is a useful keyword to be aware of.
+    for name in names.iter_mut() {
+        *name = match name {
+            &mut "Ferris" => "There is a rustacean among us!",
+            _ => "Hello",
+        }
+    }
 
-Do…While Loop
+    println!("names: {:?}", names);
+}
 
-We already learned about the while loop, which executes a block of code for as long as a specified condition is true. Building on that is the do...while statement, which is very similar to while with the major difference being that a do...while loop will always execute once, even if the condition is never true.
+In the above snippets note the type of match branch, that is the key
+                        difference in the types of iteration. The difference in type then of course
+                        implies differing actions that are able to be performed.
 
-Below we will demonstrate the syntax of the do...while loop.
+See also:
 
-do {
-    // execute code
-} while (condition);
+Iterator
 
-As you can see, the do portion of the loop comes first, and is followed by while (condition). The code block will run, then the condition will be tested as it is in a normal while loop.
-
-To test this, we can set a variable to 0, increment it inside the do statement, and set our condition to false.
-
-falseCondition.js
-
-// Set variable to 0
-let x = 0;
-
-do {
-    // Increment variable by 1
-    x++;
-    console.log(x);
-} while (false);
-
-Output1
-
-Our output came out to 1, meaning that the code block iterated through the loop once (from 0) before it was stopped by an unsuccessful while condition.
-
-While keeping in mind that the loop will iterate at least once, the do...while loop can be used for the same purposes as a while loop.
-
-Conclusion
-
-In this tutorial, we learned about the while loop, the do...while loop, and infinite loops in JavaScript.
-
-Automation of repetitive tasks is an extremely important part of programming, and these loops can help make your programs more efficient and concise.
-
-To learn more, read about the while and do...while loops on the Mozilla Developer Network.
-
-Thanks for learning with the DigitalOcean Community. Check out our offerings for compute, storage, networking, and managed databases.
-
-Learn more about our products
-
-Next in series: JavaScript For Loops ->
-
-Tutorial Series:How To Code in JavaScript
-
-JavaScript is a high-level, object-based, dynamic scripting language popular as a tool for making webpages interactive.
-
-JavaScriptDevelopment
-
-Browse Series: 37 articles
-
-1/37 How To Use the JavaScript Developer Console 
-
-2/37 How To Add JavaScript to HTML 
-
-3/37 How To Write Your First JavaScript Program 
-
-About the author(s)
-
-IMAGE
-
-Tania Rascia
-
-See author profile
-
-Category:
-
-Tutorial
-
-Tags:
-
-JavaScript
-
-Development
-
-Still looking for an answer?
-Ask a questionSearch for more help
-
-Was this helpful?
-
-Leave a comment
-
-This textbox defaults to usingMarkdownto format your answer.
-
-You can type!refin this text area to quickly search our full set oftutorials, documentation & marketplace offerings and insert the link!
-
-Sign In or Sign Up to Comment
-
-IMAGE
-This work is licensed under a Creative Commons Attribution-NonCommercial- ShareAlike 4.0 International License.
-
-Try DigitalOcean for free
-
-Click below to sign up and get$200of creditto try our products over 60 days!
-
-Sign up
-
-Popular Topics
-
-AI/ML
-
-Ubuntu
-
-Linux Basics
-
-JavaScript
-
-Python
-
-MySQL
-
-Docker
-
-Kubernetes
-
-All tutorials
-
-Talk to an expert
-
-Join the Tech Talk
-
-Success!Thank you! Please check your email for further details.
-
-Please complete your information!
-
-IMAGE
-
-Become a contributor for community
-
-Get paid to write technical tutorials and select a tech-focused charity to receive a matching donation.
-
-Sign Up
-
-IMAGE
-
-DigitalOcean Documentation
-
-Full documentation for every DigitalOcean product.
-
-Learn more
-
-IMAGE
-
-Resources for startups and SMBs
-
-The Wave has everything you need to know about building a business, from raising funding to marketing your product.
-
-Learn more
-
-Get our newsletter
-
-Stay up to date by signing up for DigitalOcean’s Infrastructure as a Newsletter.
-
-New accounts only. By submitting your email you agree to ourPrivacy Policy
-
-The developer cloud
-
-Scale up as you grow — whether you're running one virtual machine or ten thousand.
-
-View all products
-
-IMAGE
-
-Get started for free
-
-Sign up and get $200 in credit for your first 60 days with DigitalOcean.*
-
-Get started
-
-IMAGE
-
-*This promotional offer applies to new accounts only.
-
-© 2025 DigitalOcean, LLC.Sitemap.
