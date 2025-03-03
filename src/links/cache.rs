@@ -21,15 +21,8 @@ pub fn get_content(link: &Link) -> Paragraph<'static> {
                     CACHE.insert(link.clone().url, paragraph.clone());
                     paragraph
                 })
-                .unwrap_or_else(|e| Paragraph::new(Text::from(e.clone())))
+                .unwrap_or_else(|e| Paragraph::new(Text::from(e.to_string())))
         })
-}
-
-pub fn preload(link: &Link) {
-    let clone = link.clone();
-    thread::spawn(move || {
-        get_content(&clone);
-    });
 }
 
 pub fn new_page(index: &mut usize, links: &[Link], history_active: bool) -> Paragraph<'static> {
@@ -45,4 +38,11 @@ pub fn new_page(index: &mut usize, links: &[Link], history_active: bool) -> Para
         })
         .map(|link| get_content(link))
         .unwrap_or_else(|| Paragraph::new(Text::from(String::from("Index out of bounds"))))
+}
+
+fn preload(link: &Link) {
+    let clone = link.clone();
+    thread::spawn(move || {
+        get_content(&clone);
+    });
 }

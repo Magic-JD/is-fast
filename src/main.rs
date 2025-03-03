@@ -20,24 +20,15 @@ fn main() {
     let args = Cli::parse();
     if args.generate_config {
         generate_config::run();
-        return;
-    }
-    if args.history {
+    } else if args.history {
         history::run();
-        return;
-    }
-    if let Some(file) = args.file {
+    } else if let Some(file) = args.file {
         view::run(file, args.url, args.piped);
-        return;
-    }
-    if let Some(url) = args.direct {
+    } else if let Some(url) = args.direct {
         direct::run(None, url, args.piped);
-        return;
-    }
-    let search_term = args.query.map(|query| query.join(" "));
-    if let Some(search_term) = search_term {
+    } else if let Some(search_term) = args.query.map(|query| query.join(" ")) {
         search::run(search_term);
-        return;
+    } else {
+        eprintln!("No actions term provided!");
     }
-    eprintln!("No actions term provided!");
 }

@@ -16,4 +16,7 @@ pub enum IsError {
 
     #[error("Access errors: {0}")]
     Access(String),
+
+    #[error("Scrape errors: {0}")]
+    Scrape(String),
 }

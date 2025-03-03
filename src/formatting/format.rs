@@ -1,4 +1,6 @@
 use crate::config::load::Config;
+use crate::errors::error::IsError;
+use crate::errors::error::IsError::General;
 use crate::formatting::syntax_highlight::highlight_code;
 use once_cell::sync::Lazy;
 use ratatui::style::{Style, Styled};
@@ -10,10 +12,10 @@ static IGNORED_TAGS: Lazy<HashSet<String>> = Lazy::new(Config::get_ignored_tags)
 static BLOCK_ELEMENTS: Lazy<HashSet<String>> = Lazy::new(Config::get_block_elements);
 static TAG_STYLES: Lazy<HashMap<String, Style>> = Lazy::new(Config::get_styles);
 
-pub fn to_display(url: &str, res: &str) -> Result<Text<'static>, String> {
+pub fn to_display(url: &str, res: &str) -> Result<Text<'static>, IsError> {
     let selection_tag = Config::get_selectors(url).unwrap_or_else(|| "body".to_string());
-    let selector =
-        Selector::parse(&selection_tag).map_err(|_| "Error: Could not parse selector")?;
+    let selector = Selector::parse(&selection_tag)
+        .map_err(|_| General("Error: Could not parse selector".into()))?;
     let mut lines = Html::parse_document(res)
         .select(&selector)
         .flat_map(|e| to_lines(e, e.value().name() == "pre"))
@@ -30,7 +32,7 @@ pub fn to_display(url: &str, res: &str) -> Result<Text<'static>, String> {
         }
     }
     if lines.is_empty() {
-        return Err("No content found".to_string());
+        return Err(General("No content found".into()));
     }
     Ok(Text::from(lines))
 }

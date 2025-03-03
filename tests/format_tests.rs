@@ -97,7 +97,10 @@ mod tests {
         let result = to_display(url, html);
 
         assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), "No content found");
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "General errors: No content found"
+        );
     }
 
     #[test]
