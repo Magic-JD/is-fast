@@ -38,10 +38,10 @@ mod tests {
         let temp_dir = TempDir::new().expect("Failed to create temp dir");
         let fake_home = temp_dir.path();
 
-        env::set_var("HOME", fake_home);
+        env::set_var("XDG_CONFIG_HOME", fake_home);
         run();
 
-        let config_path = fake_home.join(".config/is-fast/config.toml");
+        let config_path = fake_home.join("is-fast/config.toml");
         assert!(config_path.exists(), "Config file should be created");
     }
 
@@ -53,9 +53,9 @@ mod tests {
         let temp_dir = TempDir::new().expect("Failed to create temp dir");
         let fake_home = temp_dir.path();
 
-        env::set_var("HOME", fake_home);
+        env::set_var("XDG_CONFIG_HOME", fake_home);
 
-        let config_path = fake_home.join(".config/is-fast/config.toml");
+        let config_path = fake_home.join("is-fast/config.toml");
         fs::create_dir_all(config_path.parent().unwrap()).unwrap();
         fs::write(&config_path, "existing content").unwrap();
 
