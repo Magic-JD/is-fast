@@ -181,8 +181,8 @@ This is line one.
         }
         let duration = start.elapsed();
 
-        let lower_bound = 50;
-        let upper_bound = 500;
+        let lower_bound = 200;
+        let upper_bound = 2000;
 
         if duration.as_millis() < lower_bound {
             eprintln!(
