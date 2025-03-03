@@ -40,12 +40,11 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Run Clippy
-        run: cargo clippy --all-targets -- -D warnings  # Fail on warnings
+        run: cargo clippy --all-targets -- -D warnings
 
   test:
     name: Run Tests
     runs-on: ubuntu-latest
-    needs: [ rustfmt, clippy ]  # Tests only run if rustfmt & clippy pass
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
