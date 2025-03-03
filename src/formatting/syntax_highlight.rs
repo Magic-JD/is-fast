@@ -12,7 +12,7 @@ static THEME_SET: Lazy<ThemeSet> = Lazy::new(ThemeSet::load_defaults);
 static DEFAULT_THEME: Lazy<Theme> = Lazy::new(Theme::default);
 static SYNTAX_SET: Lazy<SyntaxSet> = Lazy::new(SyntaxSet::load_defaults_newlines);
 
-pub fn highlight_code(text: &str, language: &str) -> Vec<Line<'static>> {
+pub fn highlight_code(text: String, language: &str) -> Vec<Line<'static>> {
     let syntax = SYNTAX_SET
         .find_syntax_by_token(language) // Attempt to use language from css
         .or_else(|| SYNTAX_SET.find_syntax_by_token(DEFAULT_LANGUAGE.as_str())) // Attempt to use language from config
@@ -27,7 +27,7 @@ pub fn highlight_code(text: &str, language: &str) -> Vec<Line<'static>> {
 
     let mut highlighter = HighlightLines::new(syntax, theme);
 
-    LinesWithEndings::from(text)
+    LinesWithEndings::from(&text)
         .map(|line| highlight_line(&SYNTAX_SET, &mut highlighter, line))
         .collect()
 }

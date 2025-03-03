@@ -174,8 +174,8 @@ impl Config {
             .collect()
     }
 
-    pub fn get_styles() -> &'static HashMap<String, Style> {
-        &CONFIG.styles
+    pub fn get_styles() -> HashMap<String, Style> {
+        CONFIG.styles.clone()
     }
 
     pub fn get_selectors(url: &str) -> Option<String> {
@@ -188,12 +188,12 @@ impl Config {
             .and_then(|s| CONFIG.selectors.get(&s).cloned())
     }
 
-    pub fn get_ignored_tags() -> &'static HashSet<String> {
-        &CONFIG.ignored_tags
+    pub fn get_ignored_tags() -> HashSet<String> {
+        CONFIG.ignored_tags.clone()
     }
 
-    pub fn get_block_elements() -> &'static HashSet<String> {
-        &CONFIG.block_elements
+    pub fn get_block_elements() -> HashSet<String> {
+        CONFIG.block_elements.clone()
     }
 
     pub fn get_default_language() -> String {
