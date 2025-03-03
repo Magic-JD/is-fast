@@ -61,6 +61,9 @@ jobs:
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
 
+      - name: Install cargo-tarpaulin
+        run: cargo install cargo-tarpaulin
+        
       - name: Run tests
         run: cargo tarpaulin --out Xml --output-dir target/llvm-cov
 
