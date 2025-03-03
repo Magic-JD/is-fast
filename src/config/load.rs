@@ -4,7 +4,8 @@ use once_cell::sync::Lazy;
 use ratatui::style::{Color, Modifier, Style};
 use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
-use std::fs;
+use std::path::PathBuf;
+use std::{env, fs};
 use toml;
 
 static CONFIG: Lazy<Config> = Lazy::new(Config::load);
@@ -69,45 +70,41 @@ impl Config {
                 format: None,
                 syntax: None,
             });
-        _ = dirs::config_dir()
-            .map(|p| p.join("is-fast/config.toml"))
-            .and_then(|path| fs::read_to_string(&path).ok())
-            .and_then(|content| toml::from_str::<RawConfig>(&content).ok())
-            .map(|u_config| {
-                for (tag, user_style) in u_config.styles {
-                    config.styles.insert(tag, user_style);
-                }
-                for (site, selector) in u_config.selectors {
-                    config.selectors.insert(site, selector);
-                }
-                let mut format = config.format.take().unwrap_or_else(|| FormatSection {
-                    ignored_tags: Vec::new(),
-                    block_elements: Vec::new(),
-                });
-
-                if let Some(u_format) = u_config.format {
-                    if !u_format.ignored_tags.is_empty() {
-                        format.ignored_tags = u_format.ignored_tags;
-                    }
-                    if !u_format.block_elements.is_empty() {
-                        format.block_elements = u_format.block_elements;
-                    }
-                }
-                let mut syntax = config.syntax.take().unwrap_or(SyntaxHighlightingSection {
-                    theme: None,
-                    default_language: None,
-                });
-                if let Some(u_syntax) = u_config.syntax {
-                    if let Some(theme) = u_syntax.theme {
-                        syntax.theme = Some(theme);
-                    }
-                    if let Some(default_language) = u_syntax.default_language {
-                        syntax.default_language = Some(default_language);
-                    }
-                }
-                config.format = Some(format);
-                config.syntax = Some(syntax);
+        _ = get_user_specified_config().map(|u_config| {
+            for (tag, user_style) in u_config.styles {
+                config.styles.insert(tag, user_style);
+            }
+            for (site, selector) in u_config.selectors {
+                config.selectors.insert(site, selector);
+            }
+            let mut format = config.format.take().unwrap_or_else(|| FormatSection {
+                ignored_tags: Vec::new(),
+                block_elements: Vec::new(),
             });
+
+            if let Some(u_format) = u_config.format {
+                if !u_format.ignored_tags.is_empty() {
+                    format.ignored_tags = u_format.ignored_tags;
+                }
+                if !u_format.block_elements.is_empty() {
+                    format.block_elements = u_format.block_elements;
+                }
+            }
+            let mut syntax = config.syntax.take().unwrap_or(SyntaxHighlightingSection {
+                theme: None,
+                default_language: None,
+            });
+            if let Some(u_syntax) = u_config.syntax {
+                if let Some(theme) = u_syntax.theme {
+                    syntax.theme = Some(theme);
+                }
+                if let Some(default_language) = u_syntax.default_language {
+                    syntax.default_language = Some(default_language);
+                }
+            }
+            config.format = Some(format);
+            config.syntax = Some(syntax);
+        });
         let mut builder = GlobSetBuilder::new();
         let mut globs = Vec::new();
         config.selectors.iter().for_each(|(pattern, _)| {
@@ -228,4 +225,23 @@ fn parse_color(color: &str) -> Color {
         "lightcyan" => Color::LightCyan,
         _ => Color::Reset,
     }
+}
+fn get_user_specified_config() -> Option<RawConfig> {
+    env::var("IS_FAST_CONFIG_PATH")
+        .ok()
+        .map(PathBuf::from)
+        .and_then(config_from_filepath)
+        .or_else(|| {
+            dirs::config_dir()
+                .map(|p| p.join("is-fast/config.toml"))
+                .map(config_from_filepath)
+                .unwrap_or_else(|| None)
+        })
+}
+
+fn config_from_filepath(buff: PathBuf) -> Option<RawConfig> {
+    fs::read_to_string(buff)
+        .ok()
+        .as_ref()
+        .and_then(|str| toml::from_str(str).ok())
 }

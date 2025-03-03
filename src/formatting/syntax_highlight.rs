@@ -3,30 +3,37 @@ use once_cell::sync::Lazy;
 use ratatui::prelude::{Color, Line, Span, Style};
 use syntect::easy::HighlightLines;
 use syntect::highlighting::{Style as SyntectStyle, Theme, ThemeSet};
-use syntect::parsing::SyntaxSet;
+use syntect::parsing::{SyntaxReference, SyntaxSet};
 use syntect::util::LinesWithEndings;
 
 static DEFAULT_LANGUAGE: Lazy<String> = Lazy::new(Config::get_default_language);
-static SYNTAX_HIGHLIGHTING_THEME: Lazy<String> = Lazy::new(Config::get_syntax_highlighting_theme);
-static THEME_SET: Lazy<ThemeSet> = Lazy::new(ThemeSet::load_defaults);
-static DEFAULT_THEME: Lazy<Theme> = Lazy::new(Theme::default);
 static SYNTAX_SET: Lazy<SyntaxSet> = Lazy::new(SyntaxSet::load_defaults_newlines);
+static THEME_SET: Lazy<ThemeSet> = Lazy::new(ThemeSet::load_defaults);
+static DEFAULT_SYNTAX: Lazy<&'static SyntaxReference> = Lazy::new(|| {
+    let default_lang = DEFAULT_LANGUAGE.as_str();
+    SYNTAX_SET
+        .find_syntax_by_token(default_lang) // Use language from config
+        .unwrap_or_else(|| SYNTAX_SET.find_syntax_plain_text()) // Fallback to plain text
+});
+static DEFAULT_THEME: Lazy<&'static Theme> = Lazy::new(|| {
+    THEME_SET
+        .themes
+        .get(&Config::get_syntax_highlighting_theme())
+        .unwrap_or_else(|| {
+            THEME_SET
+                .themes
+                .values()
+                .next()
+                .expect("No themes available")
+        })
+});
 
 pub fn highlight_code(text: String, language: &str) -> Vec<Line<'static>> {
     let syntax = SYNTAX_SET
         .find_syntax_by_token(language) // Attempt to use language from css
-        .or_else(|| SYNTAX_SET.find_syntax_by_token(DEFAULT_LANGUAGE.as_str())) // Attempt to use language from config
-        .unwrap_or_else(|| SYNTAX_SET.find_syntax_plain_text()); // Use plain text
+        .unwrap_or_else(|| *DEFAULT_SYNTAX);
 
-    let theme_set = &THEME_SET;
-    let default_theme = &DEFAULT_THEME;
-    let theme = theme_set
-        .themes
-        .get(SYNTAX_HIGHLIGHTING_THEME.as_str())
-        .unwrap_or_else(|| default_theme);
-
-    let mut highlighter = HighlightLines::new(syntax, theme);
-
+    let mut highlighter = HighlightLines::new(syntax, *DEFAULT_THEME);
     LinesWithEndings::from(&text)
         .map(|line| highlight_line(&SYNTAX_SET, &mut highlighter, line))
         .collect()
@@ -37,10 +44,13 @@ fn highlight_line(
     highlighter: &mut HighlightLines,
     line: &str,
 ) -> Line<'static> {
-    let highlighted = highlighter.highlight_line(line, syntax_set).unwrap();
+    let highlighted = highlighter
+        .highlight_line(line, syntax_set)
+        .expect("Line could not be highlighted."); // Should not happen -> if it does it's important to fix
     let styled_spans = highlighted
         .iter()
         .map(|(style, content)| Span::styled(content.to_string(), convert_syntect_style(*style)))
+        .filter(|s| s.content != "\n")
         .collect::<Vec<Span>>();
     Line::from(styled_spans)
 }
@@ -51,4 +61,82 @@ fn convert_syntect_style(syntect_style: SyntectStyle) -> Style {
         syntect_style.foreground.g,
         syntect_style.foreground.b,
     ))
+}
+
+#[test]
+fn test_default_syntax_is_plain_text() {
+    use std::env;
+    env::set_var("IS_FAST_CONFIG_PATH", "tests/data/invalid_lang_config.toml");
+    assert_eq!(
+        DEFAULT_SYNTAX.name, "Plain Text",
+        "Default syntax should be Plain Text if nothing is found"
+    );
+    env::remove_var("IS_FAST_CONFIG_PATH");
+}
+
+#[test]
+fn test_default_theme_selection() {
+    assert!(
+        !THEME_SET.themes.is_empty(),
+        "Theme set should not be empty"
+    );
+    assert!(
+        THEME_SET
+            .themes
+            .values()
+            .any(|theme| theme == *DEFAULT_THEME),
+        "Selected theme should be present in the theme set"
+    );
+}
+
+#[test]
+fn test_highlight_line() {
+    let syntax = SYNTAX_SET.find_syntax_plain_text();
+    let mut highlighter = HighlightLines::new(syntax, *DEFAULT_THEME);
+    let result = highlight_line(&SYNTAX_SET, &mut highlighter, "fn main() {}");
+
+    assert!(
+        !result.spans.is_empty(),
+        "Highlighted line should not be empty"
+    );
+    assert_eq!(result.to_string(), "fn main() {}");
+}
+
+#[test]
+fn test_highlight_code_rust() {
+    let code = r#"fn main() {
+    println!("Hello, world!");
+}"#
+    .to_string();
+    let highlighted = highlight_code(code, "rust");
+    let expected = vec![
+        Line::from_iter([
+            Span::styled("fn", Style::default().fg(Color::Rgb(180, 142, 173))),
+            Span::styled(" ", Style::default().fg(Color::Rgb(192, 197, 206))),
+            Span::styled("main", Style::default().fg(Color::Rgb(143, 161, 179))),
+            Span::styled("(", Style::default().fg(Color::Rgb(192, 197, 206))),
+            Span::styled(")", Style::default().fg(Color::Rgb(192, 197, 206))),
+            Span::styled(" ", Style::default().fg(Color::Rgb(192, 197, 206))),
+            Span::styled("{", Style::default().fg(Color::Rgb(192, 197, 206))),
+        ]),
+        Line::from_iter([
+            Span::styled("    ", Style::default().fg(Color::Rgb(192, 197, 206))),
+            Span::styled("println!", Style::default().fg(Color::Rgb(192, 197, 206))),
+            Span::styled("(", Style::default().fg(Color::Rgb(192, 197, 206))),
+            Span::styled("\"", Style::default().fg(Color::Rgb(192, 197, 206))),
+            Span::styled(
+                "Hello, world!",
+                Style::default().fg(Color::Rgb(163, 190, 140)),
+            ),
+            Span::styled("\"", Style::default().fg(Color::Rgb(192, 197, 206))),
+            Span::styled(")", Style::default().fg(Color::Rgb(192, 197, 206))),
+            Span::styled(";", Style::default().fg(Color::Rgb(192, 197, 206))),
+        ]),
+        Line::from_iter([Span::styled(
+            "}",
+            Style::default().fg(Color::Rgb(192, 197, 206)),
+        )]),
+    ];
+
+    assert_eq!(highlighted, expected);
 }
