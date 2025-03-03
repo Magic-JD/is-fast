@@ -1,78 +1,78 @@
 Tutorial Series: How To Code in JavaScript
 
-1/37 How To Use the JavaScript Developer Console
+1/37 How To Use the JavaScript Developer Console 
 
-2/37 How To Add JavaScript to HTML
+2/37 How To Add JavaScript to HTML 
 
-3/37 How To Write Your First JavaScript Program
+3/37 How To Write Your First JavaScript Program 
 
-4/37 Understanding Syntax and Code Structure in JavaScript
+4/37 Understanding Syntax and Code Structure in JavaScript 
 
-5/37 How To Write Comments in JavaScript
+5/37 How To Write Comments in JavaScript 
 
-6/37 Understanding Data Types in JavaScript
+6/37 Understanding Data Types in JavaScript 
 
-7/37 How To Work with Strings in JavaScript
+7/37 How To Work with Strings in JavaScript 
 
-8/37 How To Index, Split, and Manipulate Strings in JavaScript
+8/37 How To Index, Split, and Manipulate Strings in JavaScript 
 
-9/37 How To Convert Data Types in JavaScript
+9/37 How To Convert Data Types in JavaScript 
 
-10/37 Understanding Variables, Scope, and Hoisting in JavaScript
+10/37 Understanding Variables, Scope, and Hoisting in JavaScript 
 
-11/37 How To Do Math in JavaScript with Operators
+11/37 How To Do Math in JavaScript with Operators 
 
-12/37 Understanding Comparison and Logical Operators in JavaScript
+12/37 Understanding Comparison and Logical Operators in JavaScript 
 
-13/37 Understanding Arrays in JavaScript
+13/37 Understanding Arrays in JavaScript 
 
-14/37 How To Use Array Methods in JavaScript: Mutator Methods
+14/37 How To Use Array Methods in JavaScript: Mutator Methods 
 
-15/37 How To Use Array Methods in JavaScript: Accessor Methods
+15/37 How To Use Array Methods in JavaScript: Accessor Methods 
 
-16/37 How To Use Array Methods in JavaScript: Iteration Methods
+16/37 How To Use Array Methods in JavaScript: Iteration Methods 
 
-17/37 Understanding Objects in JavaScript
+17/37 Understanding Objects in JavaScript 
 
-18/37 Understanding Date and Time in JavaScript
+18/37 Understanding Date and Time in JavaScript 
 
-19/37 Understanding Events in JavaScript
+19/37 Understanding Events in JavaScript 
 
-20/37 How To Work with JSON in JavaScript
+20/37 How To Work with JSON in JavaScript 
 
-21/37 How To Write Conditional Statements in JavaScript
+21/37 How To Write Conditional Statements in JavaScript 
 
-22/37 How To Use the Switch Statement in JavaScript
+22/37 How To Use the Switch Statement in JavaScript 
 
-23/37 Using While Loops and Do...While Loops in JavaScript
+23/37 Using While Loops and Do...While Loops in JavaScript 
 
-24/37 JavaScript For Loops
+24/37 JavaScript For Loops 
 
-25/37 How To Define Functions in JavaScript
+25/37 How To Define Functions in JavaScript 
 
-26/37 Understanding Prototypes and Inheritance in JavaScript
+26/37 Understanding Prototypes and Inheritance in JavaScript 
 
-27/37 Understanding Classes in JavaScript
+27/37 Understanding Classes in JavaScript 
 
-28/37 How To Use Object Methods in JavaScript
+28/37 How To Use Object Methods in JavaScript 
 
-29/37 Understanding This, Bind, Call, and Apply in JavaScript
+29/37 Understanding This, Bind, Call, and Apply in JavaScript 
 
-30/37 Understanding Map and Set Objects in JavaScript
+30/37 Understanding Map and Set Objects in JavaScript 
 
-31/37 Understanding Generators in JavaScript
+31/37 Understanding Generators in JavaScript 
 
-32/37 Understanding Default Parameters in JavaScript
+32/37 Understanding Default Parameters in JavaScript 
 
-33/37 Understanding Destructuring, Rest Parameters, and Spread Syntax in JavaScript
+33/37 Understanding Destructuring, Rest Parameters, and Spread Syntax in JavaScript 
 
-34/37 Understanding Template Literals in JavaScript
+34/37 Understanding Template Literals in JavaScript 
 
-35/37 Understanding Arrow Functions in JavaScript
+35/37 Understanding Arrow Functions in JavaScript 
 
-36/37 Understanding the Event Loop, Callbacks, Promises, and Async/Await in JavaScript
+36/37 Understanding the Event Loop, Callbacks, Promises, and Async/Await in JavaScript 
 
-37/37 Understanding Modules and Import and Export Statements in JavaScript
+37/37 Understanding Modules and Import and Export Statements in JavaScript 
 
 Tutorial
 
@@ -242,11 +242,11 @@ JavaScriptDevelopment
 
 Browse Series: 37 articles
 
-1/37 How To Use the JavaScript Developer Console
+1/37 How To Use the JavaScript Developer Console 
 
-2/37 How To Add JavaScript to HTML
+2/37 How To Add JavaScript to HTML 
 
-3/37 How To Write Your First JavaScript Program
+3/37 How To Write Your First JavaScript Program 
 
 About the author(s)
 
