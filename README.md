@@ -1,6 +1,10 @@
 # 🌍 Internet Search Fast from the Terminal
 
-`is-fast` is a TUI tool designed for quick and efficient internet searches directly from the terminal, ideal for environments where you don't have easy access to a browser. With simple commands, you can search the web, navigate results, and view content seamlessly in the terminal. It supports custom configurations for styling, content extraction, and syntax highlighting, and allows direct URL viewing, local HTML file rendering, and history tracking. is-fast is fast, lightweight, and perfect for developers and terminal enthusiasts.
+`is-fast` is a TUI tool designed for quick and efficient internet searches directly from the terminal, ideal for
+environments where you don't have easy access to a browser. With simple commands, you can search the web, navigate
+results, and view content seamlessly in the terminal. It supports custom configurations for styling, content extraction,
+and syntax highlighting, and allows direct URL viewing, local HTML file rendering, and history tracking. is-fast is
+fast, lightweight, and perfect for developers and terminal enthusiasts.
 
 This tool makes **searching from the terminal fast and simple!** 🚀
 
@@ -9,12 +13,15 @@ This tool makes **searching from the terminal fast and simple!** 🚀
 ```sh
 is-fast "search query"
 ```
+
 or
+
 ```sh
 is-fast search query
 ```
 
 ### 🔧 Navigation Controls
+
 - 🔍 **Next result:** `n` / `→`
 - ⬅️ **Go back:** `b` / `←`
 - ⬇️ **Scroll down:** `j` / `↓`
@@ -55,19 +62,27 @@ No waiting - just internet search fast in your terminal.
 
 # Configuration Guide
 
-This project supports both built-in and user-provided configurations for styles and content selection rules. Configuration is handled using a TOML file, and a default configuration is embedded within the binary. Users can override this configuration by placing a custom config file in their system's configuration directory. Changes will only take effect once the program is run again.
+This project supports both built-in and user-provided configurations for styles and content selection rules.
+Configuration is handled using a TOML file, and a default configuration is embedded within the binary. Users can
+override this configuration by placing a custom config file in their system's configuration directory. Changes will only
+take effect once the program is run again.
 
 ## Default Configuration
 
-A built-in configuration is included with the binary and is loaded automatically. The default configuration defines styles for various elements and selectors for extracting content from different websites.
+A built-in configuration is included with the binary and is loaded automatically. The default configuration defines
+styles for various elements and selectors for extracting content from different websites.
 
-Users can override the default configuration by creating a TOML configuration file in their system’s configuration directory.
+Users can override the default configuration by creating a TOML configuration file in their system’s configuration
+directory.
 
 ### `--generate-config`
+
 Creates a `config.toml` in your system's configuration directory for customization:
+
 ```sh
 is-fast --generate-config
 ```
+
 This will only run if the user does not already have a configuration file in that location.
 
 ### Location of User Configuration File
@@ -81,10 +96,14 @@ If not generated the configuration file should be placed in:
 If the `--generate-config` command is used a copy of the default configuration will be placed there automatically.
 
 ## 🏷 Block Elements
+
 ### Definition
-Block elements are HTML tags that should have **a new line before and after** them when processed. This helps preserve readability and logical structure in the parsed content.
+
+Block elements are HTML tags that should have **a new line before and after** them when processed. This helps preserve
+readability and logical structure in the parsed content.
 
 ### Example Configuration
+
 ```toml
 block_elements = [
     "p", "div", "article", "section", "pre", "blockquote", "ul", "ol", "dl", "dt", "dd", "li",
@@ -93,12 +112,15 @@ block_elements = [
 ```
 
 ### Effect on Output
+
 #### Input HTML:
+
 ```html
 <p>This is a paragraph.</p><h2>Title</h2><ul><li>Item 1</li><li>Item 2</li></ul>
 ```
 
 #### Output After Processing:
+
 ```
 This is a paragraph.
 
@@ -107,13 +129,18 @@ Title
 - Item 1
 - Item 2
 ```
+
 Each **block element** is **separated by a new line** for better readability.
 
 ## 🚫 Ignored Tags
+
 ### Definition
-Ignored tags are HTML elements that **will be completely removed** from the processed content. These typically include **scripts, metadata, and interactive elements** that are irrelevant to text processing.
+
+Ignored tags are HTML elements that **will be completely removed** from the processed content. These typically include *
+*scripts, metadata, and interactive elements** that are irrelevant to text processing.
 
 ### Example Configuration
+
 ```toml
 ignored_tags = [
     "script", "style", "noscript", "head", "title", "meta", "input", "button", "svg", "nav",
@@ -122,7 +149,9 @@ ignored_tags = [
 ```
 
 ### Effect on Output
+
 #### Input HTML:
+
 ```html
 <head><title>My Page</title></head>
 <body>
@@ -133,17 +162,26 @@ ignored_tags = [
 ```
 
 #### Output After Processing:
+
 ```
 Hello, world!
 ```
+
 - **`<script>` and `<footer>` are removed**.
 - **Only meaningful content remains**.
 
 ## 🔍 Selectors
+
 ### Definition
-Selectors allow you to **extract only relevant content** from different websites. This is useful for customizing certain sites for a better user experience. If no selector is provided for a specific site then `body` will be used. Glob matching is used to match the site, or even certain urls within the site to extract the most relevant text. NOTE: If there are multiple globs that could match, the most restrictive should be placed higher in the config! Selectors are chosen from the first match only.
+
+Selectors allow you to **extract only relevant content** from different websites. This is useful for customizing certain
+sites for a better user experience. If no selector is provided for a specific site then `body` will be used. Glob
+matching is used to match the site, or even certain urls within the site to extract the most relevant text. NOTE: If
+there are multiple globs that could match, the most restrictive should be placed higher in the config! Selectors are
+chosen from the first match only.
 
 ### Example Configuration
+
 ```toml
 [selectors]
 "*en.wikipedia.org*" = "p"
@@ -152,13 +190,19 @@ Selectors allow you to **extract only relevant content** from different websites
 ```
 
 ### Effect
-When processing content from Wikipedia, only `<p>` elements will be extracted. For github, if the url contains the endpoint blob it will return only elements with the CSS class .react-code-line-contents. Otherwise it will return the .markdown-body.
+
+When processing content from Wikipedia, only `<p>` elements will be extracted. For github, if the url contains the
+endpoint blob it will return only elements with the CSS class .react-code-line-contents. Otherwise it will return the
+.markdown-body.
 
 ## 🎨 Text Styles
+
 ### Definition
+
 This section defines **how different HTML tags should be styled** in the output.
 
 ### Example Configuration
+
 ```toml
 [styles.h1]
 bold = true
@@ -170,18 +214,22 @@ fg = "Cyan"
 fg = "Gray"
 italic = true
 ```
+
 This means:
+
 - `<h1>` will be **bold**.
 - `<a>` (links) will be **cyan**.
 - `<blockquote>` will be **gray** and **italicised**.
 
 ## 🌈 Syntax Highlighting
 
-The `[syntax]` section defines syntax highlighting settings for code. Where possible the language type will be determined from the CSS classes present in the HTML.
+The `[syntax]` section defines syntax highlighting settings for code. Where possible the language type will be
+determined from the CSS classes present in the HTML.
 
 ### Default Language
 
-This defines the language that is used if the language type cannot be determined from the CSS classes. This should be set to your primary development language.
+This defines the language that is used if the language type cannot be determined from the CSS classes. This should be
+set to your primary development language.
 
 ### Theme
 
@@ -219,14 +267,18 @@ theme = "base16-ocean.dark"
 
 # 🌐 Using `is-fast` to Open URLs Directly
 
-`is-fast` allows you to open a specific URL directly in its terminal viewer, bypassing the search functionality. This is done using the `--direct` option.
+`is-fast` allows you to open a specific URL directly in its terminal viewer, bypassing the search functionality. This is
+done using the `--direct` option.
 
 ### `--direct` / `-d`
+
 **Open a given URL directly in the TUI viewer.**
 
-If this option is provided, `is-fast` will immediately load and render the contents of the given URL inside the terminal interface.
+If this option is provided, `is-fast` will immediately load and render the contents of the given URL inside the terminal
+interface.
 
 #### Example Usage:
+
 ```sh
 is-fast --direct "https://example.com"
 is-fast -d https://example.com
@@ -236,25 +288,32 @@ is-fast -d https://example.com
 
 # 📃 Using `is-fast` with Local HTML Files
 
-`is-fast` also supports rendering local HTML files inside its terminal viewer. This is done using the `--file` option. Additionally, you can associate the file with a reference URL using the `--url` option.
+`is-fast` also supports rendering local HTML files inside its terminal viewer. This is done using the `--file` option.
+Additionally, you can associate the file with a reference URL using the `--url` option.
 
 ### `--file` / `-f`
+
 **View a local HTML file instead of performing an internet search.**
 
-If this option is provided, `is-fast` will render the given HTML file inside its terminal viewer instead of fetching search results from the internet.
+If this option is provided, `is-fast` will render the given HTML file inside its terminal viewer instead of fetching
+search results from the internet.
 
 #### Example Usage:
+
 ```sh
 is-fast --file example.html
 is-fast -f example.html
 ```
 
 ### `--url` / `-u`
+
 **Associate the HTML file with a reference URL.**
 
-This option is only valid when `--file` is used. It allows you to provide a URL that will be used for informing which selector should be used with this file.
+This option is only valid when `--file` is used. It allows you to provide a URL that will be used for informing which
+selector should be used with this file.
 
 #### Example Usage:
+
 ```sh
 is-fast --file example.html --url example.com
 is-fast -f example.html -u example.com
@@ -264,14 +323,18 @@ is-fast -f example.html -u example.com
 
 # 🔄 Using `--piped` to Output to Standard Output
 
-Instead of rendering the content inside the TUI viewer, `is-fast` provides an option to output the processed result directly to **standard output (stdout)**. This allows you to **pipe the output** to other commands or **write it to a file**.
+Instead of rendering the content inside the TUI viewer, `is-fast` provides an option to output the processed result
+directly to **standard output (stdout)**. This allows you to **pipe the output** to other commands or **write it to a
+file**.
 
 ### `--piped`
+
 **Output the result to standard output instead of rendering in the TUI.**
 
 This option requires either `--file` or `--direct` to specify the input source.
 
 #### Example Usage:
+
 ```sh
 # Output the contents of a local file to stdout
 is-fast --file example.html --piped
@@ -286,7 +349,8 @@ is-fast --file example.html --piped > output.txt
 is-fast --direct "https://example.com" --piped | grep "keyword"
 ```
 
-Using `--piped` makes `is-fast` behave more like a **command-line utility** for extracting and processing content, rather than an interactive TUI viewer.
+Using `--piped` makes `is-fast` behave more like a **command-line utility** for extracting and processing content,
+rather than an interactive TUI viewer.
 
 ---
 
@@ -298,7 +362,9 @@ Using `--piped` makes `is-fast` behave more like a **command-line utility** for 
 
 **Show previously viewed pages.**
 
-If this option is provided, `is-fast` will display a list of previously visited webpages, numbered with the most recent entries at the bottom. You can scroll up and down and select to open. The entries are stored locally in a SQLlite database.
+If this option is provided, `is-fast` will display a list of previously visited webpages, numbered with the most recent
+entries at the bottom. You can scroll up and down and select to open. The entries are stored locally in a SQLlite
+database.
 
 #### Example Usage:
 

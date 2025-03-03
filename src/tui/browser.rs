@@ -75,11 +75,11 @@ impl Browser {
         history_active: bool,
     ) -> Result<bool, IsError> {
         if let event::Event::Key(KeyEvent {
-                                     code,
-                                     modifiers,
-                                     kind: KeyEventKind::Press,
-                                     ..
-                                 }) = event::read()?
+            code,
+            modifiers,
+            kind: KeyEventKind::Press,
+            ..
+        }) = event::read()?
         {
             match code {
                 KeyCode::Char('q') | KeyCode::Esc => return Ok(true),

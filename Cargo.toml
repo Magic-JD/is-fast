@@ -18,7 +18,7 @@ clap = { version = "4.5.31", features = ["derive"] }
 open = "5.3.2"
 dashmap = "7.0.0-rc1"
 globset = "0.4.16"
-rusqlite = {version = "0.33.0", features = ["bundled"]}
+rusqlite = { version = "0.33.0", features = ["bundled"] }
 chrono = "0.4.40"
 strsim = "0.11.1"
 nucleo-matcher = "0.3.1"

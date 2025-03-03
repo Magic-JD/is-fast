@@ -197,10 +197,7 @@ impl Config {
     }
 
     pub fn get_default_language() -> String {
-        CONFIG
-            .syntax_default_language
-            .clone()
-            .unwrap_or_default()
+        CONFIG.syntax_default_language.clone().unwrap_or_default()
     }
 
     pub fn get_syntax_highlighting_theme() -> String {

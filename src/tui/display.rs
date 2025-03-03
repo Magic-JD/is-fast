@@ -117,7 +117,8 @@ impl Display {
     ) -> std::io::Result<()> {
         let mut terminal = self.terminal.lock().unwrap();
         let block = self.default_block(&title);
-        let paragraph = page.to_owned()
+        let paragraph = page
+            .to_owned()
             .block(block)
             .style(Style::default().fg(Color::White))
             .wrap(Wrap { trim: false })

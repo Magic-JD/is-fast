@@ -38,7 +38,11 @@ pub fn new_page(index: &mut usize, links: &[Link], history_active: bool) -> Para
     }
     links
         .get(*index)
-        .inspect(|link| if history_active { _ = add_history(link) })
+        .inspect(|link| {
+            if history_active {
+                _ = add_history(link)
+            }
+        })
         .map(|link| get_content(link))
         .unwrap_or_else(|| Paragraph::new(Text::from(String::from("Index out of bounds"))))
 }

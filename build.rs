@@ -1,7 +1,7 @@
 use clap::CommandFactory;
 use clap_mangen::Man;
 use std::fs::File;
-use std::io::{Write};
+use std::io::Write;
 
 include!("src/cli/command.rs");
 
@@ -12,7 +12,9 @@ fn main() {
     let cmd = Cli::command();
 
     let mut buffer = Vec::new();
-    Man::new(cmd).render(&mut buffer).expect("Failed to generate man page");
+    Man::new(cmd)
+        .render(&mut buffer)
+        .expect("Failed to generate man page");
 
     let out_dir = std::env::var("OUT_DIR").unwrap();
     let man_path = std::path::Path::new(&out_dir).join("is-fast.1");

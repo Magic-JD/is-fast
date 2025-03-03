@@ -71,11 +71,7 @@ fn to_lines(element: ElementRef, pre_formatted: bool) -> Vec<Line<'static>> {
         // Show there is an image without rendering the image.
         lines.push(create_optionally_styled_line("IMAGE", style));
     } else {
-        lines = extract_lines(
-            element,
-            pre_formatted || tag_name == "pre",
-            style,
-        );
+        lines = extract_lines(element, pre_formatted || tag_name == "pre", style);
     }
 
     if lines.is_empty() {

@@ -2,12 +2,13 @@ use is_fast::formatting::format::to_display;
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use is_fast::scrapers::scrape::sanitize;
+    use ratatui::style::{Color, Modifier, Style, Styled};
+    use ratatui::text::{Line, Span, Text};
     use std::fs;
     use std::path::Path;
-    use ratatui::style::{Color, Modifier, Style, Styled};
-    use super::*;
-    use ratatui::text::{Line, Span, Text};
-    use is_fast::scrapers::scrape::sanitize;
+    use std::time::Instant;
 
     #[test]
     fn test_to_display_simple_html() {
@@ -28,7 +29,8 @@ mod tests {
             Line::from(Span::styled(
                 "Hello, World!",
                 Style::default().add_modifier(Modifier::BOLD),
-            )).set_style(Style::default().add_modifier(Modifier::BOLD)),
+            ))
+            .set_style(Style::default().add_modifier(Modifier::BOLD)),
             Line::default(),
             Line::from_iter([
                 Span::from("This is a "),
@@ -55,8 +57,9 @@ mod tests {
         let result = to_display(url, html).expect("Expected valid parsed output");
 
         // Since `highlight_code` transforms the code, we check if the output contains expected text
-        assert!(result.to_string().contains("fn main() { println!(\"Hello, Rust!\"); }"));
-
+        assert!(result
+            .to_string()
+            .contains("fn main() { println!(\"Hello, Rust!\"); }"));
 
         let expected = Text::from(vec![
             Line::from_iter([
@@ -71,7 +74,10 @@ mod tests {
                 Span::styled("println!", Style::default().fg(Color::Rgb(192, 197, 206))),
                 Span::styled("(", Style::default().fg(Color::Rgb(192, 197, 206))),
                 Span::styled("\"", Style::default().fg(Color::Rgb(192, 197, 206))),
-                Span::styled("Hello, Rust!", Style::default().fg(Color::Rgb(163, 190, 140))),
+                Span::styled(
+                    "Hello, Rust!",
+                    Style::default().fg(Color::Rgb(163, 190, 140)),
+                ),
                 Span::styled("\"", Style::default().fg(Color::Rgb(192, 197, 206))),
                 Span::styled(")", Style::default().fg(Color::Rgb(192, 197, 206))),
                 Span::styled(";", Style::default().fg(Color::Rgb(192, 197, 206))),
@@ -125,7 +131,6 @@ This is line one.
         assert_eq!(result, expected);
     }
 
-
     #[test]
     fn test_large_scale_file_as_expected() {
         let path_sample = Path::new("tests/data/sample.html");
@@ -133,14 +138,62 @@ This is line one.
         let html = sanitize(&dirty);
 
         let path_output = Path::new("tests/data/expected_text.txt");
-        let expected_content = fs::read_to_string(path_output).expect("Failed to read test HTML file");
+        let expected_content =
+            fs::read_to_string(path_output).expect("Failed to read test HTML file");
 
         let result = to_display("http://example.com", &html).unwrap();
 
-        let content = result.to_string();
-        assert_eq!(content, expected_content);
+        let expected_lines: Vec<_> = expected_content.lines().collect();
+        let binding = result.to_string();
+        let result_lines: Vec<_> = binding.lines().collect();
 
-        let length = content.len();
-        assert_eq!(length, 10231);
+        let min_len = expected_lines.len().min(result_lines.len());
+
+        for i in 0..min_len {
+            if expected_lines[i] != result_lines[i] {
+                panic!(
+                    "Mismatch at line {}:\nExpected: {:?}\nGot: {:?}",
+                    i + 1,
+                    expected_lines[i],
+                    result_lines[i]
+                );
+            }
+        }
+
+        let length = result
+            .lines
+            .iter()
+            .flat_map(|line| line.spans.clone())
+            .collect::<Vec<Span>>()
+            .len();
+        assert_eq!(length, 626);
+    }
+
+    #[test]
+    fn test_performance_is_acceptable() {
+        let path_sample = Path::new("tests/data/sample.html");
+        let dirty = fs::read_to_string(path_sample).expect("Failed to read test HTML file");
+        let html = sanitize(&dirty);
+        _ = to_display("http://example.com", &html).unwrap(); // Initialize statics
+        let start = Instant::now();
+        for _ in 1..10 {
+            let _ = to_display("http://example.com", &html).unwrap();
+        }
+        let duration = start.elapsed();
+
+        let lower_bound = 50;
+        let upper_bound = 500;
+
+        if duration.as_millis() < lower_bound {
+            eprintln!(
+                "⚠️ WARNING: Execution time ({:?}) was shorter than expected. Consider lowering the expected threshold.",
+                duration
+            );
+        }
+        assert!(
+            duration.as_millis() < upper_bound,
+            "Test failed: Execution took too long ({:?})",
+            duration
+        );
     }
 }

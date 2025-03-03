@@ -1,9 +1,9 @@
-use std::thread::sleep;
-use std::time::Duration;
 use crate::links::extract::from_html;
 use crate::links::link::Link;
 use crate::scrapers::scrape::scrape;
 use crate::tui::browser::Browser;
+use std::thread::sleep;
+use std::time::Duration;
 
 pub fn run(search_term: String) {
     let browser = Browser::new();
@@ -23,6 +23,6 @@ fn get_links(search_term: &String) -> Vec<Link> {
         "https://html.duckduckgo.com/html/?q={}",
         &search_term
     ))
-        .map(|html| from_html(&html))
-        .unwrap_or_else(|_| vec![])
+    .map(|html| from_html(&html))
+    .unwrap_or_else(|_| vec![])
 }

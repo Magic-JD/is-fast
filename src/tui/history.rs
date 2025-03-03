@@ -15,8 +15,7 @@ use ratatui::widgets::{Cell, Row, Table, TableState};
 use std::cmp::Ordering;
 use Action::Delete;
 
-const INSTRUCTIONS: &str =
-    " Quit: Esc | Scroll Down: ↓ | Scroll Up: ↑ | Open: ↵ | Delete: Delete ";
+const INSTRUCTIONS: &str = " Quit: Esc | Scroll Down: ↓ | Scroll Up: ↑ | Open: ↵ | Delete: Delete ";
 
 pub struct History {
     display: Display,
@@ -258,7 +257,12 @@ fn highlight_title(plain_text: String, user_search: String) -> Line<'static> {
 fn handle_input() -> Action {
     event::read()
         .map(|event| {
-            if let event::Event::Key(KeyEvent { code, kind: KeyEventKind::Press, .. }) = event {
+            if let event::Event::Key(KeyEvent {
+                code,
+                kind: KeyEventKind::Press,
+                ..
+            }) = event
+            {
                 return match code {
                     KeyCode::Esc => Exit,
                     KeyCode::Up => Up,
