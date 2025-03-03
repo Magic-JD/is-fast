@@ -92,13 +92,14 @@ fn to_lines(element: ElementRef, pre_formatted: bool) -> Vec<Line<'static>> {
     if lines.is_empty() {
         return vec![];
     }
-    if let Some(styled) = style {
-        lines = lines
-            .into_iter()
-            .map(|line| line.set_style(*styled))
-            .collect();
-    }
+    
     if BLOCK_ELEMENTS.contains(tag_name) && !lines.is_empty() {
+        if let Some(styled) = style {
+            lines = lines
+                .into_iter()
+                .map(|line| line.set_style(*styled))
+                .collect();
+        }
         lines.insert(0, Line::default());
         lines.push(Line::default());
     }
