@@ -103,4 +103,6 @@ jobs:
         run: |
           curl -sSLo sonar-scanner.zip "https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip"
           unzip sonar-scanner.zip
-          sonar-scanner-5.0.1.3006-linux/bin/sonar-scanner -X
+          sonar-scanner-5.0.1.3006-linux/bin/sonar-scanner -X \
+            -Dsonar.rust.llvm-cov.reportPaths=target/llvm-cov/lcov.info \
+            -Dsonar.rust.clippy.reportPaths=target/clippy-report.json
