@@ -273,8 +273,6 @@ Was this helpful?
 
 Leave a comment
 
-\u{feff}
-
 This textbox defaults to usingMarkdownto format your answer.
 
 You can type!refin this text area to quickly search our full set oftutorials, documentation & marketplace offerings and insert the link!

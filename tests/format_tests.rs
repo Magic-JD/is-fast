@@ -141,6 +141,6 @@ This is line one.
         assert_eq!(content, expected_content);
 
         let length = content.len();
-        assert_eq!(length, 10203);
+        assert_eq!(length, 10231);
     }
 }

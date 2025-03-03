@@ -12,7 +12,7 @@ pub fn scrape(url: &String) -> Result<String, String> {
 }
 
 pub fn sanitize(html: &str) -> String {
-    html.replace("\t", "    ").replace("\r", "")
+    html.replace("\t", "    ").replace("\r", "").replace('\u{feff}', "")
 }
 
 fn curl_scrape(url: &str) -> Result<String, String> {
