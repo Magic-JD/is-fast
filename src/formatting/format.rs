@@ -36,11 +36,15 @@ pub fn to_display(url: &str, res: &str) -> Result<Text<'static>, String> {
 }
 
 fn to_lines(element: ElementRef, pre_formatted: bool) -> Vec<Line<'static>> {
-    if is_hidden(&element) { return vec![]; }
+    if is_hidden(&element) {
+        return vec![];
+    }
 
     let tag_name = element.value().name();
 
-    if IGNORED_TAGS.contains(tag_name) { return vec![]; }
+    if IGNORED_TAGS.contains(tag_name) {
+        return vec![];
+    }
 
     if tag_name == "br" {
         return vec![
@@ -53,6 +57,7 @@ fn to_lines(element: ElementRef, pre_formatted: bool) -> Vec<Line<'static>> {
     }
 
     if tag_name == "code" {
+        // Handle code differently due to performance issues.
         let language_type = extract_language_type(element);
         let code_text = extract_code(element);
         return highlight_code(code_text, &language_type);
@@ -65,19 +70,51 @@ fn to_lines(element: ElementRef, pre_formatted: bool) -> Vec<Line<'static>> {
     if tag_name == "img" {
         // Show there is an image without rendering the image.
         lines.push(create_optionally_styled_line("IMAGE", style));
+    } else {
+        lines = extract_lines(
+            element,
+            pre_formatted || tag_name == "pre",
+            style,
+        );
     }
+
+    if lines.is_empty() {
+        return vec![];
+    }
+
+    if BLOCK_ELEMENTS.contains(tag_name) {
+        // Relies on the above line to verify lines isn't empty
+        if let Some(styled) = style {
+            lines = lines
+                .into_iter()
+                .map(|line| line.set_style(*styled))
+                .collect();
+        }
+        lines.insert(0, Line::default());
+        lines.push(Line::default());
+    }
+
+    lines
+}
+
+fn extract_lines(
+    element: ElementRef,
+    pre_formatted: bool,
+    style: Option<&Style>,
+) -> Vec<Line<'static>> {
+    let mut lines = Vec::new();
     element.children().for_each(|node| match node.value() {
         Node::Text(text) => {
-            if pre_formatted || tag_name == "pre" || !text.trim().is_empty() {
+            if pre_formatted || !text.trim().is_empty() {
                 let current_lines = text
-                    .split_inclusive('\n')
+                    .split('\n')
                     .map(|line| create_optionally_styled_line(line, style))
                     .collect::<Vec<Line>>();
                 merge_with_previous_line(&mut lines, current_lines);
             }
         }
         Node::Element(_) => ElementRef::wrap(node).iter().for_each(|element| {
-            let element_lines = to_lines(*element, pre_formatted || tag_name == "pre");
+            let element_lines = to_lines(*element, pre_formatted);
             if element_lines.is_empty() {
                 return;
             }
@@ -89,21 +126,6 @@ fn to_lines(element: ElementRef, pre_formatted: bool) -> Vec<Line<'static>> {
         }),
         _ => {}
     });
-    if lines.is_empty() {
-        return vec![];
-    }
-    
-    if BLOCK_ELEMENTS.contains(tag_name) && !lines.is_empty() {
-        if let Some(styled) = style {
-            lines = lines
-                .into_iter()
-                .map(|line| line.set_style(*styled))
-                .collect();
-        }
-        lines.insert(0, Line::default());
-        lines.push(Line::default());
-    }
-
     lines
 }
 
@@ -168,7 +190,7 @@ fn create_optionally_styled_line(content: &str, style: Option<&Style>) -> Line<'
     }
 }
 
-fn merge_with_previous_line(lines: &mut Vec<Line<'static>>, mut new_lines:  Vec<Line<'static>>) {
+fn merge_with_previous_line(lines: &mut Vec<Line<'static>>, mut new_lines: Vec<Line<'static>>) {
     if let Some(prev_end) = lines.last_mut() {
         if let Some(new_start) = new_lines.first_mut() {
             prev_end.spans.append(&mut new_start.spans);
