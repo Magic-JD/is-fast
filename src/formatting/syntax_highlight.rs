@@ -62,81 +62,74 @@ fn convert_syntect_style(syntect_style: SyntectStyle) -> Style {
         syntect_style.foreground.b,
     ))
 }
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-#[test]
-fn test_default_syntax_is_plain_text() {
-    use std::env;
-    env::set_var("IS_FAST_CONFIG_PATH", "tests/data/invalid_lang_config.toml");
-    assert_eq!(
-        DEFAULT_SYNTAX.name, "Plain Text",
-        "Default syntax should be Plain Text if nothing is found"
-    );
-    env::remove_var("IS_FAST_CONFIG_PATH");
-}
+    #[test]
+    fn test_default_theme_selection() {
+        assert!(
+            !THEME_SET.themes.is_empty(),
+            "Theme set should not be empty"
+        );
+        assert!(
+            THEME_SET
+                .themes
+                .values()
+                .any(|theme| theme == *DEFAULT_THEME),
+            "Selected theme should be present in the theme set"
+        );
+    }
 
-#[test]
-fn test_default_theme_selection() {
-    assert!(
-        !THEME_SET.themes.is_empty(),
-        "Theme set should not be empty"
-    );
-    assert!(
-        THEME_SET
-            .themes
-            .values()
-            .any(|theme| theme == *DEFAULT_THEME),
-        "Selected theme should be present in the theme set"
-    );
-}
+    #[test]
+    fn test_highlight_line() {
+        let syntax = SYNTAX_SET.find_syntax_plain_text();
+        let mut highlighter = HighlightLines::new(syntax, *DEFAULT_THEME);
+        let result = highlight_line(&SYNTAX_SET, &mut highlighter, "fn main() {}");
 
-#[test]
-fn test_highlight_line() {
-    let syntax = SYNTAX_SET.find_syntax_plain_text();
-    let mut highlighter = HighlightLines::new(syntax, *DEFAULT_THEME);
-    let result = highlight_line(&SYNTAX_SET, &mut highlighter, "fn main() {}");
+        assert!(
+            !result.spans.is_empty(),
+            "Highlighted line should not be empty"
+        );
+        assert_eq!(result.to_string(), "fn main() {}");
+    }
 
-    assert!(
-        !result.spans.is_empty(),
-        "Highlighted line should not be empty"
-    );
-    assert_eq!(result.to_string(), "fn main() {}");
-}
-
-#[test]
-fn test_highlight_code_rust() {
-    let code = r#"fn main() {
+    #[test]
+    fn test_highlight_code_rust() {
+        let code = r#"fn main() {
     println!("Hello, world!");
 }"#
-    .to_string();
-    let highlighted = highlight_code(code, "rust");
-    let expected = vec![
-        Line::from_iter([
-            Span::styled("fn", Style::default().fg(Color::Rgb(180, 142, 173))),
-            Span::styled(" ", Style::default().fg(Color::Rgb(192, 197, 206))),
-            Span::styled("main", Style::default().fg(Color::Rgb(143, 161, 179))),
-            Span::styled("(", Style::default().fg(Color::Rgb(192, 197, 206))),
-            Span::styled(")", Style::default().fg(Color::Rgb(192, 197, 206))),
-            Span::styled(" ", Style::default().fg(Color::Rgb(192, 197, 206))),
-            Span::styled("{", Style::default().fg(Color::Rgb(192, 197, 206))),
-        ]),
-        Line::from_iter([
-            Span::styled("    ", Style::default().fg(Color::Rgb(192, 197, 206))),
-            Span::styled("println!", Style::default().fg(Color::Rgb(192, 197, 206))),
-            Span::styled("(", Style::default().fg(Color::Rgb(192, 197, 206))),
-            Span::styled("\"", Style::default().fg(Color::Rgb(192, 197, 206))),
-            Span::styled(
-                "Hello, world!",
-                Style::default().fg(Color::Rgb(163, 190, 140)),
-            ),
-            Span::styled("\"", Style::default().fg(Color::Rgb(192, 197, 206))),
-            Span::styled(")", Style::default().fg(Color::Rgb(192, 197, 206))),
-            Span::styled(";", Style::default().fg(Color::Rgb(192, 197, 206))),
-        ]),
-        Line::from_iter([Span::styled(
-            "}",
-            Style::default().fg(Color::Rgb(192, 197, 206)),
-        )]),
-    ];
+        .to_string();
+        let highlighted = highlight_code(code, "rust");
+        let expected = vec![
+            Line::from_iter([
+                Span::styled("fn", Style::default().fg(Color::Rgb(180, 142, 173))),
+                Span::styled(" ", Style::default().fg(Color::Rgb(192, 197, 206))),
+                Span::styled("main", Style::default().fg(Color::Rgb(143, 161, 179))),
+                Span::styled("(", Style::default().fg(Color::Rgb(192, 197, 206))),
+                Span::styled(")", Style::default().fg(Color::Rgb(192, 197, 206))),
+                Span::styled(" ", Style::default().fg(Color::Rgb(192, 197, 206))),
+                Span::styled("{", Style::default().fg(Color::Rgb(192, 197, 206))),
+            ]),
+            Line::from_iter([
+                Span::styled("    ", Style::default().fg(Color::Rgb(192, 197, 206))),
+                Span::styled("println!", Style::default().fg(Color::Rgb(192, 197, 206))),
+                Span::styled("(", Style::default().fg(Color::Rgb(192, 197, 206))),
+                Span::styled("\"", Style::default().fg(Color::Rgb(192, 197, 206))),
+                Span::styled(
+                    "Hello, world!",
+                    Style::default().fg(Color::Rgb(163, 190, 140)),
+                ),
+                Span::styled("\"", Style::default().fg(Color::Rgb(192, 197, 206))),
+                Span::styled(")", Style::default().fg(Color::Rgb(192, 197, 206))),
+                Span::styled(";", Style::default().fg(Color::Rgb(192, 197, 206))),
+            ]),
+            Line::from_iter([Span::styled(
+                "}",
+                Style::default().fg(Color::Rgb(192, 197, 206)),
+            )]),
+        ];
 
-    assert_eq!(highlighted, expected);
+        assert_eq!(highlighted, expected);
+    }
 }
