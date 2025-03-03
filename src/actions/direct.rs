@@ -13,11 +13,10 @@ pub fn run(title: Option<String>, url: String, piped: bool) {
         move || scrape(&formatted_url.to_string()),
     );
     if piped {
-        out_to_std(
-            scrape(&link.url)
-                .and_then(|html| to_display(&link.url, &html))
-                .unwrap_or_else(|_| Text::from("Failed to convert to text")),
-        );
+        let text_only = scrape(&link.url)
+            .and_then(|html| to_display(&link.url, &html))
+            .unwrap_or_else(|_| Text::from("Failed to convert to text"));
+        out_to_std(text_only);
         return;
     }
     Browser::new().browse(vec![link], false);

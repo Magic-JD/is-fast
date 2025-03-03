@@ -148,7 +148,7 @@ impl Browser {
         scroll_offset: &mut u16,
     ) -> Result<(), IsError> {
         self.results_page(page, links.get(*index), *scroll_offset)
-            .map_err(|e| IsError::Display(e.to_string()))?;
+            .map_err(|e| IsError::General(e.to_string()))?;
         Ok(())
     }
 }

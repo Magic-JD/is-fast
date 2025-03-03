@@ -205,7 +205,7 @@ fn create_rows(history: Vec<HistoryData>, user_search: &str) -> Vec<Row<'static>
                 .style(Style::default().fg(Color::Yellow)),
                 Cell::from(clip_if_needed(h.url.clone(), 60))
                     .style(Style::default().fg(Color::Green)),
-                Cell::from(date_to_display(h.time.clone())).style(Style::default().fg(Color::Cyan)),
+                Cell::from(date_to_display(h.time)).style(Style::default().fg(Color::Cyan)),
             ];
             Row::new(cells)
         })
@@ -297,30 +297,24 @@ fn clip_if_needed(text: String, max_length: usize) -> String {
     text.to_string()
 }
 
-fn date_to_display(date: String) -> String {
-    let now = Utc::now();
-    NaiveDateTime::parse_from_str(&date, "%Y-%m-%d %H:%M:%S")
-        .map(|parsed_datetime| parsed_datetime.and_utc())
-        .map(|datetime_utc| now.signed_duration_since(datetime_utc))
-        .map(|duration| {
-            if duration.num_weeks() > 0 {
-                return format_time(duration.num_weeks(), "weeks".to_string());
-            }
-            if duration.num_days() > 0 {
-                return format_time(duration.num_days(), "days".to_string());
-            }
-            if duration.num_hours() > 0 {
-                return format_time(duration.num_hours(), "hours".to_string());
-            }
-            if duration.num_minutes() > 0 {
-                return format_time(duration.num_minutes(), "minutes".to_string());
-            }
-            if duration.num_seconds() > 0 {
-                return format_time(duration.num_seconds(), "seconds".to_string());
-            }
-            "Date could not be displayed".to_string()
-        })
-        .unwrap_or_else(|_| "Date could not be displayed".to_string())
+fn date_to_display(date: NaiveDateTime) -> String {
+    let duration = Utc::now().signed_duration_since(date.and_utc());
+    if duration.num_weeks() > 0 {
+        return format_time(duration.num_weeks(), "weeks".to_string());
+    }
+    if duration.num_days() > 0 {
+        return format_time(duration.num_days(), "days".to_string());
+    }
+    if duration.num_hours() > 0 {
+        return format_time(duration.num_hours(), "hours".to_string());
+    }
+    if duration.num_minutes() > 0 {
+        return format_time(duration.num_minutes(), "minutes".to_string());
+    }
+    if duration.num_seconds() > 0 {
+        return format_time(duration.num_seconds(), "seconds".to_string());
+    }
+    "Date could not be displayed".to_string()
 }
 
 fn format_time(amount: i64, time_measurement: String) -> String {

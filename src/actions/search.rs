@@ -7,14 +7,16 @@ use std::time::Duration;
 
 pub fn run(search_term: String) {
     let browser = Browser::new();
-    let mut links = get_links(&search_term);
-    let mut retry_count = 3;
-    while links.is_empty() && retry_count > 0 {
-        //Intermittent ddg failure -> sleep and retry
-        sleep(Duration::from_secs(2));
-        retry_count -= 1;
-        links = get_links(&search_term);
-    }
+    let links = std::iter::repeat_with(|| get_links(&search_term))
+        .take(4)
+        .inspect(|links| {
+            if links.is_empty() {
+                // Wait to retry
+                sleep(Duration::from_secs(1));
+            }
+        })
+        .find(|links| !links.is_empty())
+        .unwrap_or_default();
     browser.browse(links, true);
 }
 

@@ -1,20 +1,29 @@
 use crate::errors::error::IsError;
-use crate::errors::error::IsError::Database;
+use crate::errors::error::IsError::{Access, Database};
 use crate::links::link::Link;
+use chrono::NaiveDateTime;
 use dirs::data_dir;
 use once_cell::sync::Lazy;
-use rusqlite::Connection;
+use rusqlite::types::Type;
+use rusqlite::Error::FromSqlConversionFailure;
+use rusqlite::{Connection, Error, Row};
 use std::fs;
 use std::path::PathBuf;
 use std::sync::{Mutex, MutexGuard};
 
 static CONNECTION: Lazy<Mutex<Connection>> = Lazy::new(|| {
     let conn = Connection::open(get_database_path()).expect("Failed to open database");
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS history (title TEXT, url TEXT, time DATETIME)",
-        [],
+    conn.execute_batch(
+        "BEGIN TRANSACTION;
+     CREATE TABLE IF NOT EXISTS history (
+         title TEXT,
+         url TEXT,
+         time DATETIME
+     );
+     CREATE INDEX IF NOT EXISTS idx_url ON history (url);
+     COMMIT;",
     )
-    .expect("Failed to create table");
+    .expect("Failed to initialize database");
     Mutex::new(conn)
 });
 
@@ -28,34 +37,30 @@ fn get_database_path() -> PathBuf {
 
 pub fn add_history(link: &Link) -> Result<(), IsError> {
     let url = remove_http(link);
-    let conn = CONNECTION.lock().unwrap();
+    let conn = CONNECTION.lock().map_err(|e| Access(e.to_string()))?;
     if url_exists(&url, &conn) {
-        update_row(&url, &conn)?
+        update_row(&url, &conn)
     } else {
-        insert_row(link, &url, conn)?
+        insert_row(link, &url, conn)
     }
 }
 
-fn insert_row(
-    link: &Link,
-    url: &str,
-    conn: MutexGuard<Connection>,
-) -> Result<Result<(), IsError>, IsError> {
+fn insert_row(link: &Link, url: &str, conn: MutexGuard<Connection>) -> Result<(), IsError> {
     conn.execute(
         "INSERT INTO history (title, url, time) VALUES (?, ?, datetime('now'))",
         [&link.title, url],
     )
     .map_err(Database)?;
-    Ok(Ok(()))
+    Ok(())
 }
 
-fn update_row(url: &str, conn: &MutexGuard<Connection>) -> Result<Result<(), IsError>, IsError> {
+fn update_row(url: &str, conn: &MutexGuard<Connection>) -> Result<(), IsError> {
     conn.execute(
         "UPDATE history SET time = datetime('now') WHERE url = ?",
         [url],
     )
     .map_err(Database)?;
-    Ok(Ok(()))
+    Ok(())
 }
 
 fn url_exists(url: &str, conn: &MutexGuard<Connection>) -> bool {
@@ -68,43 +73,45 @@ fn url_exists(url: &str, conn: &MutexGuard<Connection>) -> bool {
     .unwrap_or(false)
 }
 
-fn remove_http(link: &Link) -> String {
-    let mut url = link.url.clone();
-    if url.starts_with("https") {
-        url = url[8..].to_string();
-    }
-    if url.starts_with("http") {
-        url = url[7..].to_string();
-    }
-    url
-}
-
 pub fn get_history() -> Result<Vec<HistoryData>, IsError> {
-    let conn = CONNECTION.lock().unwrap();
+    let conn = CONNECTION.lock().map_err(|e| Access(e.to_string()))?;
     let mut stmt = conn.prepare("SELECT title, url, time FROM history ORDER BY time DESC")?;
     let history: Vec<HistoryData> = stmt
-        .query_map([], |row| {
-            Ok(HistoryData {
-                title: row.get(0)?,
-                url: row.get(1)?,
-                time: row.get(2)?,
-            })
-        })?
-        .collect::<Result<_, _>>()?;
-
+        .query_map([], convert_to_history_data)?
+        .collect::<Result<_, _>>()
+        .map_err(Database)?;
     Ok(history)
 }
 
 pub fn remove_history(url: &str) -> Result<(), IsError> {
-    let conn = CONNECTION.lock().unwrap();
+    let conn = CONNECTION.lock().map_err(|e| Access(e.to_string()))?;
     conn.execute("DELETE FROM history WHERE url = ?", [url])
         .map_err(Database)?;
     Ok(())
+}
+
+fn remove_http(link: &Link) -> String {
+    link.url
+        .strip_prefix("https://")
+        .or_else(|| link.url.strip_prefix("http://"))
+        .unwrap_or(&link.url)
+        .to_string()
 }
 
 #[derive(Clone, PartialEq)]
 pub struct HistoryData {
     pub(crate) title: String,
     pub(crate) url: String,
-    pub(crate) time: String,
+    pub(crate) time: NaiveDateTime,
+}
+
+fn convert_to_history_data(row: &Row) -> Result<HistoryData, Error> {
+    let time_str: String = row.get(2)?;
+    let time = NaiveDateTime::parse_from_str(&time_str, "%Y-%m-%d %H:%M:%S")
+        .map_err(|e| FromSqlConversionFailure(2, Type::Text, Box::new(e)))?;
+    Ok(HistoryData {
+        title: row.get(0)?,
+        url: row.get(1)?,
+        time,
+    })
 }
