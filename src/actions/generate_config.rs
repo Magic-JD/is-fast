@@ -29,8 +29,8 @@ pub fn run() {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::TempDir;
     use serial_test::serial;
+    use tempfile::TempDir;
 
     #[test]
     #[serial]
