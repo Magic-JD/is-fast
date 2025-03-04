@@ -25,7 +25,7 @@ pub fn get_content(link: &Link) -> Paragraph<'static> {
         })
 }
 
-pub fn new_page(index: &mut usize, links: &[Link], history_active: bool) -> Paragraph<'static> {
+pub fn new_page(index: &usize, links: &[Link], history_active: bool) -> Paragraph<'static> {
     if let Some(link) = links.get(*index + 1) {
         preload(link);
     }
