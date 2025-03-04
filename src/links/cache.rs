@@ -24,7 +24,6 @@ pub fn get_content(link: &Link) -> Paragraph<'static> {
         })
 }
 
-
 pub fn preload(link: &Link) {
     let clone = link.clone();
     thread::spawn(move || {

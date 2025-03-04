@@ -164,4 +164,3 @@ pub fn new_page(index: &usize, links: &[Link], history_active: bool) -> Paragrap
 fn extract_title(link: &Link) -> String {
     format!(" {} ({}) ", link.title, link.url)
 }
-
