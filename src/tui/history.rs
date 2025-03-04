@@ -157,7 +157,12 @@ impl History {
 
 fn order_by_match(history: &mut [HistoryData], user_search: &mut String) -> Vec<HistoryData> {
     let mut matcher = Matcher::new(Config::DEFAULT);
-    let pattern = Pattern::new(&*user_search, CaseMatching::Ignore, Normalization::Smart, AtomKind::Fuzzy);
+    let pattern = Pattern::new(
+        &*user_search,
+        CaseMatching::Ignore,
+        Normalization::Smart,
+        AtomKind::Fuzzy,
+    );
     let mut data_2_score = history
         .iter()
         .map(|h| {
