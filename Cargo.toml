@@ -28,4 +28,5 @@ clap = { version = "4.5.31", features = ["derive", "cargo", "env"] }
 clap_mangen = "0.2.26"
 
 [dev-dependencies]
+serial_test = "3.2.0"
 tempfile = "3.17.1"

@@ -30,8 +30,10 @@ pub fn run() {
 mod tests {
     use super::*;
     use tempfile::TempDir;
+    use serial_test::serial;
 
     #[test]
+    #[serial]
     fn test_run_creates_config_file() {
         use std::env;
 
@@ -46,6 +48,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_run_fails_if_config_exists() {
         use std::env;
         use std::fs;
