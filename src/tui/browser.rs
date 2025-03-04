@@ -1,11 +1,13 @@
+use crate::database::connect::add_history;
 use crate::errors::error::IsError;
-use crate::links::cache::new_page;
+use crate::links::cache::{get_content, preload};
 use crate::links::link::Link;
 use crate::tui::browser::Action::{Down, Exit, Next, Open, PageDown, PageUp, Previous, Up};
-use crate::tui::display::Display;
+use crate::tui::display::{default_block, Display};
 use crossterm::event;
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
-use ratatui::widgets::Paragraph;
+use ratatui::prelude::{Color, Style, Text};
+use ratatui::widgets::{Paragraph, Wrap};
 
 pub const PAGE_INSTRUCTIONS: &str = " Quit: q/Esc | Scroll Down: j/↓ | Scroll Up: k/↑ | Page Down: CTRL+d | Page Up: CTRL+u | Next: n/→ | Back: b/← | Open in Browser: o";
 
@@ -135,3 +137,31 @@ fn open_link(index: &usize, links: &[Link]) {
         .iter()
         .for_each(|e| println!("{}", e));
 }
+
+pub fn new_page(index: &usize, links: &[Link], history_active: bool) -> Paragraph<'static> {
+    if let Some(link) = links.get(*index + 1) {
+        preload(link); // Initiate the call to get the page after this one
+    }
+    links
+        .get(*index)
+        .inspect(|link| {
+            if history_active {
+                _ = add_history(link)
+            }
+        })
+        .map(|link| (link, get_content(link)))
+        .map(|(link, paragraph)| {
+            let title = extract_title(link);
+            let block = default_block(&title, PAGE_INSTRUCTIONS);
+            paragraph
+                .block(block)
+                .style(Style::default().fg(Color::White))
+                .wrap(Wrap { trim: false })
+                .scroll((0, 0))
+        })
+        .unwrap_or_else(|| Paragraph::new(Text::from(String::from("Index out of bounds"))))
+}
+fn extract_title(link: &Link) -> String {
+    format!(" {} ({}) ", link.title, link.url)
+}
+
