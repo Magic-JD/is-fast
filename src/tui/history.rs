@@ -15,8 +15,6 @@ use ratatui::widgets::{Cell, Row, Table, TableState};
 use std::cmp::Ordering;
 use Action::Delete;
 
-const INSTRUCTIONS: &str = " Quit: Esc | Scroll Down: ↓ | Scroll Up: ↑ | Open: ↵ | Delete: Delete ";
-
 pub struct History {
     display: Display,
 }
@@ -24,7 +22,7 @@ pub struct History {
 impl History {
     pub fn new() -> Self {
         History {
-            display: Display::new(INSTRUCTIONS.to_string()),
+            display: Display::new(),
         }
     }
 
@@ -42,7 +40,7 @@ impl History {
         let mut rows = create_rows(history.clone(), &user_search);
         let mut table = create_table(&mut rows);
         self.display
-            .draw_table(
+            .draw_history(
                 &table,
                 history.len() as u16,
                 "History".to_string(),
@@ -79,7 +77,7 @@ impl History {
                     if let Some(selected) = state.selected() {
                         if selected > 0 {
                             state.select(Some(selected - 1));
-                            _ = self.display.draw_table(
+                            _ = self.display.draw_history(
                                 &table,
                                 history.len() as u16,
                                 "History".to_string(),
@@ -95,7 +93,7 @@ impl History {
                     if let Some(selected) = state.selected() {
                         if selected < (history.len() - 1) {
                             state.select(Some(selected + 1));
-                            _ = self.display.draw_table(
+                            _ = self.display.draw_history(
                                 &table,
                                 history.len() as u16,
                                 "History".to_string(),
@@ -113,7 +111,7 @@ impl History {
                     total_history.retain(|item| *item != removed);
                     table = create_table(&mut create_rows(history.clone(), &user_search));
                     self.display
-                        .draw_table(
+                        .draw_history(
                             &table,
                             history.len() as u16,
                             "History".to_string(),
@@ -128,7 +126,7 @@ impl History {
                     history = order_by_match(&mut history, &mut user_search);
                     table = create_table(&mut create_rows(history.clone(), &user_search));
                     state.select(Some(history.len().saturating_sub(1)));
-                    _ = self.display.draw_table(
+                    _ = self.display.draw_history(
                         &table,
                         history.len() as u16,
                         "History".to_string(),
@@ -143,7 +141,7 @@ impl History {
                     history = order_by_match(&mut history, &mut user_search);
                     table = create_table(&mut create_rows(history.clone(), &user_search));
                     state.select(Some(history.len().saturating_sub(1)));
-                    _ = self.display.draw_table(
+                    _ = self.display.draw_history(
                         &table,
                         history.len() as u16,
                         "History".to_string(),

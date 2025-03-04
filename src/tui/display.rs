@@ -7,20 +7,27 @@ use ratatui::backend::CrosstermBackend;
 use ratatui::layout::{Constraint, Direction, Layout};
 use ratatui::prelude::{Color, Modifier, Span, Style};
 use ratatui::text::Line;
-use ratatui::widgets::{Block, Borders, Paragraph, Table, TableState, Wrap};
+use ratatui::widgets::{Block, Borders, Paragraph, Table, TableState};
 use ratatui::Terminal;
 use std::io::{stdout, Stdout};
 use std::sync::Mutex;
 
 static TUI_BORDER_COLOR: Lazy<Style> = Lazy::new(|| Style::default().fg(Color::Green));
+static HISTORY_INSTRUCTIONS: &str =
+    " Quit: Esc | Scroll Down: ↓ | Scroll Up: ↑ | Open: ↵ | Delete: Delete ";
 
 pub struct Display {
     terminal: Mutex<Terminal<CrosstermBackend<Stdout>>>,
-    instructions: String,
 }
 
+static PAGE_LAYOUT: Lazy<Layout> = Lazy::new(|| {
+    Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Percentage(100)].as_ref())
+});
+
 impl Display {
-    pub(crate) fn new(instructions: String) -> Self {
+    pub(crate) fn new() -> Self {
         // This can panic if startup not handled properly.
         enable_raw_mode().unwrap();
         let mut out = stdout();
@@ -29,7 +36,6 @@ impl Display {
         let terminal = Terminal::new(backend).unwrap();
         Display {
             terminal: Mutex::new(terminal),
-            instructions,
         }
     }
 
@@ -50,10 +56,12 @@ impl Display {
     }
 
     pub fn loading(&self) -> std::io::Result<()> {
-        self.draw(&Paragraph::default(), " Loading...".to_string(), 0)
+        let paragraph = Paragraph::default();
+        let paragraph = paragraph.block(default_block("Loading...", ""));
+        self.draw_page(&paragraph)
     }
 
-    pub(crate) fn draw_table(
+    pub(crate) fn draw_history(
         &self,
         table: &Table,
         row_count: u16,
@@ -72,7 +80,7 @@ impl Display {
                 *state.offset_mut() = 0;
                 state.select_last();
             }
-            let block = self.default_block(&title);
+            let block = default_block(&title, HISTORY_INSTRUCTIONS);
             let layout = Layout::default()
                 .direction(Direction::Vertical)
                 .constraints(
@@ -101,40 +109,28 @@ impl Display {
         Ok(())
     }
 
-    fn default_block<'a>(&'a self, title: &'a str) -> Block<'a> {
-        Block::default()
-            .title(self.tui_border_span(title))
-            .title_bottom(self.tui_border_span(&self.instructions))
-            .borders(Borders::TOP)
-            .style(*TUI_BORDER_COLOR)
-    }
-
-    pub(crate) fn draw(
-        &self,
-        page: &Paragraph,
-        title: String,
-        scroll_offset: u16,
-    ) -> std::io::Result<()> {
+    pub(crate) fn draw_page(&self, page: &Paragraph) -> std::io::Result<()> {
         let mut terminal = self.terminal.lock().unwrap();
-        let block = self.default_block(&title);
-        let paragraph = page
-            .to_owned()
-            .block(block)
-            .style(Style::default().fg(Color::White))
-            .wrap(Wrap { trim: false })
-            .scroll((scroll_offset, 0));
         terminal.draw(|frame| {
             let size = frame.area();
-            let layout = Layout::default()
-                .direction(Direction::Vertical)
-                .constraints([Constraint::Percentage(100)].as_ref());
+            let layout = &PAGE_LAYOUT;
             let area = layout.split(size)[0];
-            frame.render_widget(paragraph, area);
+            frame.render_widget(page, area);
         })?;
         Ok(())
     }
+}
+pub fn default_block(title: &str, instructions: &str) -> Block<'static> {
+    Block::default()
+        .title(tui_border_span(title))
+        .title_bottom(tui_border_span(instructions))
+        .borders(Borders::TOP)
+        .style(*TUI_BORDER_COLOR)
+}
 
-    fn tui_border_span<'a>(&self, text: &'a str) -> Span<'a> {
-        Span::styled(text, (*TUI_BORDER_COLOR).add_modifier(Modifier::BOLD))
-    }
+fn tui_border_span(text: &str) -> Span<'static> {
+    Span::styled(
+        text.to_string(),
+        (*TUI_BORDER_COLOR).add_modifier(Modifier::BOLD),
+    )
 }

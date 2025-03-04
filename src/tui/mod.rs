@@ -1,3 +1,3 @@
 pub mod browser;
-mod display;
+pub mod display;
 pub mod history;
