@@ -37,7 +37,7 @@ impl History {
         let mut state = TableState::default();
         history = order_by_match(&mut history, &mut user_search);
         state.select(Some(history.len().saturating_sub(1)));
-        let mut rows = create_rows(history.clone(), &user_search);
+        let mut rows = create_rows(&history, &user_search);
         let mut table = create_table(&mut rows);
         self.display
             .draw_history(
@@ -109,7 +109,7 @@ impl History {
                     let removed = history.remove(ref_state.selected().unwrap_or(0));
                     _ = remove_history(&removed.url);
                     total_history.retain(|item| *item != removed);
-                    table = create_table(&mut create_rows(history.clone(), &user_search));
+                    table = create_table(&mut create_rows(&history, &user_search));
                     self.display
                         .draw_history(
                             &table,
@@ -124,7 +124,7 @@ impl History {
                 Text(char) => {
                     user_search.push(char);
                     history = order_by_match(&mut history, &mut user_search);
-                    table = create_table(&mut create_rows(history.clone(), &user_search));
+                    table = create_table(&mut create_rows(&history, &user_search));
                     state.select(Some(history.len().saturating_sub(1)));
                     _ = self.display.draw_history(
                         &table,
@@ -139,7 +139,7 @@ impl History {
                     user_search.pop();
                     history = total_history.clone();
                     history = order_by_match(&mut history, &mut user_search);
-                    table = create_table(&mut create_rows(history.clone(), &user_search));
+                    table = create_table(&mut create_rows(&history, &user_search));
                     state.select(Some(history.len().saturating_sub(1)));
                     _ = self.display.draw_history(
                         &table,
@@ -191,19 +191,18 @@ fn create_table<'a>(rows: &mut [Row<'a>]) -> Table<'a> {
     table
 }
 
-fn create_rows(history: Vec<HistoryData>, user_search: &str) -> Vec<Row<'static>> {
+fn create_rows(history: &[HistoryData], user_search: &str) -> Vec<Row<'static>> {
     let rows: Vec<Row> = history
         .iter()
         .map(|h| {
             let cells = vec![
                 Cell::from(highlight_title(
-                    clip_if_needed(h.title.clone(), 100),
+                    clip_if_needed(&h.title, 100),
                     user_search.to_owned(),
                 ))
                 .style(Style::default().fg(Color::Yellow)),
-                Cell::from(clip_if_needed(h.url.clone(), 60))
-                    .style(Style::default().fg(Color::Green)),
-                Cell::from(date_to_display(h.time)).style(Style::default().fg(Color::Cyan)),
+                Cell::from(clip_if_needed(&h.url, 60)).style(Style::default().fg(Color::Green)),
+                Cell::from(date_to_display(&h.time)).style(Style::default().fg(Color::Cyan)),
             ];
             Row::new(cells)
         })
@@ -253,28 +252,24 @@ fn highlight_title(plain_text: String, user_search: String) -> Line<'static> {
 }
 
 fn handle_input() -> Action {
-    event::read()
-        .map(|event| {
-            if let event::Event::Key(KeyEvent {
-                code,
-                kind: KeyEventKind::Press,
-                ..
-            }) = event
-            {
-                return match code {
-                    KeyCode::Esc => Exit,
-                    KeyCode::Up => Up,
-                    KeyCode::Down => Down,
-                    KeyCode::Enter => Open,
-                    KeyCode::Delete => Delete,
-                    KeyCode::Char(char) => Text(char),
-                    KeyCode::Backspace => Backspace,
-                    _ => Continue,
-                };
-            }
-            Continue
-        })
-        .unwrap_or(Continue)
+    if let Ok(event::Event::Key(KeyEvent {
+        code,
+        kind: KeyEventKind::Press,
+        ..
+    })) = event::read()
+    {
+        return match code {
+            KeyCode::Esc => Exit,
+            KeyCode::Up => Up,
+            KeyCode::Down => Down,
+            KeyCode::Enter => Open,
+            KeyCode::Delete => Delete,
+            KeyCode::Char(char) => Text(char),
+            KeyCode::Backspace => Backspace,
+            _ => Continue,
+        };
+    }
+    Continue
 }
 
 enum Action {
@@ -288,14 +283,14 @@ enum Action {
     Backspace,
 }
 
-fn clip_if_needed(text: String, max_length: usize) -> String {
+fn clip_if_needed(text: &str, max_length: usize) -> String {
     if text.len() > max_length {
         return format!("{}...", &text[0..max_length - 3]);
     }
     text.to_string()
 }
 
-fn date_to_display(date: NaiveDateTime) -> String {
+fn date_to_display(date: &NaiveDateTime) -> String {
     let duration = Utc::now().signed_duration_since(date.and_utc());
     if duration.num_weeks() > 0 {
         return format_time(duration.num_weeks(), "weeks".to_string());
