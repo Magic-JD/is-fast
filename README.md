@@ -45,15 +45,17 @@ No waiting - just internet search fast in your terminal.
     - [🔍 Selectors](#-selectors)
     - [🎨 Text Styles](#-text-styles)
     - [🌈 Syntax Highlighting](#-syntax-highlighting)
+    - [🎨 Display Settings](#-display-settings)
+    - [🕰️ History Settings](#-history-settings)
     - [📌 Summary](#-summary)
 - [🌐 Using `is-fast` to Open URLs Directly](#-using-is-fast-to-open-urls-directly)
     - [`--direct` / `-d`](#--direct---d)
 - [📃 Using `is-fast` with Local HTML Files](#-using-is-fast-with-local-html-files)
     - [`--file` / `-f`](#--file---f)
     - [`--url` / `-u`](#--url---u)
+- [🔄 Using `--piped` to Output to Standard Output](#-using---piped-to-output-to-standard-output)
 - [📜 Viewing History in `is-fast`](#-viewing-history-in-is-fast)
     - [`--history`](#--history)
-    - [`--select` / `-s`](#--select---s)
 - [Running the Project 🏃](#running-the-project-)
     - [Prerequisites](#prerequisites)
     - [Installing the program (🐧 🍏 🪟)](#installing-the-program---)
@@ -199,7 +201,8 @@ endpoint blob it will return only elements with the CSS class .react-code-line-c
 
 ### Definition
 
-This section defines **how different HTML tags should be styled** in the output.
+This section defines **how different HTML tags should be styled** in the output. Colors can be specified using standard color names (e.g., red, blue),
+hex values (e.g., #ff5733), or RGB notation (e.g., rgb(255, 87, 51)).
 
 ### Example Configuration
 
@@ -253,6 +256,65 @@ default_language = "rust"
 theme = "base16-ocean.dark"
 ```
 
+
+## 🎨 Display Settings
+
+The `[display]` section defines visual aspects of the output.
+
+### Border Color
+
+This sets the border color used in the UI.
+
+### Page Margin
+
+A percentage of the page width that should be empty on either side.
+
+### Example:
+
+```toml
+[display]
+border_color = "#74c7ec"
+page_margin = 10
+```
+
+## 🕰️ History Settings
+
+The `[history]` section defines how historical entries should be displayed.
+
+### Title Color
+
+Sets the color for titles in the history list.
+
+### URL Color
+
+Defines the color for URLs in the history list.
+
+### Time Color
+
+Sets the color for the time field in the history list.
+
+### Text Color
+
+Defines the text color of the search bar for history entries.
+
+### Search Type
+
+Determines the type of search used for history entries. Available options:
+- `fuzzy` (default) - Uses a fuzzy search algorithm.
+- `substring` - Matches substrings exactly.
+- `exact` - Requires an exact match.
+
+### Example:
+
+```toml
+[history]
+title_color = "rgb(137, 180, 250)"
+url_color = "rgb(186, 194, 222)"
+time_color = "rgb(242, 205, 205)"
+text_color = "rgb(116, 199, 236)"
+search_type = "fuzzy"
+```
+
 ## 📌 Summary
 
 | Configuration           | Purpose                                                             |
@@ -262,6 +324,8 @@ theme = "base16-ocean.dark"
 | **Selectors**           | Extract only specific content from websites.                        |
 | **Styles**              | Define how text should be formatted.                                |
 | **Syntax Highlighting** | Defines how the syntax highlighting should be handled.              |
+| **Display Settings**    | Controls visual aspects like borders and margins.                   |
+| **History Settings**    | Configures history display colors and search behavior.              |
 
 ---
 
