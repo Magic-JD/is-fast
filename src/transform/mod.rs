@@ -1,6 +1,7 @@
 pub mod cache;
+pub mod page;
+pub mod link;
 mod filter;
 mod format;
-pub mod page;
-pub mod scrape;
 mod syntax_highlight;
+mod scrape;

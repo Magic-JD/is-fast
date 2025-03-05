@@ -1,6 +1,6 @@
 use crate::config::load::Config;
-use crate::extraction::page::PageExtractor;
-use crate::links::link::Link;
+use crate::transform::page::PageExtractor;
+use crate::transform::link::Link;
 use crate::tui::browser::Browser;
 
 pub fn run(file: String, url: Option<String>, selection: Option<String>, piped: bool) {

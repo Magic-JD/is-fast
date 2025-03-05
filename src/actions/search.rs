@@ -1,7 +1,5 @@
-use crate::extraction::page::PageExtractor;
-use crate::extraction::scrape::scrape;
-use crate::links::extract::from_html;
-use crate::links::link::Link;
+use crate::transform::link::get_links;
+use crate::transform::page::PageExtractor;
 use crate::tui::browser::Browser;
 use std::thread::sleep;
 use std::time::Duration;
@@ -21,11 +19,3 @@ pub fn run(search_term: String) {
     browser.browse(links, PageExtractor::from_url(), true);
 }
 
-fn get_links(search_term: &String) -> Vec<Link> {
-    scrape(&format!(
-        "https://html.duckduckgo.com/html/?q={}",
-        &search_term
-    ))
-    .map(|html| from_html(&html))
-    .unwrap_or_else(|_| vec![])
-}

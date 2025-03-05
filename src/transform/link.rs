@@ -1,8 +1,32 @@
-use crate::config::load::Config;
-use crate::links::link::Link;
 use scraper::{Html, Selector};
+use crate::config::load::Config;
+use crate::transform::scrape::scrape;
 
-pub fn from_html(html: &str) -> Vec<Link> {
+#[derive(Clone)]
+pub struct Link {
+    pub url: String,
+    pub title: String,
+    pub selector: String,
+}
+impl Link {
+    pub fn new(title: String, url: String, selector: String) -> Self {
+        Self {
+            url,
+            title,
+            selector,
+        }
+    }
+}
+pub fn get_links(search_term: &String) -> Vec<Link> {
+    scrape(&format!(
+        "https://html.duckduckgo.com/html/?q={}",
+        &search_term
+    ))
+        .map(|html| from_html(&html))
+        .unwrap_or_else(|_| vec![])
+}
+
+fn from_html(html: &str) -> Vec<Link> {
     let document = Html::parse_document(html);
     let selector_title = Selector::parse("a.result__a").unwrap();
     let selector_url = Selector::parse("a.result__url").unwrap();

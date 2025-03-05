@@ -1,7 +1,7 @@
 use crate::config::load::Config;
 use crate::errors::error::IsError;
 use crate::errors::error::IsError::General;
-use crate::extraction::syntax_highlight::highlight_code;
+use crate::transform::syntax_highlight::highlight_code;
 use once_cell::sync::Lazy;
 use ratatui::style::{Style, Styled};
 use ratatui::text::{Line, Span, Text};

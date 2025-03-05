@@ -44,7 +44,7 @@ fn curl_scrape(url: &str) -> Result<String, IsError> {
             url,
         ])
         .output()
-        .map_err(|e| IsError::Scrape(e.to_string()))?;
+        .map_err(|e| Scrape(e.to_string()))?;
 
     Ok(String::from_utf8_lossy(&output.stdout).into_owned())
 }

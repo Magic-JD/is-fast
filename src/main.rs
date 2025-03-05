@@ -3,9 +3,7 @@ mod cli;
 mod config;
 mod database;
 mod errors;
-mod extraction;
-mod links;
-mod stout;
+mod transform;
 mod tui;
 
 use crate::actions::{direct, history};

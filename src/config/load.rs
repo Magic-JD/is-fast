@@ -1,4 +1,3 @@
-use crate::config::constants::DEFAULT_CONFIG_LOCATION;
 use globset::{Glob, GlobSet, GlobSetBuilder};
 use once_cell::sync::Lazy;
 use ratatui::style::{Color, Modifier, Style};
@@ -9,6 +8,7 @@ use std::{env, fs};
 use toml;
 
 static CONFIG: Lazy<Config> = Lazy::new(Config::load);
+pub const DEFAULT_CONFIG_LOCATION: &str = include_str!("config.toml");
 
 #[derive(Debug, Deserialize)]
 struct TagStyleConfig {

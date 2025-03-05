@@ -1,5 +1,5 @@
-use crate::extraction::page::PageExtractor;
-use crate::links::link::Link;
+use crate::transform::page::PageExtractor;
+use crate::transform::link::Link;
 use dashmap::DashMap;
 use once_cell::sync::Lazy;
 use ratatui::widgets::Paragraph;

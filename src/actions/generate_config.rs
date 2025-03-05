@@ -1,5 +1,5 @@
-use crate::config::write::write_default_to_user;
 use std::fs;
+use crate::config::load::DEFAULT_CONFIG_LOCATION;
 
 pub fn run() {
     println!("Generating config file...");
@@ -13,7 +13,8 @@ pub fn run() {
                 .map_err(|e| format!("Error creating config directory: {}", e))
                 .and_then(|_| {
                     if !config_path.exists() {
-                        write_default_to_user(&config_path)
+                        fs::write(&config_path, DEFAULT_CONFIG_LOCATION)
+                            .map_err(|e| format!("Error writing config file: {}", e))
                     } else {
                         Err(format!("Config file already exists at {:?}", config_path))
                     }
