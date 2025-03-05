@@ -40,16 +40,20 @@ impl Browser {
             match handle_input() {
                 Exit => break,
                 Next => {
-                    scroll = 0;
-                    index = (index + 1).min(links.len().saturating_sub(1));
-                    self.change_page(&index, &links, &mut page, &extractor, history_active)
-                        .unwrap();
+                    if index < links.len() - 1 {
+                        scroll = 0;
+                        index += 1;
+                        self.change_page(&index, &links, &mut page, &extractor, history_active)
+                            .unwrap();
+                    }
                 }
                 Previous => {
-                    scroll = 0;
-                    index = index.saturating_sub(1);
-                    self.change_page(&index, &links, &mut page, &extractor, history_active)
-                        .unwrap();
+                    if index > 0 {
+                        scroll = 0;
+                        index -= 1;
+                        self.change_page(&index, &links, &mut page, &extractor, history_active)
+                            .unwrap();
+                    }
                 }
                 Down => {
                     scroll = scroll.saturating_add(1);
