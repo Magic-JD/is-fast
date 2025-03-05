@@ -19,15 +19,6 @@ pub fn to_display(elements: Vec<ElementRef>) -> Result<Text<'static>, IsError> {
         .map(standardize_empty)
         .collect::<Vec<Line>>();
     lines.dedup();
-    if let Some(first) = lines.first() {
-        if first
-            .spans
-            .iter()
-            .all(|span| span.content.trim().is_empty())
-        {
-            lines.remove(0);
-        }
-    }
     if lines.is_empty() {
         return Err(General("No content found".into()));
     }
@@ -100,11 +91,17 @@ fn extract_lines(
     let mut lines = Vec::new();
     element.children().for_each(|node| match node.value() {
         Node::Text(text) => {
-            if pre_formatted || !text.trim().is_empty() {
+            if pre_formatted {
                 let current_lines = text
                     .split('\n')
                     .map(|line| create_optionally_styled_line(line, style))
                     .collect::<Vec<Line>>();
+                merge_with_previous_line(&mut lines, current_lines);
+            } else if !text.trim().is_empty() {
+                let current_lines = vec![create_optionally_styled_line(
+                    &text.replace("\n", " "),
+                    style,
+                )];
                 merge_with_previous_line(&mut lines, current_lines);
             }
         }
@@ -186,13 +183,24 @@ fn create_optionally_styled_line(content: &str, style: Option<&Style>) -> Line<'
 }
 
 fn merge_with_previous_line(lines: &mut Vec<Line<'static>>, mut new_lines: Vec<Line<'static>>) {
-    if let Some(prev_end) = lines.last_mut() {
-        if let Some(new_start) = new_lines.first_mut() {
+    if let (Some(prev_end), Some(new_start)) = (lines.last_mut(), new_lines.first_mut()) {
+        if let (Some(end), Some(start)) = (prev_end.spans.last(), new_start.spans.first()) {
+            // Text from two different elements should almost always have a space - only exception for punctuation.
+            // However often that space is achieved through css rather than the text.
+            // Therefore, we check this manually.
+            if !(end.content.ends_with(' ')
+                || start.content.starts_with(' ')
+                || matches!(start.content.chars().next(), Some(c) if ".:;,)}]".contains(c))
+                || matches!(end.content.chars().last(), Some(c) if "[{(".contains(c)))
+            {
+                prev_end.spans.push(Span::from(" "));
+            }
             prev_end.spans.append(&mut new_start.spans);
-            new_lines.remove(0);
+            new_lines.drain(..1);
         }
     }
-    lines.extend(new_lines);
+
+    lines.append(&mut new_lines);
 }
 
 #[cfg(test)]
@@ -217,6 +225,7 @@ mod tests {
         let result = to_display(select).expect("Expected valid parsed output");
 
         let expected = Text::from(vec![
+            Line::default(),
             Line::from(Span::styled(
                 "Hello, World!",
                 Style::default().add_modifier(Modifier::BOLD),
@@ -254,6 +263,7 @@ mod tests {
             .contains("fn main() { println!(\"Hello, Rust!\"); }"));
 
         let expected = Text::from(vec![
+            Line::default(),
             Line::from_iter([
                 Span::styled("fn", Style::default().fg(Color::Rgb(180, 142, 173))),
                 Span::styled(" ", Style::default().fg(Color::Rgb(192, 197, 206))),
@@ -312,6 +322,7 @@ This is line one.
         let result = to_display(select).unwrap();
 
         let expected = Text::from(vec![
+            Line::default(),
             Line::from("This is line one."),
             Line::from_iter([
                 Span::from("    This is line two with a "),

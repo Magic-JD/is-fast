@@ -4,13 +4,11 @@ use crate::transform::cache::{get_content, preload};
 use crate::transform::link::Link;
 use crate::transform::page::PageExtractor;
 use crate::tui::browser::Action::{Down, Exit, Next, Open, PageDown, PageUp, Previous, Up};
-use crate::tui::display::{default_block, Display};
+use crate::tui::display::Display;
 use crossterm::event;
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::prelude::{Color, Style, Text};
 use ratatui::widgets::{Paragraph, Wrap};
-
-pub const PAGE_INSTRUCTIONS: &str = " Quit: q/Esc | Scroll Down: j/↓ | Scroll Up: k/↑ | Page Down: CTRL+d | Page Up: CTRL+u | Next: n/→ | Back: b/← | Open in Browser: o";
 
 pub struct Browser {
     display: Display,
@@ -32,9 +30,9 @@ impl Browser {
             return;
         }
         let mut index = 0;
-        let mut page = new_page(&index, &links, &extractor, history_active);
+        let (mut title, mut page) = new_page(&index, &links, &extractor, history_active);
         self.display
-            .draw_page(&page)
+            .draw_page(&page, &title)
             .unwrap_or_else(|err| self.display.shutdown_with_error(&err.to_string()));
         loop {
             match handle_input() {
@@ -43,37 +41,51 @@ impl Browser {
                     if index < links.len() - 1 {
                         scroll = 0;
                         index += 1;
-                        self.change_page(&index, &links, &mut page, &extractor, history_active)
-                            .unwrap();
+                        self.change_page(
+                            &index,
+                            &links,
+                            &mut page,
+                            &mut title,
+                            &extractor,
+                            history_active,
+                        )
+                        .unwrap();
                     }
                 }
                 Previous => {
                     if index > 0 {
                         scroll = 0;
                         index -= 1;
-                        self.change_page(&index, &links, &mut page, &extractor, history_active)
-                            .unwrap();
+                        self.change_page(
+                            &index,
+                            &links,
+                            &mut page,
+                            &mut title,
+                            &extractor,
+                            history_active,
+                        )
+                        .unwrap();
                     }
                 }
                 Down => {
                     scroll = scroll.saturating_add(1);
                     page = page.scroll((scroll, 0));
-                    let _ = self.display.draw_page(&page);
+                    let _ = self.display.draw_page(&page, &title);
                 }
                 Up => {
                     scroll = scroll.saturating_sub(1);
                     page = page.scroll((scroll, 0));
-                    let _ = self.display.draw_page(&page);
+                    let _ = self.display.draw_page(&page, &title);
                 }
                 PageUp => {
                     scroll = scroll.saturating_sub(height / 2);
                     page = page.scroll((scroll, 0));
-                    let _ = self.display.draw_page(&page);
+                    let _ = self.display.draw_page(&page, &title);
                 }
                 PageDown => {
                     scroll = scroll.saturating_add(height / 2);
                     page = page.scroll((scroll, 0));
-                    let _ = self.display.draw_page(&page);
+                    let _ = self.display.draw_page(&page, &title);
                 }
                 Open => {
                     open_link(&index, &links);
@@ -89,13 +101,16 @@ impl Browser {
         index: &usize,
         links: &[Link],
         page: &mut Paragraph,
+        title: &mut String,
         extractor: &PageExtractor,
         history_active: bool,
     ) -> Result<(), IsError> {
         self.display.loading()?;
-        *page = new_page(index, links, extractor, history_active);
+        let (t, p) = new_page(index, links, extractor, history_active);
+        *title = t;
+        *page = p;
         self.display
-            .draw_page(page)
+            .draw_page(page, title)
             .map_err(|e| IsError::General(e.to_string()))
     }
 }
@@ -149,7 +164,7 @@ pub fn new_page(
     links: &[Link],
     extractor: &PageExtractor,
     history_active: bool,
-) -> Paragraph<'static> {
+) -> (String, Paragraph<'static>) {
     if let Some(link) = links.get(*index + 1) {
         preload(link, extractor); // Initiate the call to get the page after this one
     }
@@ -162,15 +177,20 @@ pub fn new_page(
         })
         .map(|link| (link, get_content(link, extractor)))
         .map(|(link, paragraph)| {
-            let title = extract_title(link);
-            let block = default_block(&title, PAGE_INSTRUCTIONS);
-            paragraph
-                .block(block)
-                .style(Style::default().fg(Color::White))
-                .wrap(Wrap { trim: false })
-                .scroll((0, 0))
+            (
+                extract_title(link),
+                paragraph
+                    .style(Style::default().fg(Color::White))
+                    .wrap(Wrap { trim: false })
+                    .scroll((0, 0)),
+            )
         })
-        .unwrap_or_else(|| Paragraph::new(Text::from(String::from("Index out of bounds"))))
+        .unwrap_or_else(|| {
+            (
+                String::from("None"),
+                Paragraph::new(Text::from(String::from("Index out of bounds"))),
+            )
+        })
 }
 fn extract_title(link: &Link) -> String {
     format!(" {} ({}) ", link.title, link.url)

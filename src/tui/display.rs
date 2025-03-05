@@ -16,15 +16,11 @@ static TUI_BORDER_COLOR: Lazy<Style> = Lazy::new(|| Style::default().fg(Color::G
 static HISTORY_INSTRUCTIONS: &str =
     " Quit: Esc | Scroll Down: ↓ | Scroll Up: ↑ | Open: ↵ | Delete: Delete ";
 
+static PAGE_INSTRUCTIONS: &str = " Quit: q/Esc | Scroll Down: j/↓ | Scroll Up: k/↑ | Page Down: CTRL+d | Page Up: CTRL+u | Next: n/→ | Back: b/← | Open in Browser: o";
+
 pub struct Display {
     terminal: Mutex<Terminal<CrosstermBackend<Stdout>>>,
 }
-
-static PAGE_LAYOUT: Lazy<Layout> = Lazy::new(|| {
-    Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([Constraint::Percentage(100)].as_ref())
-});
 
 impl Display {
     pub(crate) fn new() -> Self {
@@ -56,9 +52,13 @@ impl Display {
     }
 
     pub fn loading(&self) -> std::io::Result<()> {
-        let paragraph = Paragraph::default();
-        let paragraph = paragraph.block(default_block("Loading...", ""));
-        self.draw_page(&paragraph)
+        let block = default_block("Loading...", "");
+        let mut terminal = self.terminal.lock().unwrap();
+        terminal.draw(|frame| {
+            let size = frame.area();
+            frame.render_widget(block, size); // Block takes the whole area
+        })?;
+        Ok(())
     }
 
     pub(crate) fn draw_history(
@@ -109,13 +109,39 @@ impl Display {
         Ok(())
     }
 
-    pub(crate) fn draw_page(&self, page: &Paragraph) -> std::io::Result<()> {
+    pub(crate) fn draw_page(&self, page: &Paragraph, title: &str) -> std::io::Result<()> {
         let mut terminal = self.terminal.lock().unwrap();
         terminal.draw(|frame| {
             let size = frame.area();
-            let layout = &PAGE_LAYOUT;
-            let area = layout.split(size)[0];
-            frame.render_widget(page, area);
+            let block = default_block(title, PAGE_INSTRUCTIONS);
+            frame.render_widget(block, size); // Block takes the whole area
+
+            //Split vertically leaving room for the header and footer.
+            let vertical_chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints(
+                    [
+                        Constraint::Length(1),
+                        Constraint::Length(size.height - 2),
+                        Constraint::Length(1),
+                    ]
+                    .as_ref(),
+                )
+                .split(size);
+
+            // Split middle section horizontally to add margins to the sides.
+            let horizontal_chunks = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints(
+                    [
+                        Constraint::Percentage(5),
+                        Constraint::Percentage(90),
+                        Constraint::Percentage(5),
+                    ]
+                    .as_ref(),
+                )
+                .split(vertical_chunks[1]);
+            frame.render_widget(page, horizontal_chunks[1]);
         })?;
         Ok(())
     }

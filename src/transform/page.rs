@@ -77,7 +77,6 @@ mod tests {
         let path_output = Path::new("tests/data/expected_text.txt");
         let expected_content = fs::read_to_string(path_output)
             .expect("Failed to read test HTML file")
-            .trim()
             .to_owned();
 
         assert_eq!(plain_text, expected_content);
@@ -91,7 +90,8 @@ mod tests {
         let min_len = expected_lines.len().min(result_lines.len());
 
         for i in 0..min_len {
-            if expected_lines[i] != result_lines[i] {
+            if expected_lines[i] != result_lines[i + 1] {
+                // Additional newline on from text input
                 panic!(
                     "Mismatch at line {}:\nExpected: {:?}\nGot: {:?}",
                     i + 1,
@@ -107,6 +107,6 @@ mod tests {
             .flat_map(|line| line.spans.clone())
             .collect::<Vec<Span>>()
             .len();
-        assert_eq!(length, 571);
+        assert_eq!(length, 556);
     }
 }
