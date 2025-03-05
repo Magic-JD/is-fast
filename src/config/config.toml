@@ -1,14 +1,14 @@
 # Styles for each element
 # Example:
-#[styles.example]
-#fg = "Blue"        # Sets the foreground (text) color
-#bg = "#D3D3D3"     # Sets the background color using a hex code (Light Gray)
-#bg = "rgb(0, 0, 0)" would also be a valud option.
-#bold = true        # Makes text bold
-#italic = true      # Makes text italic
-#underlined = true  # Underlines the text
-#crossed_out = true # Strikes through the text
-#dim = true         # Makes text dimmer
+# [styles.example]
+# fg = "Blue"           # Sets the foreground (text) color
+# bg = "#D3D3D3"        # Sets the background color using a hex code (Light Gray)
+# bg = "rgb(0, 0, 0)"   # would also be a valud option.
+# bold = true           # Makes text bold
+# italic = true         # Makes text italic
+# underlined = true     # Underlines the text
+# crossed_out = true    # Strikes through the text
+# dim = true            # Makes text dimmer
 
 [styles.h1]
 bold = true
@@ -114,13 +114,13 @@ block_elements = ["p", "div", "table", "article", "img", "section", "pre", "bloc
 default_language = "rust"
 
 # Valid themes
-#InspiredGitHub
-#Solarized (dark)
-#Solarized (light)
-#base16-eighties.dark
-#base16-mocha.dark
-#base16-ocean.dark
-#base16-ocean.light
+# InspiredGitHub
+# Solarized (dark)
+# Solarized (light)
+# base16-eighties.dark
+# base16-mocha.dark
+# base16-ocean.dark
+# base16-ocean.light
 theme = "base16-ocean.dark"
 
 
