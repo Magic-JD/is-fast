@@ -102,7 +102,7 @@ impl Config {
         CONFIG.styles.clone()
     }
 
-    pub fn get_selectors(url: &str) -> Option<String> {
+    pub fn get_selectors(url: &str) -> String {
         CONFIG
             .matcher
             .matches(url)
@@ -110,6 +110,7 @@ impl Config {
             .find_map(|idx| CONFIG.globs.get(*idx))
             .map(|glob| glob.clone().to_string())
             .and_then(|s| CONFIG.selectors.get(&s).cloned())
+            .unwrap_or_else(|| String::from("body"))
     }
 
     pub fn get_ignored_tags() -> HashSet<String> {

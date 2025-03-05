@@ -67,6 +67,7 @@ impl History {
                             direct::run(
                                 Some(history_data.title.clone()),
                                 history_data.url.clone(),
+                                None,
                                 false,
                             );
                         });

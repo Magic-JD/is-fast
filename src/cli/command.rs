@@ -37,6 +37,14 @@ pub struct Cli {
     #[arg(long = "piped", help = "Output the result to standard out")]
     pub(crate) piped: bool,
 
+    /// Use custom selector for 1 time use when viewing a page. This will override any existing configuration.
+    #[arg(
+        short = 's',
+        long = "selector",
+        help = "Use selector overriding existing configuration."
+    )]
+    pub(crate) selector: Option<String>,
+
     /// Show previously viewed pages.
     #[arg(long = "history", help = "Show previously viewed pages")]
     pub(crate) history: bool,

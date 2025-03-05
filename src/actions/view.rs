@@ -1,20 +1,16 @@
-use crate::formatting::format::to_display;
+use crate::config::load::Config;
+use crate::extraction::page::PageExtractor;
 use crate::links::link::Link;
-use crate::scrapers::scrape::sanitize;
-use crate::stout::pipe::out_to_std;
 use crate::tui::browser::Browser;
-use ratatui::text::Text;
-use std::fs;
 
-pub fn run(file: String, url: Option<String>, piped: bool) {
+pub fn run(file: String, url: Option<String>, selection: Option<String>, piped: bool) {
     let url = url.unwrap_or_else(|| file.clone());
-    let html = sanitize(&fs::read_to_string(&file).unwrap());
+    let selection_tag = selection.unwrap_or_else(|| Config::get_selectors(&url));
+    let link = Link::new(file, url, selection_tag);
     if piped {
-        out_to_std(
-            to_display(&url, &html).unwrap_or_else(|_| Text::from("Failed to convert to text")),
-        );
+        let text = PageExtractor::from_file().get_plain_text(&link);
+        println!("{}", text);
         return;
     }
-    let link = Link::new(file, url, move || Ok(html.clone()));
-    Browser::new().browse(vec![link], false);
+    Browser::new().browse(vec![link], PageExtractor::from_file(), false);
 }

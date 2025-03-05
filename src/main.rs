@@ -3,9 +3,8 @@ mod cli;
 mod config;
 mod database;
 mod errors;
-mod formatting;
+mod extraction;
 mod links;
-mod scrapers;
 mod stout;
 mod tui;
 
@@ -23,9 +22,9 @@ fn main() {
     } else if args.history {
         history::run();
     } else if let Some(file) = args.file {
-        view::run(file, args.url, args.piped);
+        view::run(file, args.url, args.selector, args.piped);
     } else if let Some(url) = args.direct {
-        direct::run(None, url, args.piped);
+        direct::run(None, url, args.selector, args.piped);
     } else if let Some(search_term) = args.query.map(|query| query.join(" ")) {
         search::run(search_term);
     } else {

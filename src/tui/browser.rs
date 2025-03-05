@@ -1,6 +1,7 @@
 use crate::database::connect::add_history;
 use crate::errors::error::IsError;
-use crate::links::cache::{get_content, preload};
+use crate::extraction::cache::{get_content, preload};
+use crate::extraction::page::PageExtractor;
 use crate::links::link::Link;
 use crate::tui::browser::Action::{Down, Exit, Next, Open, PageDown, PageUp, Previous, Up};
 use crate::tui::display::{default_block, Display};
@@ -22,7 +23,7 @@ impl Browser {
         Browser { display }
     }
 
-    pub fn browse(mut self, links: Vec<Link>, history_active: bool) {
+    pub fn browse(mut self, links: Vec<Link>, extractor: PageExtractor, history_active: bool) {
         let height = self.display.height();
         let mut scroll: u16 = 0;
         if links.is_empty() {
@@ -31,7 +32,7 @@ impl Browser {
             return;
         }
         let mut index = 0;
-        let mut page = new_page(&index, &links, history_active);
+        let mut page = new_page(&index, &links, &extractor, history_active);
         self.display
             .draw_page(&page)
             .unwrap_or_else(|err| self.display.shutdown_with_error(&err.to_string()));
@@ -41,13 +42,13 @@ impl Browser {
                 Next => {
                     scroll = 0;
                     index = (index + 1).min(links.len().saturating_sub(1));
-                    self.change_page(&index, &links, &mut page, history_active)
+                    self.change_page(&index, &links, &mut page, &extractor, history_active)
                         .unwrap();
                 }
                 Previous => {
                     scroll = 0;
                     index = index.saturating_sub(1);
-                    self.change_page(&index, &links, &mut page, history_active)
+                    self.change_page(&index, &links, &mut page, &extractor, history_active)
                         .unwrap();
                 }
                 Down => {
@@ -84,10 +85,11 @@ impl Browser {
         index: &usize,
         links: &[Link],
         page: &mut Paragraph,
+        extractor: &PageExtractor,
         history_active: bool,
     ) -> Result<(), IsError> {
         self.display.loading()?;
-        *page = new_page(index, links, history_active);
+        *page = new_page(index, links, extractor, history_active);
         self.display
             .draw_page(page)
             .map_err(|e| IsError::General(e.to_string()))
@@ -138,9 +140,14 @@ fn open_link(index: &usize, links: &[Link]) {
         .for_each(|e| println!("{}", e));
 }
 
-pub fn new_page(index: &usize, links: &[Link], history_active: bool) -> Paragraph<'static> {
+pub fn new_page(
+    index: &usize,
+    links: &[Link],
+    extractor: &PageExtractor,
+    history_active: bool,
+) -> Paragraph<'static> {
     if let Some(link) = links.get(*index + 1) {
-        preload(link); // Initiate the call to get the page after this one
+        preload(link, extractor); // Initiate the call to get the page after this one
     }
     links
         .get(*index)
@@ -149,7 +156,7 @@ pub fn new_page(index: &usize, links: &[Link], history_active: bool) -> Paragrap
                 _ = add_history(link)
             }
         })
-        .map(|link| (link, get_content(link)))
+        .map(|link| (link, get_content(link, extractor)))
         .map(|(link, paragraph)| {
             let title = extract_title(link);
             let block = default_block(&title, PAGE_INSTRUCTIONS);

@@ -1,30 +1,19 @@
-use crate::formatting::format::to_display;
+use crate::config::load::Config;
+use crate::extraction::page::PageExtractor;
 use crate::links::link::Link;
-use crate::scrapers::scrape::scrape;
-use crate::stout::pipe::out_to_std;
 use crate::tui::browser::Browser;
-use ratatui::text::Text;
 
-pub fn run(title: Option<String>, url: String, piped: bool) {
-    let formatted_url = format_url(url);
+pub fn run(title: Option<String>, url: String, selector: Option<String>, piped: bool) {
+    let selection_tag = selector.unwrap_or_else(|| Config::get_selectors(&url));
     let link = Link::new(
         title.unwrap_or_default(),
-        formatted_url.to_string(),
-        move || scrape(&formatted_url.to_string()),
+        url.to_string(),
+        selection_tag.clone(),
     );
     if piped {
-        let text_only = scrape(&link.url)
-            .and_then(|html| to_display(&link.url, &html))
-            .unwrap_or_else(|_| Text::from("Failed to convert to text"));
-        out_to_std(text_only);
+        let text_only = PageExtractor::from_url().get_plain_text(&link);
+        println!("{}", text_only);
         return;
     }
-    Browser::new().browse(vec![link], false);
-}
-
-fn format_url(url: String) -> String {
-    if url.starts_with("http") {
-        return url;
-    }
-    format!("https://{}", url)
+    Browser::new().browse(vec![link], PageExtractor::from_url(), false);
 }

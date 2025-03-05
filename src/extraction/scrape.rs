@@ -12,9 +12,15 @@ static REQWEST_CLIENT: Lazy<Client> = Lazy::new(|| {
 });
 
 pub fn scrape(url: &str) -> Result<String, IsError> {
-    reqwest_scrape(url)
-        .or_else(|_| curl_scrape(url))
-        .map(|html| sanitize(&html))
+    let url = &format_url(url);
+    reqwest_scrape(url).or_else(|_| curl_scrape(url))
+}
+
+fn format_url(url: &str) -> String {
+    if url.starts_with("http") {
+        return url.to_string();
+    }
+    format!("https://{}", url)
 }
 
 fn reqwest_scrape(url: &str) -> Result<String, IsError> {
@@ -41,10 +47,4 @@ fn curl_scrape(url: &str) -> Result<String, IsError> {
         .map_err(|e| IsError::Scrape(e.to_string()))?;
 
     Ok(String::from_utf8_lossy(&output.stdout).into_owned())
-}
-
-pub fn sanitize(html: &str) -> String {
-    html.replace("\t", "    ")
-        .replace("\r", "")
-        .replace('\u{feff}', "")
 }

@@ -1,5 +1,5 @@
+use crate::config::load::Config;
 use crate::links::link::Link;
-use crate::scrapers::scrape::scrape;
 use scraper::{Html, Selector};
 
 pub fn from_html(html: &str) -> Vec<Link> {
@@ -15,7 +15,7 @@ pub fn from_html(html: &str) -> Vec<Link> {
             Link::new(
                 title.text().collect::<Vec<_>>().join(" ").trim().to_owned(),
                 url.clone(),
-                move || scrape(&format!("https://{}", url).to_string()),
+                Config::get_selectors(&url),
             )
         })
         .collect()

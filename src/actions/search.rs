@@ -1,6 +1,7 @@
+use crate::extraction::page::PageExtractor;
+use crate::extraction::scrape::scrape;
 use crate::links::extract::from_html;
 use crate::links::link::Link;
-use crate::scrapers::scrape::scrape;
 use crate::tui::browser::Browser;
 use std::thread::sleep;
 use std::time::Duration;
@@ -17,7 +18,7 @@ pub fn run(search_term: String) {
         })
         .find(|links| !links.is_empty())
         .unwrap_or_default();
-    browser.browse(links, true);
+    browser.browse(links, PageExtractor::from_url(), true);
 }
 
 fn get_links(search_term: &String) -> Vec<Link> {
