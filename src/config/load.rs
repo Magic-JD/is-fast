@@ -45,6 +45,18 @@ struct DisplaySection {
 }
 
 #[derive(Debug, Deserialize)]
+struct HistorySection {
+    #[serde(default)]
+    title_color: Option<String>,
+    #[serde(default)]
+    url_color: Option<String>,
+    #[serde(default)]
+    time_color: Option<String>,
+    #[serde(default)]
+    text_color: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
 struct RawConfig {
     #[serde(default)]
     styles: HashMap<String, TagStyleConfig>,
@@ -56,6 +68,8 @@ struct RawConfig {
     syntax: Option<SyntaxHighlightingSection>,
     #[serde(default)]
     display: Option<DisplaySection>,
+    #[serde(default)]
+    history: Option<HistorySection>,
 }
 
 #[derive(Debug)]
@@ -70,6 +84,10 @@ pub struct Config {
     syntax_highlighting_theme: Option<String>,
     page_margin: Option<u16>,
     border_color: Option<Style>,
+    title_color: Option<Style>,
+    url_color: Option<Style>,
+    time_color: Option<Style>,
+    text_color: Option<Style>,
 }
 
 impl Config {
@@ -82,6 +100,7 @@ impl Config {
                 format: None,
                 syntax: None,
                 display: None,
+                history: None,
             });
         _ = get_user_specified_config().map(|u_config| override_defaults(&mut config, u_config));
         let (matcher, globs) = generate_globs(&mut config);
@@ -116,6 +135,26 @@ impl Config {
             border_color: config
                 .display
                 .and_then(|display| display.border_color)
+                .map(|color| Style::new().fg(parse_color(&color))),
+            title_color: config
+                .history
+                .as_ref()
+                .and_then(|history| history.title_color.clone())
+                .map(|color| Style::new().fg(parse_color(&color))),
+            url_color: config
+                .history
+                .as_ref()
+                .and_then(|history| history.url_color.clone())
+                .map(|color| Style::new().fg(parse_color(&color))),
+            time_color: config
+                .history
+                .as_ref()
+                .and_then(|history| history.time_color.clone())
+                .map(|color| Style::new().fg(parse_color(&color))),
+            text_color: config
+                .history
+                .as_ref()
+                .and_then(|history| history.text_color.clone())
                 .map(|color| Style::new().fg(parse_color(&color))),
         }
     }
@@ -159,9 +198,23 @@ impl Config {
     }
 
     pub fn get_border_color() -> Style {
-        CONFIG
-            .border_color
-            .unwrap_or_else(|| Style::default().fg(Color::Green))
+        CONFIG.border_color.unwrap_or_default()
+    }
+
+    pub fn get_title_color() -> Style {
+        CONFIG.title_color.unwrap_or_default()
+    }
+
+    pub fn get_url_color() -> Style {
+        CONFIG.url_color.unwrap_or_default()
+    }
+
+    pub fn get_time_color() -> Style {
+        CONFIG.time_color.unwrap_or_default()
+    }
+
+    pub fn get_text_color() -> Style {
+        CONFIG.text_color.unwrap_or_default()
     }
 }
 
@@ -225,6 +278,30 @@ fn override_defaults(config: &mut RawConfig, u_config: RawConfig) {
             }
         }
     }
+
+    let mut history = config.history.take().unwrap_or(HistorySection {
+        title_color: None,
+        url_color: None,
+        time_color: None,
+        text_color: None,
+    });
+
+    if let Some(u_history) = u_config.history {
+        if let Some(title_color) = u_history.title_color {
+            history.title_color = Some(title_color);
+        }
+        if let Some(url_color) = u_history.url_color {
+            history.url_color = Some(url_color);
+        }
+        if let Some(time_color) = u_history.time_color {
+            history.time_color = Some(time_color);
+        }
+        if let Some(text_color) = u_history.text_color {
+            history.text_color = Some(text_color);
+        }
+    }
+
+    config.history = Some(history);
     config.format = Some(format);
     config.syntax = Some(syntax);
     config.display = Some(display);
@@ -404,6 +481,7 @@ mod tests {
             format: None,
             syntax: None,
             display: None,
+            history: None,
         };
 
         let (matcher, globs) = generate_globs(&mut raw_config);
@@ -435,6 +513,12 @@ mod tests {
                 border_color: Some("green".to_string()),
                 page_margin: Some(3),
             }),
+            history: Some(HistorySection {
+                title_color: Some("blue".to_string()),
+                url_color: Some("cyan".to_string()),
+                time_color: Some("gray".to_string()),
+                text_color: Some("white".to_string()),
+            }),
         };
 
         let user_config = RawConfig {
@@ -456,14 +540,22 @@ mod tests {
                 border_color: Some("yellow".to_string()),
                 page_margin: Some(5),
             }),
+            history: Some(HistorySection {
+                title_color: Some("red".to_string()),
+                url_color: None,
+                time_color: Some("black".to_string()),
+                text_color: None,
+            }),
         };
 
         override_defaults(&mut default_config, user_config);
 
+        // Selector Tests
         assert_eq!(default_config.selectors.len(), 2);
         assert!(default_config.selectors.contains_key("example.com"));
         assert!(default_config.selectors.contains_key("newsite.com"));
 
+        // Format Tests
         assert_eq!(
             default_config.format.as_ref().unwrap().ignored_tags,
             vec!["style"]
@@ -473,6 +565,7 @@ mod tests {
             vec!["div"]
         );
 
+        // Syntax Highlighting Tests
         assert_eq!(
             default_config.syntax.as_ref().unwrap().theme,
             Some("light".to_string())
@@ -481,6 +574,8 @@ mod tests {
             default_config.syntax.as_ref().unwrap().default_language,
             Some("rust".to_string())
         );
+
+        // Display Tests
         assert_eq!(
             default_config.display.as_ref().unwrap().border_color,
             Some("yellow".to_string())
@@ -488,6 +583,24 @@ mod tests {
         assert_eq!(
             default_config.display.as_ref().unwrap().page_margin,
             Some(5)
+        );
+
+        // History Tests
+        assert_eq!(
+            default_config.history.as_ref().unwrap().title_color,
+            Some("red".to_string()) // Overridden by user
+        );
+        assert_eq!(
+            default_config.history.as_ref().unwrap().url_color,
+            Some("cyan".to_string()) // Retained default (not overridden)
+        );
+        assert_eq!(
+            default_config.history.as_ref().unwrap().time_color,
+            Some("black".to_string()) // Overridden by user
+        );
+        assert_eq!(
+            default_config.history.as_ref().unwrap().text_color,
+            Some("white".to_string()) // Retained default (not overridden)
         );
     }
 }

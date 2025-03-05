@@ -6,7 +6,7 @@ use crossterm::terminal::{
 use once_cell::sync::Lazy;
 use ratatui::backend::CrosstermBackend;
 use ratatui::layout::{Constraint, Direction, Layout};
-use ratatui::prelude::{Color, Modifier, Span, Style};
+use ratatui::prelude::{Modifier, Span, Style};
 use ratatui::text::Line;
 use ratatui::widgets::{Block, Borders, Paragraph, Table, TableState};
 use ratatui::Terminal;
@@ -19,6 +19,7 @@ static HISTORY_INSTRUCTIONS: &str =
     " Quit: Esc | Scroll Down: ↓ | Scroll Up: ↑ | Open: ↵ | Delete: Delete ";
 
 static PAGE_INSTRUCTIONS: &str = " Quit: q/Esc | Scroll Down: j/↓ | Scroll Up: k/↑ | Page Down: CTRL+d | Page Up: CTRL+u | Next: n/→ | Back: b/← | Open in Browser: o";
+static TEXT_COLOR: Lazy<Style> = Lazy::new(Config::get_text_color);
 
 pub struct Display {
     terminal: Mutex<Terminal<CrosstermBackend<Stdout>>>,
@@ -99,11 +100,8 @@ impl Display {
             frame.render_stateful_widget(table, area, state);
             frame.render_widget(
                 Paragraph::new(
-                    Line::from(format!(" [SEARCH] {}", user_input)).style(
-                        Style::default()
-                            .fg(Color::LightBlue)
-                            .add_modifier(Modifier::BOLD),
-                    ),
+                    Line::from(format!(" [SEARCH] {}", user_input))
+                        .style(TEXT_COLOR.add_modifier(Modifier::BOLD)),
                 ),
                 areas[2],
             );

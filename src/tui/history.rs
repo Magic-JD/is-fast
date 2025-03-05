@@ -1,4 +1,5 @@
 use crate::actions::direct;
+use crate::config::load::Config as LocalConfig;
 use crate::database::connect::{remove_history, HistoryData};
 use crate::tui::display::Display;
 use crate::tui::history::Action::{Backspace, Continue, Down, Exit, Open, Text, Up};
@@ -7,6 +8,7 @@ use crossterm::event;
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
 use nucleo_matcher::pattern::{AtomKind, CaseMatching, Normalization, Pattern};
 use nucleo_matcher::{Config, Matcher, Utf32Str};
+use once_cell::sync::Lazy;
 use ratatui::layout::Constraint;
 use ratatui::prelude::Modifier;
 use ratatui::style::{Color, Style};
@@ -14,6 +16,10 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::{Cell, Row, Table, TableState};
 use std::cmp::Ordering;
 use Action::Delete;
+
+static URL_COLOR: Lazy<Style> = Lazy::new(LocalConfig::get_url_color);
+static TITLE_COLOR: Lazy<Style> = Lazy::new(LocalConfig::get_title_color);
+static TIME_COLOR: Lazy<Style> = Lazy::new(LocalConfig::get_time_color);
 
 pub struct History {
     display: Display,
@@ -206,9 +212,9 @@ fn create_rows(history: &[HistoryData], user_search: &str) -> Vec<Row<'static>> 
                     clip_if_needed(&h.title, 100),
                     user_search.to_owned(),
                 ))
-                .style(Style::default().fg(Color::Yellow)),
-                Cell::from(clip_if_needed(&h.url, 60)).style(Style::default().fg(Color::Green)),
-                Cell::from(date_to_display(&h.time)).style(Style::default().fg(Color::Cyan)),
+                .style(*TITLE_COLOR),
+                Cell::from(clip_if_needed(&h.url, 60)).style(*URL_COLOR),
+                Cell::from(date_to_display(&h.time)).style(*TIME_COLOR),
             ];
             Row::new(cells)
         })
@@ -244,7 +250,7 @@ fn highlight_title(plain_text: String, user_search: String) -> Line<'static> {
             current = String::new();
             spans.push(Span::styled(
                 String::from(c),
-                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+                Style::from(Color::Red).add_modifier(Modifier::BOLD),
             ));
             if indices.is_empty() {
                 found = true;

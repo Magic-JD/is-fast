@@ -97,5 +97,11 @@ default_language = "rust"
 theme = "base16-ocean.dark"
 
 [display]
-border_color = "green"
-page_margin = 10 # A percentage of the page width to be applied on either side
+border_color = "#74c7ec"
+page_margin = 10  # A percentage of the page width to be applied on either side
+
+[history]
+title_color = "#89b4fa"
+url_color = "#bac2de"
+time_color = "#f2cdcd"
+text_color = "#74c7ec"
