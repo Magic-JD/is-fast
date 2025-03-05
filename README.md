@@ -8,6 +8,8 @@ fast, lightweight, and perfect for developers and terminal enthusiasts.
 
 This tool makes **searching from the terminal fast and simple!** 🚀
 
+![demo](demo.gif)
+
 ## ⚡ is-fast
 
 ```sh
