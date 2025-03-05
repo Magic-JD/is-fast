@@ -1,3 +1,15 @@
+# Styles for each element
+# Example:
+#[styles.example]
+#fg = "Blue"        # Sets the foreground (text) color
+#bg = "#D3D3D3"     # Sets the background color using a hex code (Light Gray)
+#bg = "rgb(0, 0, 0)" would also be a valud option.
+#bold = true        # Makes text bold
+#italic = true      # Makes text italic
+#underlined = true  # Underlines the text
+#crossed_out = true # Strikes through the text
+#dim = true         # Makes text dimmer
+
 [styles.h1]
 bold = true
 
@@ -74,6 +86,8 @@ bold = true
 [styles.dd]
 fg = "Gray"
 
+# This determines which part of the page will be selected. No good one for a site you use? Add your own, and make a pull
+# request @https://github.com/Magic-JD/is-fast.
 [selectors]
 "*en.wikipedia.org*" = "p"
 "*www.baeldung.com*" = ".post-content"
@@ -89,20 +103,44 @@ fg = "Gray"
 "*programiz.com*" = ".editor-contents"
 
 [format]
+# All elements from this list are ignored.
 ignored_tags = ["script", "style", "noscript", "head", "title", "meta", "input", "button", "svg", "nav", "footer", "header", "aside"]
+# Adding an element to this list will ensure that every instance of that element sits on its own line.
 block_elements = ["p", "div", "table", "article", "img", "section", "pre", "blockquote", "ul", "ol", "dl", "dt", "dd", "li", "h1", "h2", "h3", "h4", "h5", "h6"]
 
+# Section relating to syntax highlighting.
 [syntax]
+# This is the language that will be used for syntax highlighting if it cannot be deduced from the CSS of the page.
 default_language = "rust"
+
+# Valid themes
+#InspiredGitHub
+#Solarized (dark)
+#Solarized (light)
+#base16-eighties.dark
+#base16-mocha.dark
+#base16-ocean.dark
+#base16-ocean.light
 theme = "base16-ocean.dark"
 
-[display]
-border_color = "#74c7ec"
-page_margin = 10  # A percentage of the page width to be applied on either side
 
+# General display options.
+[display]
+# The color of the border.
+border_color = "#89b4fa"
+# A percentage of the page width to be applied on either side
+page_margin = 10
+
+# Setting for the history page
 [history]
+# Sets the color of the title on the history entries.
 title_color = "#89b4fa"
+# Sets the url color on the history entries.
 url_color = "#bac2de"
+# Sets the color for the time on the history entries.
 time_color = "#f2cdcd"
+# Sets the color of the search text.
 text_color = "#74c7ec"
-search_type = "fuzzy" # Fuzzy | Substring | Exact
+# Sets the type of search - valid options Fuzzy | Substring | Exact.
+# Defaults to fuzzy.
+search_type = "fuzzy"
