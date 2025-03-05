@@ -1,8 +1,8 @@
 use crate::database::connect::add_history;
 use crate::errors::error::IsError;
 use crate::transform::cache::{get_content, preload};
-use crate::transform::page::PageExtractor;
 use crate::transform::link::Link;
+use crate::transform::page::PageExtractor;
 use crate::tui::browser::Action::{Down, Exit, Next, Open, PageDown, PageUp, Previous, Up};
 use crate::tui::display::{default_block, Display};
 use crossterm::event;

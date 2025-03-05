@@ -18,4 +18,3 @@ pub fn run(search_term: String) {
         .unwrap_or_default();
     browser.browse(links, PageExtractor::from_url(), true);
 }
-

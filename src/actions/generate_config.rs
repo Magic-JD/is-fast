@@ -1,5 +1,5 @@
-use std::fs;
 use crate::config::load::DEFAULT_CONFIG_LOCATION;
+use std::fs;
 
 pub fn run() {
     println!("Generating config file...");

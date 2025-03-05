@@ -1,6 +1,6 @@
-use scraper::{Html, Selector};
 use crate::config::load::Config;
 use crate::transform::scrape::scrape;
+use scraper::{Html, Selector};
 
 #[derive(Clone)]
 pub struct Link {
@@ -22,8 +22,8 @@ pub fn get_links(search_term: &String) -> Vec<Link> {
         "https://html.duckduckgo.com/html/?q={}",
         &search_term
     ))
-        .map(|html| from_html(&html))
-        .unwrap_or_else(|_| vec![])
+    .map(|html| from_html(&html))
+    .unwrap_or_else(|_| vec![])
 }
 
 fn from_html(html: &str) -> Vec<Link> {
