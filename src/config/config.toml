@@ -105,3 +105,4 @@ title_color = "#89b4fa"
 url_color = "#bac2de"
 time_color = "#f2cdcd"
 text_color = "#74c7ec"
+search_type = "fuzzy" # Fuzzy | Substring | Exact

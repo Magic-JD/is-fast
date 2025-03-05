@@ -1,4 +1,5 @@
 use globset::{Glob, GlobSet, GlobSetBuilder};
+use nucleo_matcher::pattern::AtomKind;
 use once_cell::sync::Lazy;
 use ratatui::style::{Color, Modifier, Style};
 use serde::Deserialize;
@@ -54,6 +55,8 @@ struct HistorySection {
     time_color: Option<String>,
     #[serde(default)]
     text_color: Option<String>,
+    #[serde(default)]
+    search_type: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -88,6 +91,7 @@ pub struct Config {
     url_color: Option<Style>,
     time_color: Option<Style>,
     text_color: Option<Style>,
+    search_type: Option<AtomKind>,
 }
 
 impl Config {
@@ -156,6 +160,11 @@ impl Config {
                 .as_ref()
                 .and_then(|history| history.text_color.clone())
                 .map(|color| Style::new().fg(parse_color(&color))),
+            search_type: config
+                .history
+                .as_ref()
+                .and_then(|history| history.search_type.clone())
+                .map(to_atom_kind),
         }
     }
 
@@ -215,6 +224,10 @@ impl Config {
 
     pub fn get_text_color() -> Style {
         CONFIG.text_color.unwrap_or_default()
+    }
+
+    pub fn get_search_type() -> AtomKind {
+        CONFIG.search_type.unwrap_or(AtomKind::Fuzzy)
     }
 }
 
@@ -284,6 +297,7 @@ fn override_defaults(config: &mut RawConfig, u_config: RawConfig) {
         url_color: None,
         time_color: None,
         text_color: None,
+        search_type: None,
     });
 
     if let Some(u_history) = u_config.history {
@@ -298,6 +312,9 @@ fn override_defaults(config: &mut RawConfig, u_config: RawConfig) {
         }
         if let Some(text_color) = u_history.text_color {
             history.text_color = Some(text_color);
+        }
+        if let Some(search_type) = u_history.search_type {
+            history.search_type = Some(search_type);
         }
     }
 
@@ -403,6 +420,15 @@ fn convert_styles(styles: HashMap<String, TagStyleConfig>) -> HashMap<String, St
             (tag, style)
         })
         .collect()
+}
+
+fn to_atom_kind(search_type: String) -> AtomKind {
+    match search_type.to_lowercase().as_str() {
+        "fuzzy" => AtomKind::Fuzzy,
+        "exact" => AtomKind::Exact,
+        "substring" => AtomKind::Substring,
+        _ => AtomKind::Fuzzy,
+    }
 }
 
 #[cfg(test)]
@@ -518,6 +544,7 @@ mod tests {
                 url_color: Some("cyan".to_string()),
                 time_color: Some("gray".to_string()),
                 text_color: Some("white".to_string()),
+                search_type: Some("fuzzy".to_string()),
             }),
         };
 
@@ -545,6 +572,7 @@ mod tests {
                 url_color: None,
                 time_color: Some("black".to_string()),
                 text_color: None,
+                search_type: Some("fuzzy".to_string()),
             }),
         };
 
@@ -588,19 +616,23 @@ mod tests {
         // History Tests
         assert_eq!(
             default_config.history.as_ref().unwrap().title_color,
-            Some("red".to_string()) // Overridden by user
+            Some("red".to_string())
         );
         assert_eq!(
             default_config.history.as_ref().unwrap().url_color,
-            Some("cyan".to_string()) // Retained default (not overridden)
+            Some("cyan".to_string())
         );
         assert_eq!(
             default_config.history.as_ref().unwrap().time_color,
-            Some("black".to_string()) // Overridden by user
+            Some("black".to_string())
         );
         assert_eq!(
             default_config.history.as_ref().unwrap().text_color,
-            Some("white".to_string()) // Retained default (not overridden)
+            Some("white".to_string())
+        );
+        assert_eq!(
+            default_config.history.as_ref().unwrap().search_type,
+            Some("fuzzy".to_string())
         );
     }
 }

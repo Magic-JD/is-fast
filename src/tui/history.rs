@@ -20,6 +20,7 @@ use Action::Delete;
 static URL_COLOR: Lazy<Style> = Lazy::new(LocalConfig::get_url_color);
 static TITLE_COLOR: Lazy<Style> = Lazy::new(LocalConfig::get_title_color);
 static TIME_COLOR: Lazy<Style> = Lazy::new(LocalConfig::get_time_color);
+static SEARCH_TYPE: Lazy<AtomKind> = Lazy::new(LocalConfig::get_search_type);
 
 pub struct History {
     display: Display,
@@ -168,7 +169,7 @@ fn order_by_match(history: &mut [HistoryData], user_search: &mut String) -> Vec<
         &*user_search,
         CaseMatching::Ignore,
         Normalization::Smart,
-        AtomKind::Fuzzy,
+        *SEARCH_TYPE,
     );
     let mut data_2_score = history
         .iter()
