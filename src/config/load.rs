@@ -37,6 +37,14 @@ struct SyntaxHighlightingSection {
 }
 
 #[derive(Debug, Deserialize)]
+struct DisplaySection {
+    #[serde(default)]
+    border_color: Option<String>,
+    #[serde(default)]
+    page_margin: Option<u16>,
+}
+
+#[derive(Debug, Deserialize)]
 struct RawConfig {
     #[serde(default)]
     styles: HashMap<String, TagStyleConfig>,
@@ -46,6 +54,8 @@ struct RawConfig {
     format: Option<FormatSection>,
     #[serde(default)]
     syntax: Option<SyntaxHighlightingSection>,
+    #[serde(default)]
+    display: Option<DisplaySection>,
 }
 
 #[derive(Debug)]
@@ -58,6 +68,8 @@ pub struct Config {
     block_elements: HashSet<String>,
     syntax_default_language: Option<String>,
     syntax_highlighting_theme: Option<String>,
+    page_margin: Option<u16>,
+    border_color: Option<Style>,
 }
 
 impl Config {
@@ -69,6 +81,7 @@ impl Config {
                 selectors: HashMap::new(),
                 format: None,
                 syntax: None,
+                display: None,
             });
         _ = get_user_specified_config().map(|u_config| override_defaults(&mut config, u_config));
         let (matcher, globs) = generate_globs(&mut config);
@@ -95,6 +108,15 @@ impl Config {
                 .syntax
                 .as_ref()
                 .and_then(|syntax| syntax.theme.clone()),
+            page_margin: config
+                .display
+                .as_ref()
+                .map(|display| display.page_margin)
+                .unwrap_or_default(),
+            border_color: config
+                .display
+                .and_then(|display| display.border_color)
+                .map(|color| Style::new().fg(parse_color(&color))),
         }
     }
 
@@ -130,6 +152,16 @@ impl Config {
             .syntax_highlighting_theme
             .clone()
             .unwrap_or_else(|| "base16-ocean.dark".to_string())
+    }
+
+    pub fn get_page_margin() -> u16 {
+        CONFIG.page_margin.unwrap_or_default()
+    }
+
+    pub fn get_border_color() -> Style {
+        CONFIG
+            .border_color
+            .unwrap_or_else(|| Style::default().fg(Color::Green))
     }
 }
 
@@ -178,8 +210,24 @@ fn override_defaults(config: &mut RawConfig, u_config: RawConfig) {
             syntax.default_language = Some(default_language);
         }
     }
+
+    let mut display = config.display.take().unwrap_or(DisplaySection {
+        border_color: None,
+        page_margin: None,
+    });
+    if let Some(u_display) = u_config.display {
+        if let Some(border_color) = u_display.border_color {
+            display.border_color = Some(border_color);
+        }
+        if let Some(margin) = u_display.page_margin {
+            if margin < 50 {
+                display.page_margin = Some(margin);
+            }
+        }
+    }
     config.format = Some(format);
     config.syntax = Some(syntax);
+    config.display = Some(display);
 }
 
 fn parse_color(color: &str) -> Color {
@@ -355,6 +403,7 @@ mod tests {
             styles: HashMap::new(),
             format: None,
             syntax: None,
+            display: None,
         };
 
         let (matcher, globs) = generate_globs(&mut raw_config);
@@ -382,6 +431,10 @@ mod tests {
                 theme: Some("dark".to_string()),
                 default_language: Some("rust".to_string()),
             }),
+            display: Some(DisplaySection {
+                border_color: Some("green".to_string()),
+                page_margin: Some(3),
+            }),
         };
 
         let user_config = RawConfig {
@@ -398,6 +451,10 @@ mod tests {
             syntax: Some(SyntaxHighlightingSection {
                 theme: Some("light".to_string()),
                 default_language: None,
+            }),
+            display: Some(DisplaySection {
+                border_color: Some("yellow".to_string()),
+                page_margin: Some(5),
             }),
         };
 
@@ -423,6 +480,14 @@ mod tests {
         assert_eq!(
             default_config.syntax.as_ref().unwrap().default_language,
             Some("rust".to_string())
+        );
+        assert_eq!(
+            default_config.display.as_ref().unwrap().border_color,
+            Some("yellow".to_string())
+        );
+        assert_eq!(
+            default_config.display.as_ref().unwrap().page_margin,
+            Some(5)
         );
     }
 }

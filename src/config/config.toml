@@ -95,3 +95,7 @@ block_elements = ["p", "div", "table", "article", "img", "section", "pre", "bloc
 [syntax]
 default_language = "rust"
 theme = "base16-ocean.dark"
+
+[display]
+border_color = "green"
+page_margin = 10 # A percentage of the page width to be applied on either side

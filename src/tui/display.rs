@@ -1,3 +1,4 @@
+use crate::config::load::Config;
 use crossterm::execute;
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
@@ -12,7 +13,8 @@ use ratatui::Terminal;
 use std::io::{stdout, Stdout};
 use std::sync::Mutex;
 
-static TUI_BORDER_COLOR: Lazy<Style> = Lazy::new(|| Style::default().fg(Color::Green));
+static TUI_BORDER_COLOR: Lazy<Style> = Lazy::new(Config::get_border_color);
+static TUI_MARGIN: Lazy<u16> = Lazy::new(Config::get_page_margin);
 static HISTORY_INSTRUCTIONS: &str =
     " Quit: Esc | Scroll Down: ↓ | Scroll Up: ↑ | Open: ↵ | Delete: Delete ";
 
@@ -129,14 +131,17 @@ impl Display {
                 )
                 .split(size);
 
+            let side_margin = *TUI_MARGIN;
+            let center = 100 - (side_margin * 2);
+
             // Split middle section horizontally to add margins to the sides.
             let horizontal_chunks = Layout::default()
                 .direction(Direction::Horizontal)
                 .constraints(
                     [
-                        Constraint::Percentage(5),
-                        Constraint::Percentage(90),
-                        Constraint::Percentage(5),
+                        Constraint::Percentage(side_margin),
+                        Constraint::Percentage(center),
+                        Constraint::Percentage(side_margin),
                     ]
                     .as_ref(),
                 )
