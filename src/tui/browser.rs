@@ -37,7 +37,7 @@ impl Browser {
         let mut index = 0;
         let (mut title, mut page) = new_page(&index, &links, &extractor, history_active);
         self.display
-            .draw_page(&page, &title)
+            .draw_page(&page, &title, index + 1, links.len())
             .unwrap_or_else(|err| self.display.shutdown_with_error(&err.to_string()));
         loop {
             match handle_input() {
@@ -75,22 +75,30 @@ impl Browser {
                 Down => {
                     scroll = scroll.saturating_add(1);
                     page = page.scroll((scroll, 0));
-                    let _ = self.display.draw_page(&page, &title);
+                    let _ = self
+                        .display
+                        .draw_page(&page, &title, index + 1, links.len());
                 }
                 Up => {
                     scroll = scroll.saturating_sub(1);
                     page = page.scroll((scroll, 0));
-                    let _ = self.display.draw_page(&page, &title);
+                    let _ = self
+                        .display
+                        .draw_page(&page, &title, index + 1, links.len());
                 }
                 PageUp => {
                     scroll = scroll.saturating_sub(height / 2);
                     page = page.scroll((scroll, 0));
-                    let _ = self.display.draw_page(&page, &title);
+                    let _ = self
+                        .display
+                        .draw_page(&page, &title, index + 1, links.len());
                 }
                 PageDown => {
                     scroll = scroll.saturating_add(height / 2);
                     page = page.scroll((scroll, 0));
-                    let _ = self.display.draw_page(&page, &title);
+                    let _ = self
+                        .display
+                        .draw_page(&page, &title, index + 1, links.len());
                 }
                 Open => {
                     open_link(&index, &links);
@@ -115,7 +123,7 @@ impl Browser {
         *title = t;
         *page = p;
         self.display
-            .draw_page(page, title)
+            .draw_page(page, title, index + 1, links.len())
             .map_err(|e| IsError::General(e.to_string()))
     }
 }
