@@ -64,6 +64,15 @@ fn to_lines(element: ElementRef, pre_formatted: bool) -> Vec<Line<'static>> {
         lines = extract_lines(element, pre_formatted || tag_name == "pre", style);
     }
 
+    if tag_name == "li" {
+        if let Some(line) = lines.first_mut() {
+            line.spans.insert(
+                0,
+                Span::styled("• ", style.copied().unwrap_or_else(Style::default)),
+            );
+        }
+    }
+
     if lines.is_empty() {
         return vec![];
     }
@@ -188,10 +197,12 @@ fn merge_with_previous_line(lines: &mut Vec<Line<'static>>, mut new_lines: Vec<L
             // Text from two different elements should almost always have a space - only exception for punctuation.
             // However often that space is achieved through css rather than the text.
             // Therefore, we check this manually.
-            if !(end.content.ends_with(' ')
+            if !(start.content.is_empty()
+                || end.content.is_empty()
+                || end.content.ends_with(' ')
                 || start.content.starts_with(' ')
-                || matches!(start.content.chars().next(), Some(c) if ".:;,)}]".contains(c))
-                || matches!(end.content.chars().last(), Some(c) if "[{(".contains(c)))
+                || matches!(start.content.chars().next(), Some(c) if ".:;,)}]>\"\\`'/".contains(c))
+                || matches!(end.content.chars().last(), Some(c) if "<[{(`'\"\\/".contains(c)))
             {
                 prev_end.spans.push(Span::from(" "));
             }

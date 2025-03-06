@@ -107,6 +107,6 @@ mod tests {
             .flat_map(|line| line.spans.clone())
             .collect::<Vec<Span>>()
             .len();
-        assert_eq!(length, 556);
+        assert_eq!(length, 559);
     }
 }
