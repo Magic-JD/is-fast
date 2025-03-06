@@ -8,7 +8,8 @@ fast, lightweight, and perfect for developers and terminal enthusiasts.
 
 This tool makes **searching from the terminal fast and simple!** 🚀
 
-![demo](demo.gif)
+![demo](demos/main_demo.gif)
+[See more demos here!](demos/DEMOS.md)
 
 ## ⚡ is-fast
 
@@ -22,19 +23,28 @@ or
 is-fast search query
 ```
 
-### 🔧 Navigation Controls
-
-- 🔍 **Next result:** `n` / `→`
-- ⬅️ **Go back:** `b` / `←`
-- ⬇️ **Scroll down:** `j` / `↓`
-- ⬆️ **Scroll up:** `k` / `↑`
-- 📜 **Page down:** `CTRL + d`
-- 📜 **Page up:** `CTRL + u`
-- 🖥️ **Open in browser** `o`
-- ❌ **Quit:** `q`
-
 No waiting - just internet search fast in your terminal.  
 **It is fast!** ⚡
+
+---
+
+# Running the Project 🏃
+
+## Prerequisites
+
+Before running the project, ensure you have the following installed:
+
+- [Rust](https://www.rust-lang.org/tools/install) (latest stable version) 🦀
+- [Cargo](https://doc.rust-lang.org/cargo/) (comes with Rust) 📦
+
+## Installing the program 🐧 🍏 🪟
+
+Run the following command to clone the repository and install it on your system:
+
+```sh
+cargo install --git https://github.com/Magic-JD/is-fast.git
+```
+
 
 ---
 
@@ -59,9 +69,6 @@ No waiting - just internet search fast in your terminal.
 - [🔄 Using `--piped` to Output to Standard Output](#-using---piped-to-output-to-standard-output)
 - [📜 Viewing History in `is-fast`](#-viewing-history-in-is-fast)
     - [`--history`](#--history)
-- [Running the Project 🏃](#running-the-project-)
-    - [Prerequisites](#prerequisites)
-    - [Installing the program (🐧 🍏 🪟)](#installing-the-program---)
 
 ---
 
@@ -473,29 +480,5 @@ database.
 
 ```sh
 is-fast --history
-```
-
----
-
-# Running the Project 🏃
-
-This guide explains how to set up and install the project through Cargo after cloning the repository.
-
-## Prerequisites
-
-Before running the project, ensure you have the following installed:
-
-- [Rust](https://www.rust-lang.org/tools/install) (latest stable version) 🦀
-- [Cargo](https://doc.rust-lang.org/cargo/) (comes with Rust) 📦
-
-## Installing the program 🐧 🍏 🪟
-
-Run the following command to clone the repository and install it on your system:
-
-```sh
-git clone https://github.com/Magic-JD/is-fast.git
-cd is-fast
-cargo install --path .
-is-fast "your search term"
 ```
 
