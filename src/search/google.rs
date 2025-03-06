@@ -1,0 +1,80 @@
+use crate::config::load::Config;
+use crate::errors::error::IsError;
+use crate::errors::error::IsError::Search as SearchError;
+use crate::search::link::Link;
+use crate::search::scrape::scrape;
+use crate::search::search_type::Search;
+use serde_json::from_str;
+
+#[derive(serde::Deserialize)]
+struct SearchResult {
+    items: Vec<SearchItem>,
+}
+
+#[derive(serde::Deserialize)]
+struct SearchItem {
+    link: String,
+    title: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct GoogleSearch;
+
+const API_KEY: &str = "IS_FAST_GOOGLE_API_KEY";
+const SEARCH_ENGINE_ID: &str = "IS_FAST_GOOGLE_SEARCH_ENGINE_ID";
+
+impl GoogleSearch {
+    fn extract_variables(&self) -> Result<(String, String), IsError> {
+        let api_key = std::env::var(API_KEY).map_err(|_| {
+            SearchError(format!(
+                "Unable to get the environment variable {}",
+                API_KEY
+            ))
+        })?;
+
+        let search_engine_id = std::env::var(SEARCH_ENGINE_ID).map_err(|_| {
+            SearchError(format!(
+                "Unable to get the environment variable {}",
+                SEARCH_ENGINE_ID
+            ))
+        })?;
+        Ok((api_key, search_engine_id))
+    }
+
+    fn extract_links(
+        &self,
+        api_key: &str,
+        search_engine_id: &str,
+        query: &str,
+    ) -> Result<Vec<Link>, IsError> {
+        scrape(&format!(
+            "https://www.googleapis.com/customsearch/v1?key={}&cx={}&q={}",
+            api_key, search_engine_id, query
+        ))
+        .and_then(|json| from_str::<SearchResult>(&json).map_err(|e| SearchError(e.to_string())))
+        .map(Self::search_result_to_links)
+        .map_err(|e| SearchError(e.to_string()))
+    }
+
+    fn search_result_to_links(search_result: SearchResult) -> Vec<Link> {
+        search_result
+            .items
+            .iter()
+            .map(|item| {
+                Link::new(
+                    item.title.clone(),
+                    item.link.clone(),
+                    Config::get_selectors(&item.link),
+                )
+            })
+            .collect()
+    }
+}
+impl Search for GoogleSearch {
+    fn search(&self, query: &str) -> Result<Vec<Link>, IsError> {
+        self.extract_variables()
+            .and_then(|(api_key, search_engine_id)| {
+                self.extract_links(&api_key, &search_engine_id, query)
+            })
+    }
+}

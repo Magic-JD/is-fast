@@ -1174,6 +1174,7 @@ dependencies = [
  "rusqlite",
  "scraper",
  "serde",
+ "serde_json",
  "serial_test",
  "strsim",
  "syntect",

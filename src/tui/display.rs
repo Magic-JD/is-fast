@@ -18,7 +18,7 @@ static TUI_MARGIN: Lazy<u16> = Lazy::new(Config::get_page_margin);
 static HISTORY_INSTRUCTIONS: &str =
     " Quit: Esc | Scroll Down: ↓ | Scroll Up: ↑ | Open: ↵ | Delete: Delete ";
 
-static PAGE_INSTRUCTIONS: &str = " Quit: q/Esc | Scroll Down: j/↓ | Scroll Up: k/↑ | Page Down: CTRL+d | Page Up: CTRL+u | Next: n/→ | Back: b/← | Open in Browser: o";
+static PAGE_INSTRUCTIONS: &str = " Quit: q/Esc | Scroll Down: j/↓ | Scroll Up: k/↑ | Page Down: CTRL+d | Page Up: CTRL+u | Next: n/→ | Back: b/← | Open in Browser: o ";
 static TEXT_COLOR: Lazy<Style> = Lazy::new(Config::get_text_color);
 
 pub struct Display {

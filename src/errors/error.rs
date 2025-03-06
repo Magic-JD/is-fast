@@ -19,4 +19,7 @@ pub enum IsError {
 
     #[error("Scrape errors: {0}")]
     Scrape(String),
+
+    #[error("Search errors: {0}")]
+    Search(String),
 }
