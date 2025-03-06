@@ -5,7 +5,7 @@ use crossterm::terminal::{
 };
 use once_cell::sync::Lazy;
 use ratatui::backend::CrosstermBackend;
-use ratatui::layout::{Constraint, Direction, Layout};
+use ratatui::layout::{Alignment, Constraint, Direction, Layout};
 use ratatui::prelude::{Modifier, Span, Style};
 use ratatui::text::{Line, Text};
 use ratatui::widgets::{Block, Borders, Paragraph, Table, TableState};
@@ -120,7 +120,13 @@ impl Display {
         Ok(())
     }
 
-    pub(crate) fn draw_page(&self, page: &Paragraph, title: &str) -> std::io::Result<()> {
+    pub(crate) fn draw_page(
+        &self,
+        page: &Paragraph,
+        title: &str,
+        index: usize,
+        pages: usize,
+    ) -> std::io::Result<()> {
         let mut terminal = self.terminal.lock().unwrap();
         terminal.draw(|frame| {
             let size = frame.area();
@@ -155,7 +161,20 @@ impl Display {
                     .as_ref(),
                 )
                 .split(vertical_chunks[1]);
+
+            let page_number_layout = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([Constraint::Percentage(90), Constraint::Percentage(10)].as_ref())
+                .split(vertical_chunks[2]);
             frame.render_widget(page, horizontal_chunks[1]);
+            frame.render_widget(
+                Text::from(Line::styled(
+                    format!(" [{}/{}] ", index, pages),
+                    *TUI_BORDER_COLOR,
+                ))
+                .alignment(Alignment::Right),
+                page_number_layout[1],
+            );
         })?;
         Ok(())
     }
