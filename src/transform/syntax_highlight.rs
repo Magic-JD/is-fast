@@ -28,13 +28,13 @@ static DEFAULT_THEME: Lazy<&'static Theme> = Lazy::new(|| {
         })
 });
 
-pub fn highlight_code(text: String, language: &str) -> Vec<Line<'static>> {
+pub fn highlight_code(text: &str, language: &str) -> Vec<Line<'static>> {
     let syntax = SYNTAX_SET
         .find_syntax_by_token(language) // Attempt to use language from css
         .unwrap_or_else(|| *DEFAULT_SYNTAX);
 
     let mut highlighter = HighlightLines::new(syntax, *DEFAULT_THEME);
-    LinesWithEndings::from(&text)
+    LinesWithEndings::from(text)
         .map(|line| highlight_line(&SYNTAX_SET, &mut highlighter, line))
         .collect()
 }
@@ -44,12 +44,12 @@ fn highlight_line(
     highlighter: &mut HighlightLines,
     line: &str,
 ) -> Line<'static> {
-    let highlighted = highlighter
+    let highlighted_string = highlighter
         .highlight_line(line, syntax_set)
         .expect("Line could not be highlighted."); // Should not happen -> if it does it's important to fix
-    let styled_spans = highlighted
+    let styled_spans = highlighted_string
         .iter()
-        .map(|(style, content)| Span::styled(content.to_string(), convert_syntect_style(*style)))
+        .map(|(style, content)| Span::styled((*content).to_string(), convert_syntect_style(*style)))
         .filter(|s| s.content != "\n")
         .collect::<Vec<Span>>();
     Line::from(styled_spans)
@@ -100,7 +100,7 @@ mod tests {
     println!("Hello, world!");
 }"#
         .to_string();
-        let highlighted = highlight_code(code, "rust");
+        let highlighted = highlight_code(&code, "rust");
         let expected = vec![
             Line::from_iter([
                 Span::styled("fn", Style::default().fg(Color::Rgb(180, 142, 173))),

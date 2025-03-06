@@ -26,16 +26,12 @@ const SEARCH_ENGINE_ID: &str = "IS_FAST_GOOGLE_SEARCH_ENGINE_ID";
 impl GoogleSearch {
     fn extract_variables(&self) -> Result<(String, String), IsError> {
         let api_key = std::env::var(API_KEY).map_err(|_| {
-            SearchError(format!(
-                "Unable to get the environment variable {}",
-                API_KEY
-            ))
+            SearchError(format!("Unable to get the environment variable {API_KEY}",))
         })?;
 
         let search_engine_id = std::env::var(SEARCH_ENGINE_ID).map_err(|_| {
             SearchError(format!(
-                "Unable to get the environment variable {}",
-                SEARCH_ENGINE_ID
+                "Unable to get the environment variable {SEARCH_ENGINE_ID}",
             ))
         })?;
         Ok((api_key, search_engine_id))
@@ -48,15 +44,14 @@ impl GoogleSearch {
         query: &str,
     ) -> Result<Vec<Link>, IsError> {
         scrape(&format!(
-            "https://www.googleapis.com/customsearch/v1?key={}&cx={}&q={}",
-            api_key, search_engine_id, query
+            "https://www.googleapis.com/customsearch/v1?key={api_key}&cx={search_engine_id}&q={query}",
         ))
         .and_then(|json| from_str::<SearchResult>(&json).map_err(|e| SearchError(e.to_string())))
-        .map(Self::search_result_to_links)
+        .map(|search_result| Self::search_result_to_links(&search_result))
         .map_err(|e| SearchError(e.to_string()))
     }
 
-    fn search_result_to_links(search_result: SearchResult) -> Vec<Link> {
+    fn search_result_to_links(search_result: &SearchResult) -> Vec<Link> {
         search_result
             .items
             .iter()

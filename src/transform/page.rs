@@ -47,15 +47,13 @@ impl PageExtractor {
         self.get_tui_text(link)
             .lines
             .iter()
-            .map(|line| line.to_string())
+            .map(ToString::to_string)
             .collect::<Vec<String>>()
             .join("\n")
     }
 
     fn sanitize(html: &str) -> String {
-        html.replace("\t", "    ")
-            .replace("\r", "")
-            .replace('\u{feff}', "")
+        html.replace('\t', "    ").replace(['\r', '\u{feff}'], "")
     }
 }
 

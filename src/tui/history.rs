@@ -40,7 +40,7 @@ impl History {
             return;
         }
         let mut total_history = history.clone();
-        let mut user_search = String::from("");
+        let mut user_search = String::new();
         let mut state = TableState::default();
         history = order_by_match(&mut history, &mut user_search);
         state.select(Some(history.len().saturating_sub(1)));
@@ -50,7 +50,7 @@ impl History {
             .draw_history(
                 &table,
                 history.len() as u16,
-                "History".to_string(),
+                "History",
                 &mut state,
                 &mut user_search,
                 true,
@@ -73,7 +73,7 @@ impl History {
                         .inspect(|history_data| {
                             direct::run(
                                 Some(history_data.title.clone()),
-                                history_data.url.clone(),
+                                &history_data.url.clone(),
                                 None,
                                 false,
                             );
@@ -88,7 +88,7 @@ impl History {
                             _ = self.display.draw_history(
                                 &table,
                                 history.len() as u16,
-                                "History".to_string(),
+                                "History",
                                 state,
                                 &mut user_search,
                                 false,
@@ -104,7 +104,7 @@ impl History {
                             _ = self.display.draw_history(
                                 &table,
                                 history.len() as u16,
-                                "History".to_string(),
+                                "History",
                                 state,
                                 &mut user_search,
                                 false,
@@ -122,7 +122,7 @@ impl History {
                         .draw_history(
                             &table,
                             history.len() as u16,
-                            "History".to_string(),
+                            "History",
                             &mut state,
                             &mut user_search,
                             false,
@@ -137,7 +137,7 @@ impl History {
                     _ = self.display.draw_history(
                         &table,
                         history.len() as u16,
-                        "History".to_string(),
+                        "History",
                         &mut state,
                         &mut user_search,
                         true,
@@ -145,14 +145,14 @@ impl History {
                 }
                 Backspace => {
                     user_search.pop();
-                    history = total_history.clone();
+                    history.clone_from(&total_history);
                     history = order_by_match(&mut history, &mut user_search);
                     table = create_table(&mut create_rows(&history, &user_search));
                     state.select(Some(history.len().saturating_sub(1)));
                     _ = self.display.draw_history(
                         &table,
                         history.len() as u16,
-                        "History".to_string(),
+                        "History",
                         &mut state,
                         &mut user_search,
                         true,
@@ -209,11 +209,8 @@ fn create_rows(history: &[HistoryData], user_search: &str) -> Vec<Row<'static>> 
         .iter()
         .map(|h| {
             let cells = vec![
-                Cell::from(highlight_title(
-                    clip_if_needed(&h.title, 100),
-                    user_search.to_owned(),
-                ))
-                .style(*TITLE_COLOR),
+                Cell::from(highlight_title(clip_if_needed(&h.title, 100), user_search))
+                    .style(*TITLE_COLOR),
                 Cell::from(clip_if_needed(&h.url, 60)).style(*URL_COLOR),
                 Cell::from(date_to_display(&h.time)).style(*TIME_COLOR),
             ];
@@ -223,7 +220,7 @@ fn create_rows(history: &[HistoryData], user_search: &str) -> Vec<Row<'static>> 
     rows
 }
 
-fn highlight_title(plain_text: String, user_search: String) -> Line<'static> {
+fn highlight_title(plain_text: String, user_search: &str) -> Line<'static> {
     if user_search.is_empty() || plain_text.is_empty() {
         return Line::from(plain_text);
     }
@@ -306,23 +303,23 @@ fn clip_if_needed(text: &str, max_length: usize) -> String {
 fn date_to_display(date: &NaiveDateTime) -> String {
     let duration = Utc::now().signed_duration_since(date.and_utc());
     if duration.num_weeks() > 0 {
-        return format_time(duration.num_weeks(), "weeks".to_string());
+        return format_time(duration.num_weeks(), "weeks");
     }
     if duration.num_days() > 0 {
-        return format_time(duration.num_days(), "days".to_string());
+        return format_time(duration.num_days(), "days");
     }
     if duration.num_hours() > 0 {
-        return format_time(duration.num_hours(), "hours".to_string());
+        return format_time(duration.num_hours(), "hours");
     }
     if duration.num_minutes() > 0 {
-        return format_time(duration.num_minutes(), "minutes".to_string());
+        return format_time(duration.num_minutes(), "minutes");
     }
     if duration.num_seconds() > 0 {
-        return format_time(duration.num_seconds(), "seconds".to_string());
+        return format_time(duration.num_seconds(), "seconds");
     }
     "Date could not be displayed".to_string()
 }
 
-fn format_time(amount: i64, time_measurement: String) -> String {
-    format!("{} {} ago", amount, time_measurement)
+fn format_time(amount: i64, time_measurement: &str) -> String {
+    format!("{amount} {time_measurement} ago")
 }

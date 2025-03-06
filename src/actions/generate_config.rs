@@ -10,17 +10,19 @@ pub fn run() {
             let config_path = is_fast_dir.join("config.toml");
 
             fs::create_dir_all(&is_fast_dir)
-                .map_err(|e| format!("Error creating config directory: {}", e))
-                .and_then(|_| {
-                    if !config_path.exists() {
-                        fs::write(&config_path, DEFAULT_CONFIG_LOCATION)
-                            .map_err(|e| format!("Error writing config file: {}", e))
+                .map_err(|e| format!("Error creating config directory: {e}"))
+                .and_then(|()| {
+                    if config_path.exists() {
+                        Err(format!("Config file already exists at {config_path:?}"))
                     } else {
-                        Err(format!("Config file already exists at {:?}", config_path))
+                        fs::write(&config_path, DEFAULT_CONFIG_LOCATION)
+                            .map_err(|e| format!("Error writing config file: {e}"))
                     }
                 })
-                .map(|_| println!("Config file generated at {:?}", config_path))
-                .unwrap_or_else(|e| eprintln!("{}", e));
+                .map_or_else(
+                    |e| eprintln!("{e}"),
+                    |()| println!("Config file generated at {config_path:?}"),
+                );
         }
         None => {
             println!("Could not determine config directory");

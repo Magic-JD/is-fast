@@ -41,11 +41,11 @@ pub fn add_history(link: &Link) -> Result<(), IsError> {
     if url_exists(&url, &conn) {
         update_row(&url, &conn)
     } else {
-        insert_row(link, &url, conn)
+        insert_row(link, &url, &conn)
     }
 }
 
-fn insert_row(link: &Link, url: &str, conn: MutexGuard<Connection>) -> Result<(), IsError> {
+fn insert_row(link: &Link, url: &str, conn: &MutexGuard<Connection>) -> Result<(), IsError> {
     conn.execute(
         "INSERT INTO history (title, url, time) VALUES (?, ?, datetime('now'))",
         [&link.title, url],

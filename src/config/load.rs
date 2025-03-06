@@ -108,7 +108,7 @@ pub struct Config {
 impl Config {
     fn load() -> Self {
         let mut config: RawConfig = toml::from_str(DEFAULT_CONFIG_LOCATION)
-            .map_err(|e| println!("{}", e))
+            .map_err(|e| println!("{e}"))
             .unwrap_or(RawConfig {
                 styles: HashMap::new(),
                 selectors: HashMap::new(),
@@ -174,13 +174,13 @@ impl Config {
                 .map(|color| Style::new().fg(parse_color(&color))),
             search_type: config
                 .history
-                .as_ref()
-                .and_then(|history| history.search_type.clone())
+                .and_then(|history| history.search_type)
+                .as_deref()
                 .map(to_atom_kind),
             search_engine: config
                 .search
-                .as_ref()
-                .and_then(|search| search.engine.clone())
+                .and_then(|search| search.engine)
+                .as_deref()
                 .map(to_search_engine),
         }
     }
@@ -392,7 +392,7 @@ fn parse_rgb(color: &str) -> Option<Color> {
             return Some(Color::Rgb(r, g, b));
         }
     } else if let Some(rgb_values) = color.strip_prefix("rgb(").and_then(|c| c.strip_suffix(")")) {
-        let parts: Vec<&str> = rgb_values.split(',').map(|s| s.trim()).collect();
+        let parts: Vec<&str> = rgb_values.split(',').map(str::trim).collect();
         if parts.len() == 3 {
             let r = parts[0].parse::<u8>().ok()?;
             let g = parts[1].parse::<u8>().ok()?;
@@ -411,8 +411,7 @@ fn get_user_specified_config() -> Option<RawConfig> {
         .or_else(|| {
             dirs::config_dir()
                 .map(|p| p.join("is-fast/config.toml"))
-                .map(config_from_filepath)
-                .unwrap_or_else(|| None)
+                .map_or_else(|| None, config_from_filepath)
         })
 }
 
@@ -453,7 +452,7 @@ fn convert_styles(styles: HashMap<String, TagStyleConfig>) -> HashMap<String, St
         .collect()
 }
 
-fn to_atom_kind(search_type: String) -> AtomKind {
+fn to_atom_kind(search_type: &str) -> AtomKind {
     match search_type.to_lowercase().as_str() {
         "fuzzy" => AtomKind::Fuzzy,
         "exact" => AtomKind::Exact,
@@ -462,7 +461,7 @@ fn to_atom_kind(search_type: String) -> AtomKind {
     }
 }
 
-fn to_search_engine(search_engine: String) -> SearchEngine {
+fn to_search_engine(search_engine: &str) -> SearchEngine {
     match search_engine.to_lowercase().as_str() {
         "duckduckgo" => DuckDuckGo,
         "google" => Google,

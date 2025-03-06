@@ -8,14 +8,14 @@ use std::thread;
 static CACHE: Lazy<DashMap<String, Paragraph>> = Lazy::new(DashMap::new);
 
 pub fn get_content(link: &Link, extractor: &PageExtractor) -> Paragraph<'static> {
-    CACHE
-        .get(&link.url)
-        .map(|reference| reference.value().clone())
-        .unwrap_or_else(|| {
+    CACHE.get(&link.url).map_or_else(
+        || {
             let paragraph = extractor.get_paragraph(link);
             CACHE.insert(link.url.clone(), paragraph.clone());
             paragraph
-        })
+        },
+        |reference| reference.value().clone(),
+    )
 }
 
 pub fn preload(link: &Link, extractor: &PageExtractor) {
