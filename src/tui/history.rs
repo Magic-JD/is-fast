@@ -118,6 +118,7 @@ impl History {
                     _ = remove_history(&removed.url);
                     total_history.retain(|item| *item != removed);
                     table = create_table(&mut create_rows(&history, &user_search, &search_on));
+                    *state.offset_mut() = state.offset().saturating_sub(1);
                     self.display.draw_history(
                         &table,
                         history.len() as u16,
