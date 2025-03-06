@@ -50,7 +50,7 @@ fn to_lines(element: ElementRef, pre_formatted: bool) -> Vec<Line<'static>> {
         // Handle code differently due to performance issues.
         let language_type = extract_language_type(element);
         let code_text = extract_code(element);
-        return highlight_code(code_text, &language_type);
+        return highlight_code(&code_text, &language_type);
     }
 
     let style = TAG_STYLES.get(tag_name);
@@ -108,7 +108,7 @@ fn extract_lines(
                 merge_with_previous_line(&mut lines, current_lines);
             } else if !text.trim().is_empty() {
                 let current_lines = vec![create_optionally_styled_line(
-                    &text.replace("\n", " "),
+                    &text.replace('\n', " "),
                     style,
                 )];
                 merge_with_previous_line(&mut lines, current_lines);

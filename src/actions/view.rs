@@ -9,8 +9,8 @@ pub fn run(file: String, url: Option<String>, selection: Option<String>, piped: 
     let link = Link::new(file, url, selection_tag);
     if piped {
         let text = PageExtractor::from_file().get_plain_text(&link);
-        println!("{}", text);
+        println!("{text}");
         return;
     }
-    Browser::new().browse(vec![link], PageExtractor::from_file(), false);
+    Browser::new().browse(&[link], &PageExtractor::from_file(), false);
 }

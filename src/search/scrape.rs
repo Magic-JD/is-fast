@@ -1,7 +1,7 @@
 use crate::errors::error::IsError;
 use crate::errors::error::IsError::Scrape;
 use once_cell::sync::Lazy;
-use reqwest::blocking::Client;
+use reqwest::blocking::{Client, Response};
 use std::process::Command;
 
 static REQWEST_CLIENT: Lazy<Client> = Lazy::new(|| {
@@ -20,7 +20,7 @@ pub fn format_url(url: &str) -> String {
     if url.starts_with("http") {
         return url.to_string();
     }
-    format!("https://{}", url)
+    format!("https://{url}")
 }
 
 fn reqwest_scrape(url: &str) -> Result<String, IsError> {
@@ -30,9 +30,9 @@ fn reqwest_scrape(url: &str) -> Result<String, IsError> {
         .header("Accept", "text/html,application/xhtml+xml,application/json")
         .header("Accept-Language", "en-US,en;q=0.9")
         .send()
-        .and_then(|resp| resp.error_for_status()) // Ensure HTTP errors are caught
-        .and_then(|resp| resp.text())
-        .map_err(|e| Scrape(format!("Request failed for {}: {}", url, e)))
+        .and_then(Response::error_for_status) // Ensure HTTP errors are caught
+        .and_then(Response::text)
+        .map_err(|e| Scrape(format!("Request failed for {url}: {e}")))
 }
 
 // Some sites seem to be more comfortable serving curl rather than reqwest

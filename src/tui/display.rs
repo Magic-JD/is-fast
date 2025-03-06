@@ -40,7 +40,7 @@ impl Display {
 
     pub fn shutdown_with_error(&mut self, error: &str) -> ! {
         self.shutdown();
-        eprintln!("{}", error);
+        eprintln!("{error}");
         std::process::exit(1);
     }
 
@@ -68,7 +68,7 @@ impl Display {
         &self,
         table: &Table,
         row_count: u16,
-        title: String,
+        title: &str,
         state: &mut TableState,
         user_input: &mut String,
         should_reset_position: bool,
@@ -83,7 +83,7 @@ impl Display {
                 *state.offset_mut() = 0;
                 state.select_last();
             }
-            let block = default_block(&title, HISTORY_INSTRUCTIONS);
+            let block = default_block(title, HISTORY_INSTRUCTIONS);
             let layout = Layout::default()
                 .direction(Direction::Vertical)
                 .constraints(
@@ -104,7 +104,7 @@ impl Display {
             frame.render_stateful_widget(table, area, state);
             frame.render_widget(
                 Paragraph::new(
-                    Line::from(format!(" [SEARCH] {}", user_input))
+                    Line::from(format!(" [SEARCH] {user_input}"))
                         .style(TEXT_COLOR.add_modifier(Modifier::BOLD)),
                 ),
                 search_bar_layout[0],
@@ -169,7 +169,7 @@ impl Display {
             frame.render_widget(page, horizontal_chunks[1]);
             frame.render_widget(
                 Text::from(Line::styled(
-                    format!(" [{}/{}] ", index, pages),
+                    format!(" [{index}/{pages}] "),
                     *TUI_BORDER_COLOR,
                 ))
                 .alignment(Alignment::Right),
@@ -196,8 +196,8 @@ fn tui_border_span(text: &str) -> Span<'static> {
 
 fn count_result_text(row_count: u16) -> String {
     if row_count == 1 {
-        format!("{} result", row_count)
+        format!("{row_count} result")
     } else {
-        format!("{} results", row_count)
+        format!("{row_count} results")
     }
 }

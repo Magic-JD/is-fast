@@ -3,8 +3,8 @@ use crate::search::link::Link;
 use crate::transform::page::PageExtractor;
 use crate::tui::browser::Browser;
 
-pub fn run(title: Option<String>, url: String, selector: Option<String>, piped: bool) {
-    let selection_tag = selector.unwrap_or_else(|| Config::get_selectors(&url));
+pub fn run(title: Option<String>, url: &str, selector: Option<String>, piped: bool) {
+    let selection_tag = selector.unwrap_or_else(|| Config::get_selectors(url));
     let link = Link::new(
         title.unwrap_or_default(),
         url.to_string(),
@@ -12,8 +12,8 @@ pub fn run(title: Option<String>, url: String, selector: Option<String>, piped: 
     );
     if piped {
         let text_only = PageExtractor::from_url().get_plain_text(&link);
-        println!("{}", text_only);
+        println!("{text_only}");
         return;
     }
-    Browser::new().browse(vec![link], PageExtractor::from_url(), false);
+    Browser::new().browse(&[link], &PageExtractor::from_url(), false);
 }

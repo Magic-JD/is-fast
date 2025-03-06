@@ -23,9 +23,9 @@ fn main() {
     } else if let Some(file) = args.file {
         view::run(file, args.url, args.selector, args.piped);
     } else if let Some(url) = args.direct {
-        direct::run(None, url, args.selector, args.piped);
+        direct::run(None, &url, args.selector, args.piped);
     } else if let Some(search_term) = args.query.map(|query| query.join(" ")) {
-        search_actions::run(search_term);
+        search_actions::run(&search_term);
     } else {
         eprintln!("No actions term provided!");
     }

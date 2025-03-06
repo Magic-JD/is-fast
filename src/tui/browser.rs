@@ -23,10 +23,10 @@ impl Browser {
     }
 
     pub fn shutdown(&mut self) {
-        self.display.shutdown()
+        self.display.shutdown();
     }
 
-    pub fn browse(mut self, links: Vec<Link>, extractor: PageExtractor, history_active: bool) {
+    pub fn browse(mut self, links: &[Link], extractor: &PageExtractor, history_active: bool) {
         let height = self.display.height();
         let mut scroll: u16 = 0;
         if links.is_empty() {
@@ -35,7 +35,7 @@ impl Browser {
             return;
         }
         let mut index = 0;
-        let (mut title, mut page) = new_page(&index, &links, &extractor, history_active);
+        let (mut title, mut page) = new_page(index, links, extractor, history_active);
         self.display
             .draw_page(&page, &title, index + 1, links.len())
             .unwrap_or_else(|err| self.display.shutdown_with_error(&err.to_string()));
@@ -47,11 +47,11 @@ impl Browser {
                         scroll = 0;
                         index += 1;
                         self.change_page(
-                            &index,
-                            &links,
+                            index,
+                            links,
                             &mut page,
                             &mut title,
-                            &extractor,
+                            extractor,
                             history_active,
                         )
                         .unwrap();
@@ -62,11 +62,11 @@ impl Browser {
                         scroll = 0;
                         index -= 1;
                         self.change_page(
-                            &index,
-                            &links,
+                            index,
+                            links,
                             &mut page,
                             &mut title,
-                            &extractor,
+                            extractor,
                             history_active,
                         )
                         .unwrap();
@@ -101,7 +101,7 @@ impl Browser {
                         .draw_page(&page, &title, index + 1, links.len());
                 }
                 Open => {
-                    open_link(&index, &links);
+                    open_link(index, links);
                 }
                 Action::Continue => {}
             }
@@ -111,7 +111,7 @@ impl Browser {
 
     fn change_page(
         &self,
-        index: &usize,
+        index: usize,
         links: &[Link],
         page: &mut Paragraph,
         title: &mut String,
@@ -163,47 +163,49 @@ enum Action {
     Continue,
 }
 
-fn open_link(index: &usize, links: &[Link]) {
+fn open_link(index: usize, links: &[Link]) {
     links
-        .get(*index)
+        .get(index)
         .map(|link| format_url(&link.url))
         .and_then(|url| open::that(&url).err())
         .iter()
-        .for_each(|e| println!("{}", e));
+        .for_each(|e| println!("{e}"));
 }
 
 pub fn new_page(
-    index: &usize,
+    index: usize,
     links: &[Link],
     extractor: &PageExtractor,
     history_active: bool,
 ) -> (String, Paragraph<'static>) {
-    if let Some(link) = links.get(*index + 1) {
+    if let Some(link) = links.get(index + 1) {
         preload(link, extractor); // Initiate the call to get the page after this one
     }
     links
-        .get(*index)
+        .get(index)
         .inspect(|link| {
             if history_active {
-                _ = add_history(link)
+                _ = add_history(link);
             }
         })
         .map(|link| (link, get_content(link, extractor)))
-        .map(|(link, paragraph)| {
-            (
-                extract_title(link),
-                paragraph
-                    .style(Style::default().fg(Color::White))
-                    .wrap(Wrap { trim: false })
-                    .scroll((0, 0)),
-            )
-        })
-        .unwrap_or_else(|| {
-            (
-                String::from("None"),
-                Paragraph::new(Text::from(String::from("Index out of bounds"))),
-            )
-        })
+        .map_or_else(
+            || {
+                (
+                    String::from("None"),
+                    Paragraph::new(Text::from(String::from("Index out of bounds"))),
+                )
+            },
+            |(link, paragraph)| {
+                (
+                    extract_title(link),
+                    paragraph
+                        .style(Style::default().fg(Color::White))
+                        .wrap(Wrap { trim: false })
+                        .scroll((0, 0)),
+                )
+            },
+        )
 }
 fn extract_title(link: &Link) -> String {
     format!(" {} ({}) ", link.title, link.url)
