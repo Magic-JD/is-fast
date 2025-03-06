@@ -2,7 +2,8 @@ use crate::actions::direct;
 use crate::config::load::Config as LocalConfig;
 use crate::database::connect::{remove_history, HistoryData};
 use crate::tui::display::Display;
-use crate::tui::history::Action::{Backspace, Continue, Down, Exit, Open, Text, Up};
+use crate::tui::history::Action::{Backspace, ChangeSearch, Continue, Down, Exit, Open, Text, Up};
+use crate::tui::history::SearchOn::{Title, Url};
 use chrono::{NaiveDateTime, Utc};
 use crossterm::event;
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
@@ -42,20 +43,19 @@ impl History {
         let mut total_history = history.clone();
         let mut user_search = String::new();
         let mut state = TableState::default();
-        history = order_by_match(&mut history, &mut user_search);
+        let mut search_on = Title;
+        history = order_by_match(&mut history, &mut user_search, &search_on);
         state.select(Some(history.len().saturating_sub(1)));
-        let mut rows = create_rows(&history, &user_search);
+        let mut rows = create_rows(&history, &user_search, &search_on);
         let mut table = create_table(&mut rows);
-        self.display
-            .draw_history(
-                &table,
-                history.len() as u16,
-                "History",
-                &mut state,
-                &mut user_search,
-                true,
-            )
-            .expect("TODO: panic message");
+        self.display.draw_history(
+            &table,
+            history.len() as u16,
+            &mut state,
+            &user_search,
+            true,
+            &search_on,
+        );
         loop {
             match handle_input() {
                 Continue => {}
@@ -85,13 +85,13 @@ impl History {
                     if let Some(selected) = state.selected() {
                         if selected > 0 {
                             state.select(Some(selected - 1));
-                            _ = self.display.draw_history(
+                            self.display.draw_history(
                                 &table,
                                 history.len() as u16,
-                                "History",
                                 state,
-                                &mut user_search,
+                                &user_search,
                                 false,
+                                &search_on,
                             );
                         }
                     }
@@ -101,13 +101,13 @@ impl History {
                     if let Some(selected) = state.selected() {
                         if selected < (history.len() - 1) {
                             state.select(Some(selected + 1));
-                            _ = self.display.draw_history(
+                            self.display.draw_history(
                                 &table,
                                 history.len() as u16,
-                                "History",
                                 state,
-                                &mut user_search,
+                                &user_search,
                                 false,
+                                &search_on,
                             );
                         }
                     }
@@ -117,45 +117,58 @@ impl History {
                     let removed = history.remove(ref_state.selected().unwrap_or(0));
                     _ = remove_history(&removed.url);
                     total_history.retain(|item| *item != removed);
-                    table = create_table(&mut create_rows(&history, &user_search));
-                    self.display
-                        .draw_history(
-                            &table,
-                            history.len() as u16,
-                            "History",
-                            &mut state,
-                            &mut user_search,
-                            false,
-                        )
-                        .expect("TODO: panic message");
+                    table = create_table(&mut create_rows(&history, &user_search, &search_on));
+                    self.display.draw_history(
+                        &table,
+                        history.len() as u16,
+                        &mut state,
+                        &user_search,
+                        false,
+                        &search_on,
+                    );
                 }
                 Text(char) => {
                     user_search.push(char);
-                    history = order_by_match(&mut history, &mut user_search);
-                    table = create_table(&mut create_rows(&history, &user_search));
+                    history = order_by_match(&mut history, &mut user_search, &search_on);
+                    table = create_table(&mut create_rows(&history, &user_search, &search_on));
                     state.select(Some(history.len().saturating_sub(1)));
-                    _ = self.display.draw_history(
+                    self.display.draw_history(
                         &table,
                         history.len() as u16,
-                        "History",
                         &mut state,
-                        &mut user_search,
+                        &user_search,
                         true,
+                        &search_on,
                     );
                 }
                 Backspace => {
                     user_search.pop();
                     history.clone_from(&total_history);
-                    history = order_by_match(&mut history, &mut user_search);
-                    table = create_table(&mut create_rows(&history, &user_search));
+                    history = order_by_match(&mut history, &mut user_search, &search_on);
+                    table = create_table(&mut create_rows(&history, &user_search, &search_on));
                     state.select(Some(history.len().saturating_sub(1)));
-                    _ = self.display.draw_history(
+                    self.display.draw_history(
                         &table,
                         history.len() as u16,
-                        "History",
                         &mut state,
-                        &mut user_search,
+                        &user_search,
                         true,
+                        &search_on,
+                    );
+                }
+                ChangeSearch => {
+                    search_on = next_search(&search_on);
+                    history.clone_from(&total_history);
+                    history = order_by_match(&mut history, &mut user_search, &search_on);
+                    table = create_table(&mut create_rows(&history, &user_search, &search_on));
+                    state.select(Some(history.len().saturating_sub(1)));
+                    self.display.draw_history(
+                        &table,
+                        history.len() as u16,
+                        &mut state,
+                        &user_search,
+                        true,
+                        &search_on,
                     );
                 }
             }
@@ -163,7 +176,18 @@ impl History {
     }
 }
 
-fn order_by_match(history: &mut [HistoryData], user_search: &mut String) -> Vec<HistoryData> {
+fn next_search(search_on: &SearchOn) -> SearchOn {
+    match search_on {
+        Title => Url,
+        Url => Title,
+    }
+}
+
+fn order_by_match(
+    history: &mut [HistoryData],
+    user_search: &mut String,
+    search_on: &SearchOn,
+) -> Vec<HistoryData> {
     let mut matcher = Matcher::new(Config::DEFAULT);
     let pattern = Pattern::new(
         &*user_search,
@@ -174,9 +198,10 @@ fn order_by_match(history: &mut [HistoryData], user_search: &mut String) -> Vec<
     let mut data_2_score = history
         .iter()
         .map(|h| {
+            let match_on = search_on_history(h, search_on);
             (
                 h,
-                pattern.score(Utf32Str::new(&h.title, &mut vec![]), &mut matcher),
+                pattern.score(Utf32Str::new(match_on, &mut vec![]), &mut matcher),
             )
         })
         .filter(|(_, score)| score.is_some())
@@ -189,6 +214,13 @@ fn order_by_match(history: &mut [HistoryData], user_search: &mut String) -> Vec<
         }
     });
     data_2_score.into_iter().map(|(a, _)| a.clone()).collect()
+}
+
+fn search_on_history<'a>(history: &'a HistoryData, search_on: &'a SearchOn) -> &'a str {
+    match search_on {
+        Title => &history.title,
+        Url => &history.url,
+    }
 }
 
 fn create_table<'a>(rows: &mut [Row<'a>]) -> Table<'a> {
@@ -204,23 +236,39 @@ fn create_table<'a>(rows: &mut [Row<'a>]) -> Table<'a> {
     table
 }
 
-fn create_rows(history: &[HistoryData], user_search: &str) -> Vec<Row<'static>> {
+fn create_rows(
+    history: &[HistoryData],
+    user_search: &str,
+    search_on: &SearchOn,
+) -> Vec<Row<'static>> {
     let rows: Vec<Row> = history
         .iter()
-        .map(|h| {
-            let cells = vec![
-                Cell::from(highlight_title(clip_if_needed(&h.title, 100), user_search))
-                    .style(*TITLE_COLOR),
-                Cell::from(clip_if_needed(&h.url, 60)).style(*URL_COLOR),
-                Cell::from(date_to_display(&h.time)).style(*TIME_COLOR),
-            ];
-            Row::new(cells)
+        .map(|h| match search_on {
+            Title => {
+                let cell = vec![
+                    Cell::from(highlight_text(clip_if_needed(&h.title, 100), user_search))
+                        .style(*TITLE_COLOR),
+                    Cell::from(clip_if_needed(&h.url, 60)).style(*URL_COLOR),
+                    Cell::from(date_to_display(&h.time)).style(*TIME_COLOR),
+                ];
+                Row::new(cell)
+            }
+            Url => {
+                let cells = vec![
+                    Cell::from(clip_if_needed(&h.title, 100)).style(*TITLE_COLOR),
+                    Cell::from(highlight_text(clip_if_needed(&h.url, 60), user_search))
+                        .style(*URL_COLOR),
+                    Cell::from(date_to_display(&h.time)).style(*TIME_COLOR),
+                ];
+                Row::new(cells)
+            }
         })
         .collect();
     rows
 }
 
-fn highlight_title(plain_text: String, user_search: &str) -> Line<'static> {
+fn highlight_text(plain_text: String, user_search: &str) -> Line<'static> {
+    let user_search = user_search.replace(' ', "");
     if user_search.is_empty() || plain_text.is_empty() {
         return Line::from(plain_text);
     }
@@ -276,6 +324,7 @@ fn handle_input() -> Action {
             KeyCode::Delete => Delete,
             KeyCode::Char(char) => Text(char),
             KeyCode::Backspace => Backspace,
+            KeyCode::Tab => ChangeSearch,
             _ => Continue,
         };
     }
@@ -291,6 +340,12 @@ enum Action {
     Delete,
     Text(char),
     Backspace,
+    ChangeSearch,
+}
+
+pub enum SearchOn {
+    Title,
+    Url,
 }
 
 fn clip_if_needed(text: &str, max_length: usize) -> String {
