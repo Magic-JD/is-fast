@@ -1,9 +1,9 @@
 use crate::errors::error::IsError;
 use crate::errors::error::IsError::General;
+use crate::search::link::Link;
+use crate::search::scrape::scrape;
 use crate::transform::filter::filter;
 use crate::transform::format::to_display;
-use crate::transform::link::Link;
-use crate::transform::scrape::scrape;
 use ratatui::prelude::Text;
 use ratatui::widgets::Paragraph;
 use scraper::Html;

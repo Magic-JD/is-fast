@@ -1,3 +1,5 @@
+use crate::search::search_type::SearchEngine;
+use crate::search::search_type::SearchEngine::{DuckDuckGo, Google};
 use globset::{Glob, GlobSet, GlobSetBuilder};
 use nucleo_matcher::pattern::AtomKind;
 use once_cell::sync::Lazy;
@@ -60,6 +62,12 @@ struct HistorySection {
 }
 
 #[derive(Debug, Deserialize)]
+struct SearchSection {
+    #[serde(default)]
+    engine: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
 struct RawConfig {
     #[serde(default)]
     styles: HashMap<String, TagStyleConfig>,
@@ -73,6 +81,8 @@ struct RawConfig {
     display: Option<DisplaySection>,
     #[serde(default)]
     history: Option<HistorySection>,
+    #[serde(default)]
+    search: Option<SearchSection>,
 }
 
 #[derive(Debug)]
@@ -92,6 +102,7 @@ pub struct Config {
     time_color: Option<Style>,
     text_color: Option<Style>,
     search_type: Option<AtomKind>,
+    search_engine: Option<SearchEngine>,
 }
 
 impl Config {
@@ -105,6 +116,7 @@ impl Config {
                 syntax: None,
                 display: None,
                 history: None,
+                search: None,
             });
         _ = get_user_specified_config().map(|u_config| override_defaults(&mut config, u_config));
         let (matcher, globs) = generate_globs(&mut config);
@@ -165,6 +177,11 @@ impl Config {
                 .as_ref()
                 .and_then(|history| history.search_type.clone())
                 .map(to_atom_kind),
+            search_engine: config
+                .search
+                .as_ref()
+                .and_then(|search| search.engine.clone())
+                .map(to_search_engine),
         }
     }
 
@@ -228,6 +245,9 @@ impl Config {
 
     pub fn get_search_type() -> AtomKind {
         CONFIG.search_type.unwrap_or(AtomKind::Fuzzy)
+    }
+    pub fn get_search_engine() -> SearchEngine {
+        CONFIG.search_engine.clone().unwrap_or(DuckDuckGo)
     }
 }
 
@@ -318,6 +338,17 @@ fn override_defaults(config: &mut RawConfig, u_config: RawConfig) {
         }
     }
 
+    let mut search = config
+        .search
+        .take()
+        .unwrap_or(SearchSection { engine: None });
+
+    if let Some(u_search) = u_config.search {
+        if let Some(engine) = u_search.engine {
+            search.engine = Some(engine);
+        }
+    }
+    config.search = Some(search);
     config.history = Some(history);
     config.format = Some(format);
     config.syntax = Some(syntax);
@@ -431,6 +462,14 @@ fn to_atom_kind(search_type: String) -> AtomKind {
     }
 }
 
+fn to_search_engine(search_engine: String) -> SearchEngine {
+    match search_engine.to_lowercase().as_str() {
+        "duckduckgo" => DuckDuckGo,
+        "google" => Google,
+        _ => DuckDuckGo, // Default to duckduckgo
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -508,6 +547,7 @@ mod tests {
             syntax: None,
             display: None,
             history: None,
+            search: None,
         };
 
         let (matcher, globs) = generate_globs(&mut raw_config);
@@ -546,6 +586,7 @@ mod tests {
                 text_color: Some("white".to_string()),
                 search_type: Some("fuzzy".to_string()),
             }),
+            search: None,
         };
 
         let user_config = RawConfig {
@@ -574,6 +615,7 @@ mod tests {
                 text_color: None,
                 search_type: Some("fuzzy".to_string()),
             }),
+            search: None,
         };
 
         override_defaults(&mut default_config, user_config);

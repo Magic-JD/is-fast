@@ -16,7 +16,7 @@ pub fn scrape(url: &str) -> Result<String, IsError> {
     reqwest_scrape(url).or_else(|_| curl_scrape(url))
 }
 
-fn format_url(url: &str) -> String {
+pub fn format_url(url: &str) -> String {
     if url.starts_with("http") {
         return url.to_string();
     }
@@ -27,7 +27,7 @@ fn reqwest_scrape(url: &str) -> Result<String, IsError> {
     REQWEST_CLIENT
         .get(url)
         .header("User-Agent", "Mozilla/5.0")
-        .header("Accept", "text/html,application/xhtml+xml")
+        .header("Accept", "text/html,application/xhtml+xml,application/json")
         .header("Accept-Language", "en-US,en;q=0.9")
         .send()
         .and_then(|resp| resp.error_for_status()) // Ensure HTTP errors are caught

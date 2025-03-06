@@ -1,5 +1,5 @@
 use crate::config::load::Config;
-use crate::transform::link::Link;
+use crate::search::link::Link;
 use crate::transform::page::PageExtractor;
 use crate::tui::browser::Browser;
 

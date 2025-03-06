@@ -1,7 +1,8 @@
 use crate::database::connect::add_history;
 use crate::errors::error::IsError;
+use crate::search::link::Link;
+use crate::search::scrape::format_url;
 use crate::transform::cache::{get_content, preload};
-use crate::transform::link::Link;
 use crate::transform::page::PageExtractor;
 use crate::tui::browser::Action::{Down, Exit, Next, Open, PageDown, PageUp, Previous, Up};
 use crate::tui::display::Display;
@@ -19,6 +20,10 @@ impl Browser {
         let display = Display::new();
         display.loading().unwrap();
         Browser { display }
+    }
+
+    pub fn shutdown(&mut self) {
+        self.display.shutdown()
     }
 
     pub fn browse(mut self, links: Vec<Link>, extractor: PageExtractor, history_active: bool) {
@@ -153,7 +158,7 @@ enum Action {
 fn open_link(index: &usize, links: &[Link]) {
     links
         .get(*index)
-        .map(|link| format!("https://{}", link.url))
+        .map(|link| format_url(&link.url))
         .and_then(|url| open::that(&url).err())
         .iter()
         .for_each(|e| println!("{}", e));

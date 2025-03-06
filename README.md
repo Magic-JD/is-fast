@@ -49,6 +49,7 @@ No waiting - just internet search fast in your terminal.
     - [🌈 Syntax Highlighting](#-syntax-highlighting)
     - [🎨 Display Settings](#-display-settings)
     - [🕰️ History Settings](#-history-settings)
+    - [🔍 Search Engine Configuration](#-search-engine-configuration)
     - [📌 Summary](#-summary)
 - [🌐 Using `is-fast` to Open URLs Directly](#-using-is-fast-to-open-urls-directly)
     - [`--direct` / `-d`](#--direct---d)
@@ -317,6 +318,42 @@ text_color = "rgb(116, 199, 236)"
 search_type = "fuzzy"
 ```
 
+## 🔍 Search Engine Configuration
+
+Determines which search engine is used when performing searches. Available options:
+
+- `duckduckgo` (default) - Uses DuckDuckGo for search queries.
+- `google` - Uses Google Custom Search. **Requires API configuration** (see below).
+
+### 📌 API Configuration for Google Search
+
+If you choose `google` as your search engine, you must set up a Google Custom Search API. Follow these steps:
+
+1. Visit the [Google Custom Search API](https://developers.google.com/custom-search/v1/overview) page.
+2. Click **Get Started** and enable the API in your Google Cloud Console.
+3. Generate an **API Key** from the credentials section.
+4. Create a **Custom Search Engine** and obtain the **Search Engine ID**.
+5. Set the following environment variables:
+
+```sh
+export IS_FAST_GOOGLE_API_KEY="your_api_key_here"
+export IS_FAST_GOOGLE_SEARCH_ENGINE_ID="your_search_engine_id_here"
+```
+
+These values must be provided for Google Search to function properly.
+
+### Custom search engine
+
+If you want to add your own custom search engine, please fork the repository and follow the instructions on [this file](src/search/search_type.rs).
+
+
+### 🛠 Example Configuration
+
+```toml
+[search]
+engine = "google"
+```
+
 ## 📌 Summary
 
 | Configuration           | Purpose                                                             |
@@ -328,7 +365,7 @@ search_type = "fuzzy"
 | **Syntax Highlighting** | Defines how the syntax highlighting should be handled.              |
 | **Display Settings**    | Controls visual aspects like borders and margins.                   |
 | **History Settings**    | Configures history display colors and search behavior.              |
-
+| **Search Engine**       | Determines whether to use DuckDuckGo or Google.                     |
 ---
 
 # 🌐 Using `is-fast` to Open URLs Directly
