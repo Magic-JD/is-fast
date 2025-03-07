@@ -39,7 +39,19 @@ Before running the project, ensure you have the following installed:
 
 ## Installing the program 🐧 🍏 🪟
 
-Run the following command to clone the repository and install it on your system:
+### Install prebuilt binaries via shell script
+
+```sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/Magic-JD/is-fast/releases/download/v0.1.3/is-fast-installer.sh | sh
+```
+
+### Install prebuilt binaries via Homebrew
+
+```sh
+brew install magic-jd/tap/is-fast
+```
+
+Install latest from source with cargo:
 
 ```sh
 cargo install --git https://github.com/Magic-JD/is-fast.git
