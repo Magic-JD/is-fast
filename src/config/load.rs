@@ -185,8 +185,8 @@ impl Config {
         }
     }
 
-    pub fn get_styles() -> HashMap<String, Style> {
-        CONFIG.styles.clone()
+    pub fn get_styles() -> &'static HashMap<String, Style> {
+        &CONFIG.styles
     }
 
     pub fn get_selectors(url: &str) -> String {
@@ -195,8 +195,7 @@ impl Config {
             .matches(url)
             .iter()
             .find_map(|idx| CONFIG.globs.get(*idx))
-            .map(|glob| glob.clone().to_string())
-            .and_then(|s| CONFIG.selectors.get(&s).cloned())
+            .and_then(|glob| CONFIG.selectors.get(&glob.to_string()).cloned())
             .unwrap_or_else(|| String::from("body"))
     }
 

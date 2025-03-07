@@ -5,11 +5,7 @@ use crate::tui::browser::Browser;
 
 pub fn run(title: Option<String>, url: &str, selector: Option<String>, piped: bool) {
     let selection_tag = selector.unwrap_or_else(|| Config::get_selectors(url));
-    let link = Link::new(
-        title.unwrap_or_default(),
-        url.to_string(),
-        selection_tag.clone(),
-    );
+    let link = Link::new(title.unwrap_or_default(), url.to_string(), selection_tag);
     if piped {
         let text_only = PageExtractor::from_url().get_plain_text(&link);
         println!("{text_only}");
