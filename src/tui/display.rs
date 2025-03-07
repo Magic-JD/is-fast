@@ -1,4 +1,5 @@
 use crate::config::load::Config;
+use crate::tui::general_widgets::default_block;
 use crossterm::execute;
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
@@ -6,14 +7,12 @@ use crossterm::terminal::{
 use once_cell::sync::Lazy;
 use ratatui::backend::CrosstermBackend;
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
-use ratatui::prelude::{Modifier, Span, Style};
 use ratatui::text::Text;
-use ratatui::widgets::{Block, Borders, Paragraph, Table, TableState};
+use ratatui::widgets::{Block, Paragraph, Table, TableState};
 use ratatui::Terminal;
 use std::io::{stdout, Stdout};
 use std::sync::Mutex;
 
-pub static TUI_BORDER_COLOR: Lazy<Style> = Lazy::new(Config::get_border_color);
 static TUI_MARGIN: Lazy<u16> = Lazy::new(Config::get_page_margin);
 
 pub struct Display {
@@ -156,18 +155,4 @@ impl Display {
             })
             .unwrap_or_else(|err| self.shutdown_with_error(&err.to_string()));
     }
-}
-pub fn default_block(title: &str, instructions: &str) -> Block<'static> {
-    Block::default()
-        .title(tui_border_span(title))
-        .title_bottom(tui_border_span(instructions))
-        .borders(Borders::TOP)
-        .style(*TUI_BORDER_COLOR)
-}
-
-fn tui_border_span(text: &str) -> Span<'static> {
-    Span::styled(
-        text.to_string(),
-        (*TUI_BORDER_COLOR).add_modifier(Modifier::BOLD),
-    )
 }
