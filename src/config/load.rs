@@ -93,7 +93,7 @@ pub struct Config {
     globs: Vec<Glob>,
     ignored_tags: HashSet<String>,
     block_elements: HashSet<String>,
-    syntax_default_language: Option<String>,
+    syntax_default_language: String,
     syntax_highlighting_theme: Option<String>,
     page_margin: Option<u16>,
     border_color: Option<Style>,
@@ -138,7 +138,8 @@ impl Config {
             syntax_default_language: config
                 .syntax
                 .as_ref()
-                .and_then(|syntax| syntax.default_language.clone()),
+                .and_then(|syntax| syntax.default_language.clone())
+                .unwrap_or_default(),
             syntax_highlighting_theme: config
                 .syntax
                 .as_ref()
@@ -199,16 +200,16 @@ impl Config {
             .unwrap_or_else(|| String::from("body"))
     }
 
-    pub fn get_ignored_tags() -> HashSet<String> {
-        CONFIG.ignored_tags.clone()
+    pub fn get_ignored_tags() -> &'static HashSet<String> {
+        &CONFIG.ignored_tags
     }
 
-    pub fn get_block_elements() -> HashSet<String> {
-        CONFIG.block_elements.clone()
+    pub fn get_block_elements() -> &'static HashSet<String> {
+        &CONFIG.block_elements
     }
 
-    pub fn get_default_language() -> String {
-        CONFIG.syntax_default_language.clone().unwrap_or_default()
+    pub fn get_default_language() -> &'static String {
+        &CONFIG.syntax_default_language
     }
 
     pub fn get_syntax_highlighting_theme() -> String {

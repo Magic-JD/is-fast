@@ -8,8 +8,8 @@ use ratatui::text::{Line, Span, Text};
 use scraper::{ElementRef, Node};
 use std::collections::{HashMap, HashSet};
 
-static IGNORED_TAGS: Lazy<HashSet<String>> = Lazy::new(Config::get_ignored_tags);
-static BLOCK_ELEMENTS: Lazy<HashSet<String>> = Lazy::new(Config::get_block_elements);
+static IGNORED_TAGS: Lazy<&HashSet<String>> = Lazy::new(Config::get_ignored_tags);
+static BLOCK_ELEMENTS: Lazy<&HashSet<String>> = Lazy::new(Config::get_block_elements);
 static TAG_STYLES: Lazy<&HashMap<String, Style>> = Lazy::new(Config::get_styles);
 
 pub fn to_display(elements: Vec<ElementRef>) -> Result<Text<'static>, IsError> {

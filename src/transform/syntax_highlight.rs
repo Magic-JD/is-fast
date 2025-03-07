@@ -6,7 +6,7 @@ use syntect::highlighting::{Style as SyntectStyle, Theme, ThemeSet};
 use syntect::parsing::{SyntaxReference, SyntaxSet};
 use syntect::util::LinesWithEndings;
 
-static DEFAULT_LANGUAGE: Lazy<String> = Lazy::new(Config::get_default_language);
+static DEFAULT_LANGUAGE: Lazy<&String> = Lazy::new(Config::get_default_language);
 static SYNTAX_SET: Lazy<SyntaxSet> = Lazy::new(SyntaxSet::load_defaults_newlines);
 static THEME_SET: Lazy<ThemeSet> = Lazy::new(ThemeSet::load_defaults);
 static DEFAULT_SYNTAX: Lazy<&'static SyntaxReference> = Lazy::new(|| {
