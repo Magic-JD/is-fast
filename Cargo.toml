@@ -2,6 +2,9 @@
 name = "is-fast"
 version = "0.1.0"
 edition = "2021"
+repository = "https://github.com/Magic-JD/is-fast"
+homepage = "https://github.com/Magic-JD/is-fast"
+description = "Internet search fast - view webpages from the terminal."
 
 [dependencies]
 crossterm = "0.28.1"
@@ -30,3 +33,8 @@ clap_mangen = "0.2.26"
 [dev-dependencies]
 serial_test = "3.2.0"
 tempfile = "3.17.1"
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
