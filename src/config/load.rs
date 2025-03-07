@@ -94,13 +94,13 @@ pub struct Config {
     ignored_tags: HashSet<String>,
     block_elements: HashSet<String>,
     syntax_default_language: String,
-    syntax_highlighting_theme: Option<String>,
-    page_margin: Option<u16>,
-    border_color: Option<Style>,
-    title_color: Option<Style>,
-    url_color: Option<Style>,
-    time_color: Option<Style>,
-    text_color: Option<Style>,
+    syntax_highlighting_theme: String,
+    page_margin: u16,
+    border_color: Style,
+    title_color: Style,
+    url_color: Style,
+    time_color: Style,
+    text_color: Style,
     search_type: Option<AtomKind>,
     search_engine: Option<SearchEngine>,
 }
@@ -143,36 +143,42 @@ impl Config {
             syntax_highlighting_theme: config
                 .syntax
                 .as_ref()
-                .and_then(|syntax| syntax.theme.clone()),
+                .and_then(|syntax| syntax.theme.clone())
+                .unwrap_or_default(),
             page_margin: config
                 .display
                 .as_ref()
-                .map(|display| display.page_margin)
+                .and_then(|display| display.page_margin)
                 .unwrap_or_default(),
             border_color: config
                 .display
                 .and_then(|display| display.border_color)
-                .map(|color| Style::new().fg(parse_color(&color))),
+                .map(|color| Style::new().fg(parse_color(&color)))
+                .unwrap_or_default(),
             title_color: config
                 .history
                 .as_ref()
                 .and_then(|history| history.title_color.clone())
-                .map(|color| Style::new().fg(parse_color(&color))),
+                .map(|color| Style::new().fg(parse_color(&color)))
+                .unwrap_or_default(),
             url_color: config
                 .history
                 .as_ref()
                 .and_then(|history| history.url_color.clone())
-                .map(|color| Style::new().fg(parse_color(&color))),
+                .map(|color| Style::new().fg(parse_color(&color)))
+                .unwrap_or_default(),
             time_color: config
                 .history
                 .as_ref()
                 .and_then(|history| history.time_color.clone())
-                .map(|color| Style::new().fg(parse_color(&color))),
+                .map(|color| Style::new().fg(parse_color(&color)))
+                .unwrap_or_default(),
             text_color: config
                 .history
                 .as_ref()
                 .and_then(|history| history.text_color.clone())
-                .map(|color| Style::new().fg(parse_color(&color))),
+                .map(|color| Style::new().fg(parse_color(&color)))
+                .unwrap_or_default(),
             search_type: config
                 .history
                 .and_then(|history| history.search_type)
@@ -212,35 +218,32 @@ impl Config {
         &CONFIG.syntax_default_language
     }
 
-    pub fn get_syntax_highlighting_theme() -> String {
-        CONFIG
-            .syntax_highlighting_theme
-            .clone()
-            .unwrap_or_else(|| "base16-ocean.dark".to_string())
+    pub fn get_syntax_highlighting_theme() -> &'static String {
+        &CONFIG.syntax_highlighting_theme
     }
 
     pub fn get_page_margin() -> u16 {
-        CONFIG.page_margin.unwrap_or_default()
+        CONFIG.page_margin
     }
 
-    pub fn get_border_color() -> Style {
-        CONFIG.border_color.unwrap_or_default()
+    pub fn get_border_color() -> &'static Style {
+        &CONFIG.border_color
     }
 
-    pub fn get_title_color() -> Style {
-        CONFIG.title_color.unwrap_or_default()
+    pub fn get_title_color() -> &'static Style {
+        &CONFIG.title_color
     }
 
-    pub fn get_url_color() -> Style {
-        CONFIG.url_color.unwrap_or_default()
+    pub fn get_url_color() -> &'static Style {
+        &CONFIG.url_color
     }
 
-    pub fn get_time_color() -> Style {
-        CONFIG.time_color.unwrap_or_default()
+    pub fn get_time_color() -> &'static Style {
+        &CONFIG.time_color
     }
 
-    pub fn get_text_color() -> Style {
-        CONFIG.text_color.unwrap_or_default()
+    pub fn get_text_color() -> &'static Style {
+        &CONFIG.text_color
     }
 
     pub fn get_search_type() -> AtomKind {

@@ -18,7 +18,7 @@ static DEFAULT_SYNTAX: Lazy<&'static SyntaxReference> = Lazy::new(|| {
 static DEFAULT_THEME: Lazy<&'static Theme> = Lazy::new(|| {
     THEME_SET
         .themes
-        .get(&Config::get_syntax_highlighting_theme())
+        .get(Config::get_syntax_highlighting_theme())
         .unwrap_or_else(|| {
             THEME_SET
                 .themes
