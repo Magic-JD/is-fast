@@ -30,7 +30,11 @@ fn main() {
     } else if let Some(url) = args.direct {
         direct::run(None, &url, args.selector, args.piped);
     } else if let Some(search_term) = args.query.map(|query| query.join(" ")) {
-        search_actions::run(&search_term);
+        if args.selector.is_some() {
+            eprintln!("Selector cannot be used for a generalize search, only for a --file or --direct query");
+            return;
+        }
+        search_actions::run(&search_term, args.piped);
     } else {
         eprintln!("No actions term provided!");
     }
