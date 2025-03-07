@@ -6,7 +6,7 @@ use syntect::highlighting::{Style as SyntectStyle, Theme, ThemeSet};
 use syntect::parsing::{SyntaxReference, SyntaxSet};
 use syntect::util::LinesWithEndings;
 
-static DEFAULT_LANGUAGE: Lazy<String> = Lazy::new(Config::get_default_language);
+static DEFAULT_LANGUAGE: Lazy<&String> = Lazy::new(Config::get_default_language);
 static SYNTAX_SET: Lazy<SyntaxSet> = Lazy::new(SyntaxSet::load_defaults_newlines);
 static THEME_SET: Lazy<ThemeSet> = Lazy::new(ThemeSet::load_defaults);
 static DEFAULT_SYNTAX: Lazy<&'static SyntaxReference> = Lazy::new(|| {
@@ -15,17 +15,12 @@ static DEFAULT_SYNTAX: Lazy<&'static SyntaxReference> = Lazy::new(|| {
         .find_syntax_by_token(default_lang) // Use language from config
         .unwrap_or_else(|| SYNTAX_SET.find_syntax_plain_text()) // Fallback to plain text
 });
+static BACKUP_THEME: Lazy<Theme> = Lazy::new(Theme::default);
 static DEFAULT_THEME: Lazy<&'static Theme> = Lazy::new(|| {
     THEME_SET
         .themes
-        .get(&Config::get_syntax_highlighting_theme())
-        .unwrap_or_else(|| {
-            THEME_SET
-                .themes
-                .values()
-                .next()
-                .expect("No themes available")
-        })
+        .get(Config::get_syntax_highlighting_theme())
+        .unwrap_or_else(|| THEME_SET.themes.values().next().unwrap_or(&BACKUP_THEME))
 });
 
 pub fn highlight_code(text: &str, language: &str) -> Vec<Line<'static>> {

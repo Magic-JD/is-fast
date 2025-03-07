@@ -89,7 +89,7 @@ fg = "Gray"
 # This determines which part of the page will be selected. No good one for a site you use? Add your own, and make a pull
 # request @https://github.com/Magic-JD/is-fast.
 [selectors]
-"*en.wikipedia.org*" = "p"
+"*en.wikipedia.org*" = "div.mw-content-ltr > *:not(table, figure, div.hatnote)"
 "*www.baeldung.com*" = ".post-content"
 "*www.w3schools.com*" = "#main"
 "*linuxhandbook.com*" = "article"

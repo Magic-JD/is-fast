@@ -6,7 +6,7 @@ use nucleo_matcher::{Config, Matcher, Utf32Str};
 use once_cell::sync::Lazy;
 use std::cmp::Ordering;
 
-static SEARCH_TYPE: Lazy<AtomKind> = Lazy::new(crate::config::load::Config::get_search_type);
+static SEARCH_TYPE: Lazy<&AtomKind> = Lazy::new(crate::config::load::Config::get_search_type);
 pub fn order_by_match(
     history: &mut [HistoryData],
     user_search: &mut String,
@@ -17,7 +17,7 @@ pub fn order_by_match(
         &*user_search,
         CaseMatching::Ignore,
         Normalization::Smart,
-        *SEARCH_TYPE,
+        **SEARCH_TYPE,
     );
     let mut data_2_score = history
         .iter()

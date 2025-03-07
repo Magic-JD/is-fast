@@ -9,10 +9,10 @@ use ratatui::layout::{Alignment, Constraint};
 use ratatui::prelude::{Color, Line, Modifier, Span, Style};
 use ratatui::widgets::{Cell, Paragraph, Row, Table};
 
-static URL_COLOR: Lazy<Style> = Lazy::new(crate::config::load::Config::get_url_color);
-static TITLE_COLOR: Lazy<Style> = Lazy::new(crate::config::load::Config::get_title_color);
-static TIME_COLOR: Lazy<Style> = Lazy::new(crate::config::load::Config::get_time_color);
-pub static TEXT_COLOR: Lazy<Style> = Lazy::new(crate::config::load::Config::get_text_color);
+static URL_COLOR: Lazy<&Style> = Lazy::new(crate::config::load::Config::get_url_color);
+static TITLE_COLOR: Lazy<&Style> = Lazy::new(crate::config::load::Config::get_title_color);
+static TIME_COLOR: Lazy<&Style> = Lazy::new(crate::config::load::Config::get_time_color);
+pub static TEXT_COLOR: Lazy<&Style> = Lazy::new(crate::config::load::Config::get_text_color);
 
 pub fn create_table<'a>(
     history: &[HistoryData],
@@ -43,18 +43,18 @@ fn create_rows(
             Title => {
                 let cell = vec![
                     Cell::from(highlight_text(clip_if_needed(&h.title, 100), user_search))
-                        .style(*TITLE_COLOR),
-                    Cell::from(clip_if_needed(&h.url, 60)).style(*URL_COLOR),
-                    Cell::from(date_to_display(&h.time)).style(*TIME_COLOR),
+                        .style(**TITLE_COLOR),
+                    Cell::from(clip_if_needed(&h.url, 60)).style(**URL_COLOR),
+                    Cell::from(date_to_display(&h.time)).style(**TIME_COLOR),
                 ];
                 Row::new(cell)
             }
             Url => {
                 let cells = vec![
-                    Cell::from(clip_if_needed(&h.title, 100)).style(*TITLE_COLOR),
+                    Cell::from(clip_if_needed(&h.title, 100)).style(**TITLE_COLOR),
                     Cell::from(highlight_text(clip_if_needed(&h.url, 60), user_search))
-                        .style(*URL_COLOR),
-                    Cell::from(date_to_display(&h.time)).style(*TIME_COLOR),
+                        .style(**URL_COLOR),
+                    Cell::from(date_to_display(&h.time)).style(**TIME_COLOR),
                 ];
                 Row::new(cells)
             }

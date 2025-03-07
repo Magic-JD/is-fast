@@ -11,7 +11,7 @@ use ratatui::text::Text;
 use ratatui::widgets::{Block, Paragraph, Table, TableState};
 use ratatui::Terminal;
 use std::io::{stdout, Stdout};
-use std::sync::Mutex;
+use std::sync::{Mutex, MutexGuard};
 
 static TUI_MARGIN: Lazy<u16> = Lazy::new(Config::get_page_margin);
 
@@ -19,14 +19,18 @@ pub struct Display {
     terminal: Mutex<Terminal<CrosstermBackend<Stdout>>>,
 }
 
+const STARTUP_ERROR: &str = "Cannot properly enable TUI - shutting down.";
+const SHUTDOWN_ERROR: &str =
+    "Cannot properly close TUI - shutting down. Try 'reset' if there are on going terminal issues.";
+
 impl Display {
     pub fn new() -> Self {
         // This can panic if startup not handled properly.
-        enable_raw_mode().unwrap();
+        enable_raw_mode().expect(STARTUP_ERROR);
         let mut out = stdout();
-        execute!(out, EnterAlternateScreen).unwrap();
+        execute!(out, EnterAlternateScreen).expect(STARTUP_ERROR);
         let backend = CrosstermBackend::new(out);
-        let terminal = Terminal::new(backend).unwrap();
+        let terminal = Terminal::new(backend).expect(STARTUP_ERROR);
         Display {
             terminal: Mutex::new(terminal),
         }
@@ -39,19 +43,24 @@ impl Display {
     }
 
     pub fn shutdown(&self) {
-        let mut terminal = self.terminal.lock().unwrap();
-        execute!(terminal.backend_mut(), LeaveAlternateScreen).unwrap();
-        disable_raw_mode().unwrap();
+        let mut terminal = self.terminal.lock().expect(SHUTDOWN_ERROR);
+        execute!(terminal.backend_mut(), LeaveAlternateScreen).expect(SHUTDOWN_ERROR);
+        disable_raw_mode().expect(SHUTDOWN_ERROR);
     }
 
     pub fn height(&self) -> u16 {
-        self.terminal.lock().unwrap().get_frame().area().height
+        self.unwrap_terminal().get_frame().area().height
+    }
+
+    fn unwrap_terminal(&self) -> MutexGuard<Terminal<CrosstermBackend<Stdout>>> {
+        self.terminal
+            .lock()
+            .unwrap_or_else(|err| self.shutdown_with_error(&err.to_string()))
     }
 
     pub fn loading(&mut self) {
         let block = default_block("Loading...", "");
-        let mut terminal = self.terminal.lock().unwrap();
-        terminal
+        self.unwrap_terminal()
             .draw(|frame| {
                 let size = frame.area();
                 frame.render_widget(block, size); // Block takes the whole area
@@ -60,7 +69,7 @@ impl Display {
     }
 
     pub fn history_areas(&self, row_count: u16) -> (Rect, Rect, Rect) {
-        let size = self.terminal.lock().unwrap().get_frame().area();
+        let size = self.unwrap_terminal().get_frame().area();
         let layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints(
@@ -93,8 +102,7 @@ impl Display {
         table_count: u16,
     ) {
         let (table_area, search_text_area, row_count_area) = self.history_areas(table_count);
-        let mut terminal = self.terminal.lock().unwrap();
-        let _ = terminal
+        self.unwrap_terminal()
             .draw(|frame| {
                 let area = frame.area();
                 frame.render_widget(border, area);
@@ -106,7 +114,7 @@ impl Display {
     }
 
     pub fn page_area(&self) -> (Rect, Rect) {
-        let size = self.terminal.lock().unwrap().get_frame().area();
+        let size = self.unwrap_terminal().get_frame().area();
         //Split vertically leaving room for the header and footer.
         let vertical_chunks = Layout::default()
             .direction(Direction::Vertical)
@@ -145,8 +153,7 @@ impl Display {
 
     pub fn draw_page(&mut self, page: &Paragraph, block: &Block, page_numbers: &Text) {
         let (text_area, page_number_area) = self.page_area();
-        let mut terminal = self.terminal.lock().unwrap();
-        _ = terminal
+        self.unwrap_terminal()
             .draw(|frame| {
                 let size = frame.area();
                 frame.render_widget(block, size); // Block takes the whole area

@@ -6,7 +6,7 @@ use once_cell::sync::Lazy;
 use std::thread::sleep;
 use std::time::Duration;
 
-static SEARCH_ENGINE: Lazy<SearchEngine> = Lazy::new(Config::get_search_engine);
+static SEARCH_ENGINE: Lazy<&SearchEngine> = Lazy::new(Config::get_search_engine);
 
 pub fn run(search_term: &str) {
     let mut browser = Browser::new();

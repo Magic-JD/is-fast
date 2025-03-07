@@ -93,16 +93,16 @@ pub struct Config {
     globs: Vec<Glob>,
     ignored_tags: HashSet<String>,
     block_elements: HashSet<String>,
-    syntax_default_language: Option<String>,
-    syntax_highlighting_theme: Option<String>,
-    page_margin: Option<u16>,
-    border_color: Option<Style>,
-    title_color: Option<Style>,
-    url_color: Option<Style>,
-    time_color: Option<Style>,
-    text_color: Option<Style>,
-    search_type: Option<AtomKind>,
-    search_engine: Option<SearchEngine>,
+    syntax_default_language: String,
+    syntax_highlighting_theme: String,
+    page_margin: u16,
+    border_color: Style,
+    title_color: Style,
+    url_color: Style,
+    time_color: Style,
+    text_color: Style,
+    search_type: AtomKind,
+    search_engine: SearchEngine,
 }
 
 impl Config {
@@ -138,55 +138,64 @@ impl Config {
             syntax_default_language: config
                 .syntax
                 .as_ref()
-                .and_then(|syntax| syntax.default_language.clone()),
+                .and_then(|syntax| syntax.default_language.clone())
+                .unwrap_or_default(),
             syntax_highlighting_theme: config
                 .syntax
                 .as_ref()
-                .and_then(|syntax| syntax.theme.clone()),
+                .and_then(|syntax| syntax.theme.clone())
+                .unwrap_or_default(),
             page_margin: config
                 .display
                 .as_ref()
-                .map(|display| display.page_margin)
+                .and_then(|display| display.page_margin)
                 .unwrap_or_default(),
             border_color: config
                 .display
                 .and_then(|display| display.border_color)
-                .map(|color| Style::new().fg(parse_color(&color))),
+                .map(|color| Style::new().fg(parse_color(&color)))
+                .unwrap_or_default(),
             title_color: config
                 .history
                 .as_ref()
                 .and_then(|history| history.title_color.clone())
-                .map(|color| Style::new().fg(parse_color(&color))),
+                .map(|color| Style::new().fg(parse_color(&color)))
+                .unwrap_or_default(),
             url_color: config
                 .history
                 .as_ref()
                 .and_then(|history| history.url_color.clone())
-                .map(|color| Style::new().fg(parse_color(&color))),
+                .map(|color| Style::new().fg(parse_color(&color)))
+                .unwrap_or_default(),
             time_color: config
                 .history
                 .as_ref()
                 .and_then(|history| history.time_color.clone())
-                .map(|color| Style::new().fg(parse_color(&color))),
+                .map(|color| Style::new().fg(parse_color(&color)))
+                .unwrap_or_default(),
             text_color: config
                 .history
                 .as_ref()
                 .and_then(|history| history.text_color.clone())
-                .map(|color| Style::new().fg(parse_color(&color))),
-            search_type: config
-                .history
-                .and_then(|history| history.search_type)
-                .as_deref()
-                .map(to_atom_kind),
-            search_engine: config
-                .search
-                .and_then(|search| search.engine)
-                .as_deref()
-                .map(to_search_engine),
+                .map(|color| Style::new().fg(parse_color(&color)))
+                .unwrap_or_default(),
+            search_type: to_atom_kind(
+                &config
+                    .history
+                    .and_then(|history| history.search_type)
+                    .unwrap_or_default(),
+            ),
+            search_engine: to_search_engine(
+                &config
+                    .search
+                    .and_then(|search| search.engine)
+                    .unwrap_or_default(),
+            ),
         }
     }
 
-    pub fn get_styles() -> HashMap<String, Style> {
-        CONFIG.styles.clone()
+    pub fn get_styles() -> &'static HashMap<String, Style> {
+        &CONFIG.styles
     }
 
     pub fn get_selectors(url: &str) -> String {
@@ -195,59 +204,55 @@ impl Config {
             .matches(url)
             .iter()
             .find_map(|idx| CONFIG.globs.get(*idx))
-            .map(|glob| glob.clone().to_string())
-            .and_then(|s| CONFIG.selectors.get(&s).cloned())
+            .and_then(|glob| CONFIG.selectors.get(&glob.to_string()).cloned())
             .unwrap_or_else(|| String::from("body"))
     }
 
-    pub fn get_ignored_tags() -> HashSet<String> {
-        CONFIG.ignored_tags.clone()
+    pub fn get_ignored_tags() -> &'static HashSet<String> {
+        &CONFIG.ignored_tags
     }
 
-    pub fn get_block_elements() -> HashSet<String> {
-        CONFIG.block_elements.clone()
+    pub fn get_block_elements() -> &'static HashSet<String> {
+        &CONFIG.block_elements
     }
 
-    pub fn get_default_language() -> String {
-        CONFIG.syntax_default_language.clone().unwrap_or_default()
+    pub fn get_default_language() -> &'static String {
+        &CONFIG.syntax_default_language
     }
 
-    pub fn get_syntax_highlighting_theme() -> String {
-        CONFIG
-            .syntax_highlighting_theme
-            .clone()
-            .unwrap_or_else(|| "base16-ocean.dark".to_string())
+    pub fn get_syntax_highlighting_theme() -> &'static String {
+        &CONFIG.syntax_highlighting_theme
     }
 
     pub fn get_page_margin() -> u16 {
-        CONFIG.page_margin.unwrap_or_default()
+        CONFIG.page_margin
     }
 
-    pub fn get_border_color() -> Style {
-        CONFIG.border_color.unwrap_or_default()
+    pub fn get_border_color() -> &'static Style {
+        &CONFIG.border_color
     }
 
-    pub fn get_title_color() -> Style {
-        CONFIG.title_color.unwrap_or_default()
+    pub fn get_title_color() -> &'static Style {
+        &CONFIG.title_color
     }
 
-    pub fn get_url_color() -> Style {
-        CONFIG.url_color.unwrap_or_default()
+    pub fn get_url_color() -> &'static Style {
+        &CONFIG.url_color
     }
 
-    pub fn get_time_color() -> Style {
-        CONFIG.time_color.unwrap_or_default()
+    pub fn get_time_color() -> &'static Style {
+        &CONFIG.time_color
     }
 
-    pub fn get_text_color() -> Style {
-        CONFIG.text_color.unwrap_or_default()
+    pub fn get_text_color() -> &'static Style {
+        &CONFIG.text_color
     }
 
-    pub fn get_search_type() -> AtomKind {
-        CONFIG.search_type.unwrap_or(AtomKind::Fuzzy)
+    pub fn get_search_type() -> &'static AtomKind {
+        &CONFIG.search_type
     }
-    pub fn get_search_engine() -> SearchEngine {
-        CONFIG.search_engine.clone().unwrap_or(DuckDuckGo)
+    pub fn get_search_engine() -> &'static SearchEngine {
+        &CONFIG.search_engine
     }
 }
 
@@ -260,7 +265,10 @@ fn generate_globs(config: &mut RawConfig) -> (GlobSet, Vec<Glob>) {
             globs.push(glob);
         }
     });
-    let matcher = builder.build().unwrap(); // Should be safe as only valid globs added
+    let matcher = builder
+        .build()
+        .inspect_err(|err| eprintln!("{err} : cannot build glob matcher."))
+        .unwrap_or_default(); // Should be safe as only valid globs added
     (matcher, globs)
 }
 
