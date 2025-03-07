@@ -1,5 +1,5 @@
 use crate::errors::error::IsError;
-use crate::errors::error::IsError::{Access, Database};
+use crate::errors::error::IsError::{Access, DatabaseSql};
 use crate::search::link::Link;
 use chrono::NaiveDateTime;
 use dirs::data_dir;
@@ -50,7 +50,7 @@ fn insert_row(link: &Link, url: &str, conn: &MutexGuard<Connection>) -> Result<(
         "INSERT INTO history (title, url, time) VALUES (?, ?, datetime('now'))",
         [&link.title, url],
     )
-    .map_err(Database)?;
+    .map_err(DatabaseSql)?;
     Ok(())
 }
 
@@ -59,7 +59,7 @@ fn update_row(url: &str, conn: &MutexGuard<Connection>) -> Result<(), IsError> {
         "UPDATE history SET time = datetime('now') WHERE url = ?",
         [url],
     )
-    .map_err(Database)?;
+    .map_err(DatabaseSql)?;
     Ok(())
 }
 
@@ -79,14 +79,14 @@ pub fn get_history() -> Result<Vec<HistoryData>, IsError> {
     let history: Vec<HistoryData> = stmt
         .query_map([], convert_to_history_data)?
         .collect::<Result<_, _>>()
-        .map_err(Database)?;
+        .map_err(DatabaseSql)?;
     Ok(history)
 }
 
 pub fn remove_history(url: &str) -> Result<(), IsError> {
     let conn = CONNECTION.lock().map_err(|e| Access(e.to_string()))?;
     conn.execute("DELETE FROM history WHERE url = ?", [url])
-        .map_err(Database)?;
+        .map_err(DatabaseSql)?;
     Ok(())
 }
 

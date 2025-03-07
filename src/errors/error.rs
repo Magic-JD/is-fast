@@ -9,7 +9,7 @@ pub enum IsError {
     Io(#[from] std::io::Error),
 
     #[error("Database errors: {0}")]
-    Database(#[from] rusqlite::Error),
+    DatabaseSql(#[from] rusqlite::Error),
 
     #[error("Parse errors: {0}")]
     Parse(#[from] chrono::format::ParseError),
@@ -22,4 +22,7 @@ pub enum IsError {
 
     #[error("Search errors: {0}")]
     Search(String),
+
+    #[error("Selector errors: {0}")]
+    Selector(String),
 }

@@ -1,5 +1,6 @@
 use crate::config::load::Config;
 use crate::errors::error::IsError;
+use crate::errors::error::IsError::Selector as SelectorError;
 use crate::search::link::Link;
 use crate::search::scrape::scrape;
 use crate::search::search_type::Search;
@@ -13,15 +14,16 @@ impl DuckDuckGoSearch {
             "https://html.duckduckgo.com/html/?q={}",
             &search_term
         ))
-        .map(|html| self.links_from_html(&html))
+        .and_then(|html| self.links_from_html(&html))
     }
 
-    fn links_from_html(&self, html: &str) -> Vec<Link> {
+    fn links_from_html(&self, html: &str) -> Result<Vec<Link>, IsError> {
         let document = Html::parse_document(html);
-        let selector_title = Selector::parse("a.result__a").unwrap();
-        let selector_url = Selector::parse("a.result__url").unwrap();
-
-        document
+        let selector_title = Selector::parse("a.result__a")
+            .map_err(|_| SelectorError(String::from("Failed to create title selector")))?;
+        let selector_url = Selector::parse("a.result__url")
+            .map_err(|_| SelectorError(String::from("Failed to create url selector")))?;
+        Ok(document
             .select(&selector_title)
             .zip(document.select(&selector_url))
             .map(|(title, url)| {
@@ -32,9 +34,10 @@ impl DuckDuckGoSearch {
                     Config::get_selectors(&url),
                 )
             })
-            .collect()
+            .collect())
     }
 }
+
 impl Search for DuckDuckGoSearch {
     fn search(&self, query: &str) -> Result<Vec<Link>, IsError> {
         self.get_links(query)

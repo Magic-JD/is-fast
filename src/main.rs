@@ -1,3 +1,8 @@
+#![deny(clippy::unwrap_used)]
+#![deny(clippy::panic)]
+#![deny(unused_must_use)]
+#![deny(clippy::todo)]
+
 mod actions;
 mod cli;
 mod config;
