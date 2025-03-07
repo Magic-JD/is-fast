@@ -449,12 +449,6 @@ Instead of rendering the content inside the TUI viewer, `is-fast` provides an op
 directly to **standard output (stdout)**. This allows you to **pipe the output** to other commands or **write it to a
 file**.
 
-### `--piped`
-
-**Output the result to standard output instead of rendering in the TUI.**
-
-This option requires either `--file` or `--direct` to specify the input source.
-
 #### Example Usage:
 
 ```sh
