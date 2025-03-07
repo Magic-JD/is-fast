@@ -1,7 +1,7 @@
-#![deny(clippy::unwrap_used)]
-#![deny(clippy::panic)]
-#![deny(unused_must_use)]
-#![deny(clippy::todo)]
+#![cfg_attr(not(test), deny(clippy::unwrap_used))]
+#![cfg_attr(not(test), deny(clippy::panic))]
+#![cfg_attr(not(test), deny(unused_must_use))]
+#![cfg_attr(not(test), deny(clippy::todo))]
 
 mod actions;
 mod cli;
