@@ -22,6 +22,7 @@ static URL_COLOR: Lazy<Style> = Lazy::new(LocalConfig::get_url_color);
 static TITLE_COLOR: Lazy<Style> = Lazy::new(LocalConfig::get_title_color);
 static TIME_COLOR: Lazy<Style> = Lazy::new(LocalConfig::get_time_color);
 static SEARCH_TYPE: Lazy<AtomKind> = Lazy::new(LocalConfig::get_search_type);
+static TEXT_COLOR: Lazy<Style> = Lazy::new(crate::config::load::Config::get_text_color);
 static HISTORY_INSTRUCTIONS: &str =
     " Quit: Esc | Scroll Down: ↓ | Scroll Up: ↑ | Open: ↵ | Delete: Delete | Tab: Change search ";
 
@@ -44,7 +45,7 @@ impl History {
         }
         let mut total_history = history.clone();
         let mut user_search = String::new();
-        let mut state = TableState::default();
+        let state = &mut TableState::default();
         let mut search_on = Title;
         history = order_by_match(&mut history, &mut user_search, &search_on);
         state.select_last();
@@ -55,7 +56,7 @@ impl History {
         let mut entry_count = draw_history_count(history.len() as u16);
         self.display.draw_history(
             &table,
-            &mut state,
+            state,
             &entry_count,
             &search,
             &border,
@@ -70,39 +71,33 @@ impl History {
                 }
                 Open => {
                     self.display.shutdown();
-                    open_browser(&history, &state);
+                    open_browser(&history, state);
                     break;
                 }
                 Up => {
-                    let state = &mut state;
                     if let Some(selected) = state.selected() {
-                        if selected > 0 {
-                            state.select(Some(selected - 1));
-                            self.display.draw_history(
-                                &table,
-                                state,
-                                &entry_count,
-                                &search,
-                                &border,
-                                history.len() as u16,
-                            );
-                        }
+                        state.select(Some(selected.saturating_sub(1)));
+                        self.display.draw_history(
+                            &table,
+                            state,
+                            &entry_count,
+                            &search,
+                            &border,
+                            history.len() as u16,
+                        );
                     }
                 }
                 Down => {
-                    let state = &mut state;
                     if let Some(selected) = state.selected() {
-                        if selected < (history.len() - 1) {
-                            state.select(Some(selected + 1));
-                            self.display.draw_history(
-                                &table,
-                                state,
-                                &entry_count,
-                                &search,
-                                &border,
-                                history.len() as u16,
-                            );
-                        }
+                        state.select(Some(selected.saturating_add(1).min(history.len() - 1)));
+                        self.display.draw_history(
+                            &table,
+                            state,
+                            &entry_count,
+                            &search,
+                            &border,
+                            history.len() as u16,
+                        );
                     }
                 }
                 Delete => {
@@ -114,7 +109,7 @@ impl History {
                     entry_count = draw_history_count(history.len() as u16);
                     self.display.draw_history(
                         &table,
-                        &mut state,
+                        state,
                         &entry_count,
                         &search,
                         &border,
@@ -131,7 +126,7 @@ impl History {
                     entry_count = draw_history_count(history.len() as u16);
                     self.display.draw_history(
                         &table,
-                        &mut state,
+                        state,
                         &entry_count,
                         &search,
                         &border,
@@ -149,7 +144,7 @@ impl History {
                     entry_count = draw_history_count(history.len() as u16);
                     self.display.draw_history(
                         &table,
-                        &mut state,
+                        state,
                         &entry_count,
                         &search,
                         &border,
@@ -167,7 +162,7 @@ impl History {
                     entry_count = draw_history_count(history.len() as u16);
                     self.display.draw_history(
                         &table,
-                        &mut state,
+                        state,
                         &entry_count,
                         &search,
                         &border,
@@ -402,7 +397,7 @@ fn draw_search_text<'a>(user_input: &'a str, search_on: &'a SearchOn) -> Paragra
     let searched_on_text = searched_on_to_string(search_on);
     Paragraph::new(
         Line::from(format!(" [{searched_on_text}] {user_input}"))
-            .style(crate::tui::display::TEXT_COLOR.add_modifier(Modifier::BOLD)),
+            .style(TEXT_COLOR.add_modifier(Modifier::BOLD)),
     )
 }
 fn draw_history_count(row_count: u16) -> ratatui::prelude::Text<'static> {

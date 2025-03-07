@@ -1,15 +1,17 @@
 use crate::database::connect::add_history;
-use crate::errors::error::IsError;
 use crate::search::link::Link;
 use crate::search::scrape::format_url;
 use crate::transform::cache::{get_content, preload};
 use crate::transform::page::PageExtractor;
 use crate::tui::browser::Action::{Down, Exit, Next, Open, PageDown, PageUp, Previous, Up};
-use crate::tui::display::Display;
+use crate::tui::display::{default_block, Display, TUI_BORDER_COLOR};
 use crossterm::event;
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
-use ratatui::prelude::{Color, Style, Text};
+use ratatui::layout::Alignment;
+use ratatui::prelude::{Color, Line, Style, Text};
 use ratatui::widgets::{Paragraph, Wrap};
+
+static PAGE_INSTRUCTIONS: &str = " Quit: q/Esc | Scroll Down: j/↓ | Scroll Up: k/↑ | Page Down: CTRL+d | Page Up: CTRL+u | Next: n/→ | Back: b/← | Open in Browser: o ";
 
 pub struct Browser {
     display: Display,
@@ -17,8 +19,8 @@ pub struct Browser {
 
 impl Browser {
     pub fn new() -> Self {
-        let display = Display::new();
-        display.loading().unwrap();
+        let mut display = Display::new();
+        display.loading();
         Browser { display }
     }
 
@@ -36,9 +38,9 @@ impl Browser {
         }
         let mut index = 0;
         let (mut title, mut page) = new_page(index, links, extractor, history_active);
-        self.display
-            .draw_page(&page, &title, index + 1, links.len())
-            .unwrap_or_else(|err| self.display.shutdown_with_error(&err.to_string()));
+        let mut border = default_block(&title, PAGE_INSTRUCTIONS);
+        let mut page_numbers = draw_page_numbers(index + 1, links.len());
+        self.display.draw_page(&page, &border, &page_numbers);
         loop {
             match handle_input() {
                 Exit => break,
@@ -46,59 +48,43 @@ impl Browser {
                     if index < links.len() - 1 {
                         scroll = 0;
                         index += 1;
-                        self.change_page(
-                            index,
-                            links,
-                            &mut page,
-                            &mut title,
-                            extractor,
-                            history_active,
-                        )
-                        .unwrap();
+                        self.display.loading();
+                        (title, page) = new_page(index, links, extractor, history_active);
+                        border = default_block(&title, PAGE_INSTRUCTIONS);
+                        page_numbers = draw_page_numbers(index + 1, links.len());
+                        self.display.draw_page(&page, &border, &page_numbers);
                     }
                 }
                 Previous => {
                     if index > 0 {
                         scroll = 0;
                         index -= 1;
-                        self.change_page(
-                            index,
-                            links,
-                            &mut page,
-                            &mut title,
-                            extractor,
-                            history_active,
-                        )
-                        .unwrap();
+                        self.display.loading();
+                        (title, page) = new_page(index, links, extractor, history_active);
+                        border = default_block(&title, PAGE_INSTRUCTIONS);
+                        page_numbers = draw_page_numbers(index + 1, links.len());
+                        self.display.draw_page(&page, &border, &page_numbers);
                     }
                 }
                 Down => {
                     scroll = scroll.saturating_add(1);
                     page = page.scroll((scroll, 0));
-                    let _ = self
-                        .display
-                        .draw_page(&page, &title, index + 1, links.len());
+                    self.display.draw_page(&page, &border, &page_numbers);
                 }
                 Up => {
                     scroll = scroll.saturating_sub(1);
                     page = page.scroll((scroll, 0));
-                    let _ = self
-                        .display
-                        .draw_page(&page, &title, index + 1, links.len());
+                    self.display.draw_page(&page, &border, &page_numbers);
                 }
                 PageUp => {
                     scroll = scroll.saturating_sub(height / 2);
                     page = page.scroll((scroll, 0));
-                    let _ = self
-                        .display
-                        .draw_page(&page, &title, index + 1, links.len());
+                    self.display.draw_page(&page, &border, &page_numbers);
                 }
                 PageDown => {
                     scroll = scroll.saturating_add(height / 2);
                     page = page.scroll((scroll, 0));
-                    let _ = self
-                        .display
-                        .draw_page(&page, &title, index + 1, links.len());
+                    self.display.draw_page(&page, &border, &page_numbers);
                 }
                 Open => {
                     open_link(index, links);
@@ -107,24 +93,6 @@ impl Browser {
             }
         }
         self.display.shutdown();
-    }
-
-    fn change_page(
-        &self,
-        index: usize,
-        links: &[Link],
-        page: &mut Paragraph,
-        title: &mut String,
-        extractor: &PageExtractor,
-        history_active: bool,
-    ) -> Result<(), IsError> {
-        self.display.loading()?;
-        let (t, p) = new_page(index, links, extractor, history_active);
-        *title = t;
-        *page = p;
-        self.display
-            .draw_page(page, title, index + 1, links.len())
-            .map_err(|e| IsError::General(e.to_string()))
     }
 }
 
@@ -209,4 +177,12 @@ pub fn new_page(
 }
 fn extract_title(link: &Link) -> String {
     format!(" {} ({}) ", link.title, link.url)
+}
+
+pub fn draw_page_numbers(index: usize, pages: usize) -> Text<'static> {
+    Text::from(Line::styled(
+        format!(" [{index}/{pages}] "),
+        *TUI_BORDER_COLOR,
+    ))
+    .alignment(Alignment::Right)
 }
