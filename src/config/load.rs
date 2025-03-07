@@ -101,8 +101,8 @@ pub struct Config {
     url_color: Style,
     time_color: Style,
     text_color: Style,
-    search_type: Option<AtomKind>,
-    search_engine: Option<SearchEngine>,
+    search_type: AtomKind,
+    search_engine: SearchEngine,
 }
 
 impl Config {
@@ -179,16 +179,18 @@ impl Config {
                 .and_then(|history| history.text_color.clone())
                 .map(|color| Style::new().fg(parse_color(&color)))
                 .unwrap_or_default(),
-            search_type: config
-                .history
-                .and_then(|history| history.search_type)
-                .as_deref()
-                .map(to_atom_kind),
-            search_engine: config
-                .search
-                .and_then(|search| search.engine)
-                .as_deref()
-                .map(to_search_engine),
+            search_type: to_atom_kind(
+                &config
+                    .history
+                    .and_then(|history| history.search_type)
+                    .unwrap_or_default(),
+            ),
+            search_engine: to_search_engine(
+                &config
+                    .search
+                    .and_then(|search| search.engine)
+                    .unwrap_or_default(),
+            ),
         }
     }
 
@@ -246,11 +248,11 @@ impl Config {
         &CONFIG.text_color
     }
 
-    pub fn get_search_type() -> AtomKind {
-        CONFIG.search_type.unwrap_or(AtomKind::Fuzzy)
+    pub fn get_search_type() -> &'static AtomKind {
+        &CONFIG.search_type
     }
-    pub fn get_search_engine() -> SearchEngine {
-        CONFIG.search_engine.clone().unwrap_or(DuckDuckGo)
+    pub fn get_search_engine() -> &'static SearchEngine {
+        &CONFIG.search_engine
     }
 }
 
