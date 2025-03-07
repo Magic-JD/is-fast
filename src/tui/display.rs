@@ -1,5 +1,4 @@
 use crate::config::load::Config;
-use crate::tui::history::SearchOn;
 use crossterm::execute;
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
@@ -14,13 +13,11 @@ use ratatui::Terminal;
 use std::io::{stdout, Stdout};
 use std::sync::Mutex;
 
-static TUI_BORDER_COLOR: Lazy<Style> = Lazy::new(Config::get_border_color);
+pub(crate) static TUI_BORDER_COLOR: Lazy<Style> = Lazy::new(Config::get_border_color);
 static TUI_MARGIN: Lazy<u16> = Lazy::new(Config::get_page_margin);
-static HISTORY_INSTRUCTIONS: &str =
-    " Quit: Esc | Scroll Down: ↓ | Scroll Up: ↑ | Open: ↵ | Delete: Delete | Tab: Change search ";
 
 static PAGE_INSTRUCTIONS: &str = " Quit: q/Esc | Scroll Down: j/↓ | Scroll Up: k/↑ | Page Down: CTRL+d | Page Up: CTRL+u | Next: n/→ | Back: b/← | Open in Browser: o ";
-static TEXT_COLOR: Lazy<Style> = Lazy::new(Config::get_text_color);
+pub(crate) static TEXT_COLOR: Lazy<Style> = Lazy::new(Config::get_text_color);
 
 pub struct Display {
     terminal: Mutex<Terminal<CrosstermBackend<Stdout>>>,
@@ -89,57 +86,23 @@ impl Display {
         (history_rows, search_text, history_count)
     }
 
-    pub fn draw_history_table<'a>(
-        &self,
-        should_reset_position: bool,
-        state: &mut TableState,
-        table: &'a Table<'a>,
-    ) -> &'a Table<'a> {
-        if should_reset_position {
-            //Set the offset to 0, then select the last item to correctly scroll the page.
-            *state.offset_mut() = 0;
-            state.select_last();
-        }
-        table
-    }
-
-    pub fn draw_search_text(&self, user_input: &str, search_on: &SearchOn) -> Paragraph {
-        let searched_on_text = searched_on_to_string(search_on);
-        Paragraph::new(
-            Line::from(format!(" [{searched_on_text}] {user_input}"))
-                .style(TEXT_COLOR.add_modifier(Modifier::BOLD)),
-        )
-    }
-    pub fn draw_history_count(&self, row_count: u16) -> Text {
-        Text::from(vec![
-            Line::default(), // Move to the bottom line
-            Line::from(count_result_text(row_count))
-                .style(TUI_BORDER_COLOR.add_modifier(Modifier::BOLD))
-                .alignment(Alignment::Right),
-        ])
-    }
-
     pub fn draw_history(
         &self,
         table: &Table,
-        history_count: u16,
-        state: &mut TableState,
-        user_search: &str,
-        should_reset_position: bool,
-        search_on: &SearchOn,
+        table_state: &mut TableState,
+        history_count: &Text,
+        search_text: &Paragraph,
+        border: &Block,
+        table_count: u16,
     ) {
-        let border = default_block("History", HISTORY_INSTRUCTIONS);
-        let (table_area, search_text_area, row_count_area) = self.history_areas(history_count);
-        let history_count = self.draw_history_count(history_count);
-        let search_text = self.draw_search_text(user_search, search_on);
-        let history_table = self.draw_history_table(should_reset_position, state, table);
+        let (table_area, search_text_area, row_count_area) = self.history_areas(table_count);
         let mut terminal = self.terminal.lock().unwrap();
         let _ = terminal.draw(|frame| {
             let area = frame.area();
             frame.render_widget(border, area);
             frame.render_widget(history_count, row_count_area);
             frame.render_widget(search_text, search_text_area);
-            frame.render_stateful_widget(history_table, table_area, state);
+            frame.render_stateful_widget(table, table_area, table_state);
         });
     }
 
@@ -215,19 +178,4 @@ fn tui_border_span(text: &str) -> Span<'static> {
         text.to_string(),
         (*TUI_BORDER_COLOR).add_modifier(Modifier::BOLD),
     )
-}
-
-fn count_result_text(row_count: u16) -> String {
-    if row_count == 1 {
-        format!("{row_count} result ")
-    } else {
-        format!("{row_count} results ")
-    }
-}
-
-fn searched_on_to_string(search_on: &SearchOn) -> String {
-    match search_on {
-        SearchOn::Title => String::from("TITLE"),
-        SearchOn::Url => String::from("URL"),
-    }
 }

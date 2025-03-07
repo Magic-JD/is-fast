@@ -1,7 +1,7 @@
 use crate::actions::direct;
 use crate::config::load::Config as LocalConfig;
 use crate::database::connect::{remove_history, HistoryData};
-use crate::tui::display::Display;
+use crate::tui::display::{default_block, Display};
 use crate::tui::history::Action::{Backspace, ChangeSearch, Continue, Down, Exit, Open, Text, Up};
 use crate::tui::history::SearchOn::{Title, Url};
 use chrono::{NaiveDateTime, Utc};
@@ -10,11 +10,11 @@ use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
 use nucleo_matcher::pattern::{AtomKind, CaseMatching, Normalization, Pattern};
 use nucleo_matcher::{Config, Matcher, Utf32Str};
 use once_cell::sync::Lazy;
-use ratatui::layout::Constraint;
+use ratatui::layout::{Alignment, Constraint};
 use ratatui::prelude::Modifier;
 use ratatui::style::{Color, Style};
 use ratatui::text::{Line, Span};
-use ratatui::widgets::{Cell, Row, Table, TableState};
+use ratatui::widgets::{Cell, Paragraph, Row, Table, TableState};
 use std::cmp::Ordering;
 use Action::Delete;
 
@@ -22,6 +22,8 @@ static URL_COLOR: Lazy<Style> = Lazy::new(LocalConfig::get_url_color);
 static TITLE_COLOR: Lazy<Style> = Lazy::new(LocalConfig::get_title_color);
 static TIME_COLOR: Lazy<Style> = Lazy::new(LocalConfig::get_time_color);
 static SEARCH_TYPE: Lazy<AtomKind> = Lazy::new(LocalConfig::get_search_type);
+static HISTORY_INSTRUCTIONS: &str =
+    " Quit: Esc | Scroll Down: ↓ | Scroll Up: ↑ | Open: ↵ | Delete: Delete | Tab: Change search ";
 
 pub struct History {
     display: Display,
@@ -45,16 +47,19 @@ impl History {
         let mut state = TableState::default();
         let mut search_on = Title;
         history = order_by_match(&mut history, &mut user_search, &search_on);
-        state.select(Some(history.len().saturating_sub(1)));
+        state.select_last();
         let mut rows = create_rows(&history, &user_search, &search_on);
         let mut table = create_table(&mut rows);
+        let border = default_block(" History ", HISTORY_INSTRUCTIONS);
+        let mut search = draw_search_text(&user_search, &search_on);
+        let mut entry_count = draw_history_count(history.len() as u16);
         self.display.draw_history(
             &table,
-            history.len() as u16,
             &mut state,
-            &user_search,
-            true,
-            &search_on,
+            &entry_count,
+            &search,
+            &border,
+            history.len() as u16,
         );
         loop {
             match handle_input() {
@@ -65,19 +70,7 @@ impl History {
                 }
                 Open => {
                     self.display.shutdown();
-                    let idx = state.selected().unwrap_or(0);
-                    history
-                        .into_iter()
-                        .collect::<Vec<_>>()
-                        .get(idx)
-                        .inspect(|history_data| {
-                            direct::run(
-                                Some(history_data.title.clone()),
-                                &history_data.url.clone(),
-                                None,
-                                false,
-                            );
-                        });
+                    open_browser(&history, &state);
                     break;
                 }
                 Up => {
@@ -87,11 +80,11 @@ impl History {
                             state.select(Some(selected - 1));
                             self.display.draw_history(
                                 &table,
-                                history.len() as u16,
                                 state,
-                                &user_search,
-                                false,
-                                &search_on,
+                                &entry_count,
+                                &search,
+                                &border,
+                                history.len() as u16,
                             );
                         }
                     }
@@ -103,43 +96,46 @@ impl History {
                             state.select(Some(selected + 1));
                             self.display.draw_history(
                                 &table,
-                                history.len() as u16,
                                 state,
-                                &user_search,
-                                false,
-                                &search_on,
+                                &entry_count,
+                                &search,
+                                &border,
+                                history.len() as u16,
                             );
                         }
                     }
                 }
                 Delete => {
-                    let ref_state = &mut state;
-                    let removed = history.remove(ref_state.selected().unwrap_or(0));
+                    let removed = history.remove(state.selected().unwrap_or(0));
                     _ = remove_history(&removed.url);
                     total_history.retain(|item| *item != removed);
                     table = create_table(&mut create_rows(&history, &user_search, &search_on));
                     *state.offset_mut() = state.offset().saturating_sub(1);
+                    entry_count = draw_history_count(history.len() as u16);
                     self.display.draw_history(
                         &table,
-                        history.len() as u16,
                         &mut state,
-                        &user_search,
-                        false,
-                        &search_on,
+                        &entry_count,
+                        &search,
+                        &border,
+                        history.len() as u16,
                     );
                 }
                 Text(char) => {
                     user_search.push(char);
                     history = order_by_match(&mut history, &mut user_search, &search_on);
                     table = create_table(&mut create_rows(&history, &user_search, &search_on));
-                    state.select(Some(history.len().saturating_sub(1)));
+                    *state.offset_mut() = 0;
+                    state.select_last();
+                    search = draw_search_text(&user_search, &search_on);
+                    entry_count = draw_history_count(history.len() as u16);
                     self.display.draw_history(
                         &table,
-                        history.len() as u16,
                         &mut state,
-                        &user_search,
-                        true,
-                        &search_on,
+                        &entry_count,
+                        &search,
+                        &border,
+                        history.len() as u16,
                     );
                 }
                 Backspace => {
@@ -147,14 +143,17 @@ impl History {
                     history.clone_from(&total_history);
                     history = order_by_match(&mut history, &mut user_search, &search_on);
                     table = create_table(&mut create_rows(&history, &user_search, &search_on));
-                    state.select(Some(history.len().saturating_sub(1)));
+                    *state.offset_mut() = 0;
+                    state.select_last();
+                    search = draw_search_text(&user_search, &search_on);
+                    entry_count = draw_history_count(history.len() as u16);
                     self.display.draw_history(
                         &table,
-                        history.len() as u16,
                         &mut state,
-                        &user_search,
-                        true,
-                        &search_on,
+                        &entry_count,
+                        &search,
+                        &border,
+                        history.len() as u16,
                     );
                 }
                 ChangeSearch => {
@@ -162,14 +161,17 @@ impl History {
                     history.clone_from(&total_history);
                     history = order_by_match(&mut history, &mut user_search, &search_on);
                     table = create_table(&mut create_rows(&history, &user_search, &search_on));
-                    state.select(Some(history.len().saturating_sub(1)));
+                    *state.offset_mut() = 0;
+                    state.select_last();
+                    search = draw_search_text(&user_search, &search_on);
+                    entry_count = draw_history_count(history.len() as u16);
                     self.display.draw_history(
                         &table,
-                        history.len() as u16,
                         &mut state,
-                        &user_search,
-                        true,
-                        &search_on,
+                        &entry_count,
+                        &search,
+                        &border,
+                        history.len() as u16,
                     );
                 }
             }
@@ -378,4 +380,51 @@ fn date_to_display(date: &NaiveDateTime) -> String {
 
 fn format_time(amount: i64, time_measurement: &str) -> String {
     format!("{amount} {time_measurement} ago")
+}
+
+fn open_browser(history: &[HistoryData], state: &TableState) {
+    let idx = state.selected().unwrap_or(0);
+    history
+        .iter()
+        .collect::<Vec<_>>()
+        .get(idx)
+        .inspect(|history_data| {
+            direct::run(
+                Some(history_data.title.clone()),
+                &history_data.url.clone(),
+                None,
+                false,
+            );
+        });
+}
+
+fn draw_search_text<'a>(user_input: &'a str, search_on: &'a SearchOn) -> Paragraph<'a> {
+    let searched_on_text = searched_on_to_string(search_on);
+    Paragraph::new(
+        Line::from(format!(" [{searched_on_text}] {user_input}"))
+            .style(crate::tui::display::TEXT_COLOR.add_modifier(Modifier::BOLD)),
+    )
+}
+fn draw_history_count(row_count: u16) -> ratatui::prelude::Text<'static> {
+    ratatui::prelude::Text::from(vec![
+        Line::default(), // Move to the bottom line
+        Line::from(count_result_text(row_count))
+            .style(crate::tui::display::TUI_BORDER_COLOR.add_modifier(Modifier::BOLD))
+            .alignment(Alignment::Right),
+    ])
+}
+
+fn count_result_text(row_count: u16) -> String {
+    if row_count == 1 {
+        format!("{row_count} result ")
+    } else {
+        format!("{row_count} results ")
+    }
+}
+
+fn searched_on_to_string(search_on: &SearchOn) -> String {
+    match search_on {
+        Title => String::from("TITLE"),
+        Url => String::from("URL"),
+    }
 }
