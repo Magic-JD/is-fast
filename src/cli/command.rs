@@ -32,8 +32,7 @@ pub struct Cli {
     #[arg(short = 'd', long = "direct", help = "Open the given URL directly")]
     pub(crate) direct: Option<String>,
 
-    /// Output the result to standard out instead of rendering in the TUI. Must be used with direct
-    /// or with file
+    /// Output the result to standard out instead of rendering in the TUI. If | or > is detected this will be automatically applied.
     #[arg(long = "piped", help = "Output the result to standard out")]
     pub(crate) piped: bool,
 
