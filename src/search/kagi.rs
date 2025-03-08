@@ -5,7 +5,6 @@ use crate::errors::error::IsError::Search as SearchError;
 use crate::search::link::Link;
 use crate::search::scrape::REQWEST_CLIENT;
 use crate::search::search_type::Search;
-use reqwest::blocking::Response;
 use serde_json::Value;
 
 #[derive(Debug, Clone)]
@@ -22,8 +21,7 @@ impl KagiSearch {
         Ok(api_key)
     }
 
-    pub fn get_links(&self, query: &str) -> Result<Vec<Link>, IsError> {
-        let api_key = self.extract_variables()?;
+    pub fn extract_links(&self, api_key: &str, query: &str) -> Result<Vec<Link>, IsError> {
         let url = format!("https://kagi.com/api/v0/search?q={query}");
 
         let response: Result<Value, IsError> = REQWEST_CLIENT
@@ -53,6 +51,7 @@ impl KagiSearch {
 
 impl Search for KagiSearch {
     fn search(&self, query: &str) -> Result<Vec<Link>, IsError> {
-        self.get_links(query)
+        self.extract_variables()
+            .and_then(|api_key| self.extract_links(&api_key, query))
     }
 }
