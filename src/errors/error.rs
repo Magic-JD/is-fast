@@ -25,4 +25,7 @@ pub enum IsError {
 
     #[error("Selector errors: {0}")]
     Selector(String),
+
+    #[error("Csv errors: {0}")]
+    Csv(String),
 }
