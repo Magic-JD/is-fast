@@ -4,7 +4,7 @@ use once_cell::sync::Lazy;
 use reqwest::blocking::{Client, Response};
 use std::process::Command;
 
-static REQWEST_CLIENT: Lazy<Client> = Lazy::new(|| {
+pub static REQWEST_CLIENT: Lazy<Client> = Lazy::new(|| {
     Client::builder()
         .http1_only()
         .build()

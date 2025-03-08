@@ -1,5 +1,5 @@
 use crate::search::search_type::SearchEngine;
-use crate::search::search_type::SearchEngine::{DuckDuckGo, Google};
+use crate::search::search_type::SearchEngine::{DuckDuckGo, Google, Kagi};
 use globset::{Glob, GlobSet, GlobSetBuilder};
 use nucleo_matcher::pattern::AtomKind;
 use once_cell::sync::Lazy;
@@ -473,6 +473,7 @@ fn to_search_engine(search_engine: &str) -> SearchEngine {
     match search_engine.to_lowercase().as_str() {
         "duckduckgo" => DuckDuckGo,
         "google" => Google,
+        "kagi" => Kagi,
         _ => DuckDuckGo, // Default to duckduckgo
     }
 }
