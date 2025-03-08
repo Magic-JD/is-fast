@@ -39,10 +39,12 @@ Before running the project, ensure you have the following installed:
 
 ## Installing the program 🐧 🍏 🪟
 
+![Latest Release](https://img.shields.io/github/v/release/Magic-JD/is-fast?include_prereleases)
+
 ### Install prebuilt binaries via shell script
 
 ```sh
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/Magic-JD/is-fast/releases/download/v0.2.0/is-fast-installer.sh | sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/Magic-JD/is-fast/releases/download/v0.3.0/is-fast-installer.sh | sh
 ```
 
 ### Install prebuilt binaries via Homebrew
@@ -51,7 +53,7 @@ curl --proto '=https' --tlsv1.2 -LsSf https://github.com/Magic-JD/is-fast/releas
 brew install magic-jd/tap/is-fast
 ```
 
-Install latest from source with cargo:
+### Install latest from source with cargo:
 
 ```sh
 cargo install --git https://github.com/Magic-JD/is-fast.git
@@ -78,7 +80,7 @@ cargo install --git https://github.com/Magic-JD/is-fast.git
 - [📃 Using `is-fast` with Local HTML Files](#-using-is-fast-with-local-html-files)
     - [`--file` / `-f`](#--file---f)
     - [`--url` / `-u`](#--url---u)
-- [🔄 Using `--piped` to Output to Standard Output](#-using---piped-to-output-to-standard-output)
+- [ 🔄 Using `--piped`, `|` or `>` to Output to Standard Output](#-using---piped--or--to-output-to-standard-output)
 - [📜 Viewing History in `is-fast`](#-viewing-history-in-is-fast)
     - [`--history`](#--history)
 
@@ -443,11 +445,35 @@ is-fast -f example.html -u example.com
 
 ---
 
-# 🔄 Using `--piped` to Output to Standard Output
+# 🔄 Using `--piped`, `|` or `>` to Output to Standard Output
 
 Instead of rendering the content inside the TUI viewer, `is-fast` provides an option to output the processed result
 directly to **standard output (stdout)**. This allows you to **pipe the output** to other commands or **write it to a
-file**.
+file**. This can be directly invoked using the `--piped` command in the case that you just want to print to stdout, or 
+added implicitly in the case that the output is not the terminal. The result is always plain text, but otherwise with
+the formatting you would see in the TUI.
+
+## Output type
+
+### Search command
+
+When used with a regular search, the first search result will be sent out.
+
+### `--direct` or `--file`
+
+The contents of the page will be output.
+
+### `--history`
+
+The history database will be output in CSV format. If you want to further manipulate/query this data, I recommend 
+[mlr](https://github.com/johnkerl/miller) for processing it. If you are more comfortable with json processing, using `mlr`
+you can easily convert to json to be processed by [jq](https://github.com/jqlang/jq).
+
+Here is how you could get a list of all the titles this way.
+
+```sh
+is-fast --history | mlr --icsv --ojson cat | jq '.[].title'
+```
 
 #### Example Usage:
 
@@ -459,10 +485,10 @@ is-fast --file example.html --piped
 is-fast --direct "https://example.com" --piped
 
 # Save the output to a file
-is-fast --file example.html --piped > output.txt
+is-fast --file example.html > output.txt
 
 # Pipe the output into another command
-is-fast --direct "https://example.com" --piped | grep "keyword"
+is-fast --direct "https://example.com" | grep "keyword"
 ```
 
 Using `--piped` makes `is-fast` behave more like a **command-line utility** for extracting and processing content,
