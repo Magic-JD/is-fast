@@ -37,9 +37,8 @@ Before running the project, ensure you have the following installed:
 - [Rust](https://www.rust-lang.org/tools/install) (latest stable version) 🦀
 - [Cargo](https://doc.rust-lang.org/cargo/) (comes with Rust) 📦
 
-## Installing the program 🐧 🍏 🪟
+## Installing the program ![Latest Release](https://img.shields.io/github/v/release/Magic-JD/is-fast?include_prereleases) 🐧 🍏 🪟
 
-![Latest Release](https://img.shields.io/github/v/release/Magic-JD/is-fast?include_prereleases)
 
 ### Install prebuilt binaries via shell script
 
