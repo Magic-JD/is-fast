@@ -7,7 +7,7 @@ use clap::{ArgAction, Parser};
 #[derive(Parser)]
 #[command(name = "is-fast")]
 #[command(about = "A fast content extractor for terminal-based internet searches")]
-#[command(version = "1.0.0", author = "Joseph Daunt")]
+#[command(version = env!("CARGO_PKG_VERSION"), author = "Joseph Daunt")]
 #[command(after_help = "For more details, visit https://github.com/Magic-JD/is-fast")]
 pub struct Cli {
     /// The search query to extract content from websites

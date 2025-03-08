@@ -43,7 +43,7 @@ Before running the project, ensure you have the following installed:
 ### Install prebuilt binaries via shell script
 
 ```sh
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/Magic-JD/is-fast/releases/download/v0.3.0/is-fast-installer.sh | sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/Magic-JD/is-fast/releases/latest/download/is-fast-installer.sh | sh
 ```
 
 ### Install prebuilt binaries via Homebrew
