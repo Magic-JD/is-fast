@@ -1,9 +1,9 @@
 use crate::config::load::Config;
 use crate::search::link::Extractable;
-use crate::tui::browser_widgets::{draw_page_numbers, new_page};
 use crate::tui::display::Widget;
 use crate::tui::display::Widget::{Block, Paragraph, Text};
 use crate::tui::general_widgets::default_block;
+use crate::tui::page_widgets::{draw_page_numbers, new_page};
 use once_cell::sync::Lazy;
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 

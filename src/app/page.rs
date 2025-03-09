@@ -8,7 +8,7 @@ use crate::config::load::Config;
 use crate::search::link::{Extractable, Link};
 use crate::search::scrape::format_url;
 use crate::transform::page::PageExtractor;
-use crate::tui::browser::displayables;
+use crate::tui::page_content::displayables;
 
 impl PageViewer for TuiApp {
     fn show_page(&mut self, args: Cli) {
@@ -58,7 +58,7 @@ impl PageViewer for TuiApp {
                 }
                 PageAction::Continue => continue,
             }
-            let displayables = crate::tui::browser::displayables(
+            let displayables = crate::tui::page_content::displayables(
                 index,
                 scroll,
                 &extractables,

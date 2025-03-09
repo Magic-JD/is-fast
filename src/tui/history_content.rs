@@ -1,23 +1,31 @@
-use crate::app::history::HistoryState;
+use crate::app::history::SearchOn;
+use crate::database::connect::HistoryData;
 use crate::tui::display::Widget;
 use crate::tui::display::Widget::{Block, Paragraph, Table, Text};
 use crate::tui::general_widgets::default_block;
 use crate::tui::history_widgets::{create_table, draw_history_count, draw_search_text};
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
+use ratatui::widgets::TableState;
 
 pub(crate) static HISTORY_INSTRUCTIONS: &str =
     " Quit: Esc | Scroll Down: ↓ | Scroll Up: ↑ | Open: ↵ | Delete: Delete | Tab: Change search ";
 
-pub fn displayables(state: &mut HistoryState, available_space: Rect) -> Vec<Widget> {
-    let table = create_table(&state.current_history, &state.search_term, &state.search_on);
+pub fn displayables<'a>(
+    state: &'a mut TableState,
+    current_history: &'a [HistoryData],
+    search_term: &'a str,
+    search_on: &'a SearchOn,
+    available_space: Rect,
+) -> Vec<Widget<'a>> {
+    let table = create_table(current_history, search_term, search_on);
     let block = default_block(" History ", HISTORY_INSTRUCTIONS);
-    let search = draw_search_text(&state.search_term, &state.search_on);
-    let row_count = draw_history_count(state.current_history.len() as u16);
+    let search = draw_search_text(search_term, search_on);
+    let row_count = draw_history_count(current_history.len() as u16);
     let (border_area, table_area, search_area, count_row_area) =
-        history_areas(available_space, state.current_history.len() as u16);
+        history_areas(available_space, current_history.len() as u16);
     vec![
         Block(block, border_area),
-        Table(table, &mut state.table_state, table_area),
+        Table(table, state, table_area),
         Paragraph(search, search_area),
         Text(row_count, count_row_area),
     ]
