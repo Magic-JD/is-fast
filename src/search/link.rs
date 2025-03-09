@@ -1,4 +1,4 @@
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Link {
     pub url: String,
     pub title: String,

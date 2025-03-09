@@ -5,7 +5,22 @@ use crate::errors::error::IsError::Search as SearchError;
 use crate::search::link::Link;
 use crate::search::scrape::REQWEST_CLIENT;
 use crate::search::search_type::Search;
-use serde_json::Value;
+use reqwest::blocking::Response;
+use serde_json::from_str;
+
+#[derive(serde::Deserialize)]
+struct SearchResult {
+    data: Vec<SearchItem>,
+}
+
+#[derive(serde::Deserialize)]
+struct SearchItem {
+    t: i32,
+    #[serde(default)]
+    url: String,
+    #[serde(default)]
+    title: String,
+}
 
 #[derive(Debug, Clone)]
 pub struct KagiSearch;
@@ -21,37 +36,45 @@ impl KagiSearch {
         Ok(api_key)
     }
 
-    pub fn extract_links(&self, api_key: &str, query: &str) -> Result<Vec<Link>, IsError> {
-        let url = format!("https://kagi.com/api/v0/search?q={query}");
+    fn search_result_to_links(search_result: &SearchResult) -> Vec<Link> {
+        search_result
+            .data
+            .iter()
+            .filter(|item| item.t == 0)
+            .map(|item| {
+                Link::new(
+                    item.title.clone(),
+                    item.url.clone(),
+                    Config::get_selectors(&item.url),
+                )
+            })
+            .collect()
+    }
 
-        let response: Result<Value, IsError> = REQWEST_CLIENT
+    fn request_results(&self, api_key: &str, query: &str) -> Result<String, IsError> {
+        let url = format!("https://kagi.com/api/v0/search?q={query}");
+        REQWEST_CLIENT
             .get(&url)
             .header("Authorization", format!("Bot {api_key}"))
             .send()
-            .and_then(|resp| resp.error_for_status())
-            .and_then(|resp| resp.json::<Value>())
-            .map_err(|e| Scrape(format!("Request failed for {url}: {e}")));
-        let response = response?;
-        let data = &response["data"].as_array().unwrap();
-        let search_results: Vec<Link> = data
-            .iter()
-            .filter(|item| item["t"] == 0)
-            .map(|result| {
-                Link::new(
-                    result["title"].to_string().trim_matches('"').to_string(),
-                    result["url"].to_string().trim_matches('"').to_string(),
-                    Config::get_selectors(&result["url"].to_string()),
-                )
-            })
-            .collect();
+            .and_then(Response::error_for_status)
+            .and_then(Response::text)
+            .map_err(|e| Scrape(format!("Request failed for {url}: {e}")))
+    }
 
-        Ok(search_results)
+    fn get_links(&self, api_key: &str, query: &str) -> Result<Vec<Link>, IsError> {
+        self.request_results(api_key, query)
+            .and_then(|json| {
+                from_str::<SearchResult>(&json).map_err(|e| SearchError(e.to_string()))
+            })
+            .map(|search_result| Self::search_result_to_links(&search_result))
+            .map_err(|e| SearchError(e.to_string()))
     }
 }
 
 impl Search for KagiSearch {
     fn search(&self, query: &str) -> Result<Vec<Link>, IsError> {
         self.extract_variables()
-            .and_then(|api_key| self.extract_links(&api_key, query))
+            .and_then(|api_key| self.get_links(&api_key, query))
     }
 }
