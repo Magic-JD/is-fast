@@ -344,6 +344,7 @@ Determines which search engine is used when performing searches. Available optio
 
 - `duckduckgo` (default) - Uses DuckDuckGo for search queries.
 - `google` - Uses Google Custom Search. **Requires API configuration** (see below).
+- `kagi` - Uses Kagi Search. **Requires API configuration** (see below).
 
 ### 📌 API Configuration for Google Search
 
@@ -361,6 +362,15 @@ export IS_FAST_GOOGLE_SEARCH_ENGINE_ID="your_search_engine_id_here"
 ```
 
 These values must be provided for Google Search to function properly.
+
+### 📌 API Configuration for Kagi Search
+
+If you choose `kagi` as your search engine, you must have access to the Kagi search API. Relevant documentation is [here](https://help.kagi.com/kagi/api/search.html).
+
+After obtaining access and your API key, set the following environment variable:
+```sh
+export IS_FAST_KAGI_API_KEY="your_api_key_here"
+```
 
 ### Custom search engine
 
