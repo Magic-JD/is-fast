@@ -149,6 +149,7 @@ search_type = "fuzzy"
 # Available options:
 # - "duckduckgo" (default) - Uses DuckDuckGo for searches.
 # - "google" - Uses Google Custom Search (requires API setup).
+# - "kagi" - Uses Kagi Search (requires API setup)
 #
 # If using Google Search, you must configure the API:
 # 1. Enable the Google Custom Search API in the Google Cloud Console.
@@ -157,7 +158,12 @@ search_type = "fuzzy"
 # 4. Set the following environment variables:
 #    export IS_FAST_GOOGLE_API_KEY="your_api_key_here"
 #    export IS_FAST_GOOGLE_SEARCH_ENGINE_ID="your_search_engine_id_here"
-# 5. These values are required for Google Search to function.
+#
+# If using Kagi search you must configure the api: https://help.kagi.com/kagi/api/search.html
+# 1. Obtain access to the API (Currently in closed Beta)
+# 2. Generate an API key.
+# 3. Set the following environment variable:
+#   export IS_FAST_KAGI_API_KEY
 #
 # To add a custom search engine, fork the repository and follow the
 # instructions in src/search/search_type.rs.
