@@ -5,6 +5,13 @@ edition = "2021"
 repository = "https://github.com/Magic-JD/is-fast"
 homepage = "https://github.com/Magic-JD/is-fast"
 description = "Internet search fast - view webpages from the terminal."
+authors = ["Joseph Daunt"]
+
+[package.metadata.wix]
+upgrade-guid = "98558109-78F3-44AC-94BB-270EA47A5129"
+path-guid = "1E9BD8F8-FFD2-4F99-B266-C805B17FEAB9"
+license = false
+eula = false
 
 [dependencies]
 crossterm = "0.28.1"
