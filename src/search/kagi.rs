@@ -25,7 +25,7 @@ struct SearchItem {
 #[derive(Debug, Clone)]
 pub struct KagiSearch;
 
-const API_KEY: &str = "KAGI_API_KEY";
+const API_KEY: &str = "IS_FAST_KAGI_API_KEY";
 
 impl KagiSearch {
     fn extract_variables(&self) -> Result<String, IsError> {
