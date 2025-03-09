@@ -1,7 +1,7 @@
 pub mod browser;
-mod browser_widgets;
-mod display;
-mod general_widgets;
+pub mod browser_widgets;
+pub mod display;
+pub mod general_widgets;
 pub mod history;
-mod history_search;
-mod history_widgets;
+pub mod history_search;
+pub mod history_widgets;

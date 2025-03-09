@@ -1,7 +1,6 @@
+use crate::app::history::SearchOn;
 use crate::database::connect::HistoryData;
 use crate::tui::general_widgets::TUI_BORDER_COLOR;
-use crate::tui::history::SearchOn;
-use crate::tui::history::SearchOn::{Title, Url};
 use chrono::{NaiveDateTime, Utc};
 use nucleo_matcher::{Config, Matcher, Utf32Str};
 use once_cell::sync::Lazy;
@@ -40,20 +39,18 @@ fn create_rows(
     let rows: Vec<Row> = history
         .iter()
         .map(|h| match search_on {
-            Title => {
+            SearchOn::Title => {
                 let cell = vec![
-                    Cell::from(highlight_text(clip_if_needed(&h.title, 100), user_search))
-                        .style(**TITLE_COLOR),
-                    Cell::from(clip_if_needed(&h.url, 60)).style(**URL_COLOR),
+                    Cell::from(highlight_text(h.title.clone(), user_search)).style(**TITLE_COLOR),
+                    Cell::from(h.url.clone()).style(**URL_COLOR),
                     Cell::from(date_to_display(&h.time)).style(**TIME_COLOR),
                 ];
                 Row::new(cell)
             }
-            Url => {
+            SearchOn::Url => {
                 let cells = vec![
-                    Cell::from(clip_if_needed(&h.title, 100)).style(**TITLE_COLOR),
-                    Cell::from(highlight_text(clip_if_needed(&h.url, 60), user_search))
-                        .style(**URL_COLOR),
+                    Cell::from(h.title.clone()).style(**TITLE_COLOR),
+                    Cell::from(highlight_text(h.url.clone(), user_search)).style(**URL_COLOR),
                     Cell::from(date_to_display(&h.time)).style(**TIME_COLOR),
                 ];
                 Row::new(cells)
@@ -103,12 +100,6 @@ fn highlight_text(plain_text: String, user_search: &str) -> Line<'static> {
     }
     spans.push(Span::from(current));
     Line::from(spans)
-}
-fn clip_if_needed(text: &str, max_length: usize) -> String {
-    if text.len() > max_length {
-        return format!("{}...", &text[0..max_length - 3]);
-    }
-    text.to_string()
 }
 
 fn date_to_display(date: &NaiveDateTime) -> String {
@@ -161,7 +152,7 @@ fn count_result_text(row_count: u16) -> String {
 
 fn searched_on_to_string(search_on: &SearchOn) -> String {
     match search_on {
-        Title => String::from("TITLE"),
-        Url => String::from("URL"),
+        SearchOn::Title => String::from("TITLE"),
+        SearchOn::Url => String::from("URL"),
     }
 }

@@ -1,3 +1,5 @@
+use crate::transform::page::PageExtractor;
+
 #[derive(Clone)]
 pub struct Link {
     pub url: String,
@@ -12,4 +14,9 @@ impl Link {
             selector,
         }
     }
+}
+pub struct Extractable {
+    pub link: Link,
+    pub extract: PageExtractor,
+    pub tracked: bool,
 }

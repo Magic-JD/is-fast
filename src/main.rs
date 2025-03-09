@@ -4,43 +4,47 @@
 #![cfg_attr(not(test), deny(clippy::todo))]
 
 mod actions;
+mod app;
 mod cli;
 mod config;
 mod database;
 mod errors;
+mod pipe;
 mod search;
 mod transform;
 mod tui;
 
-use crate::actions::{direct, history};
+use crate::app::enum_values::App;
+use crate::app::enum_values::HistoryViewer;
+use crate::app::enum_values::PageViewer;
+use crate::app::enum_values::Shutdown;
+use crate::app::text::TextApp;
+use crate::app::tui::TuiApp;
 use crate::cli::command::Cli;
 use actions::generate_config;
-use actions::search as search_actions;
-use actions::view;
 use atty::{is, Stream};
 use clap::Parser;
 
 fn main() {
     let args = Cli::parse();
+    // Generate config doesn't need a display, process and return.
+    if args.generate_config {
+        generate_config::run();
+        return;
+    }
     let mut is_piped = args.piped;
     if !is(Stream::Stdout) {
         is_piped = true;
     }
-    if args.generate_config {
-        generate_config::run();
-    } else if args.history {
-        history::run(is_piped);
-    } else if let Some(file) = args.file {
-        view::run(file, args.url, args.selector, is_piped);
-    } else if let Some(url) = args.direct {
-        direct::run(None, &url, args.selector, is_piped);
-    } else if let Some(search_term) = args.query.map(|query| query.join(" ")) {
-        if args.selector.is_some() {
-            eprintln!("Selector cannot be used for a generalize search, only for a --file or --direct query");
-            return;
-        }
-        search_actions::run(&search_term, is_piped);
+    let mut app = if is_piped {
+        App::Text(TextApp::new())
     } else {
-        eprintln!("No actions term provided!");
+        App::Tui(TuiApp::new())
+    };
+    if args.history {
+        app.show_history();
+    } else {
+        app.show_page(args);
     }
+    app.shutdown();
 }

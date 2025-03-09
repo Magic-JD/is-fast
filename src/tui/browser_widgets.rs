@@ -1,29 +1,25 @@
 use crate::database::connect::add_history;
-use crate::search::link::Link;
+use crate::search::link::{Extractable, Link};
 use crate::transform::cache::{get_content, preload};
-use crate::transform::page::PageExtractor;
 use crate::tui::general_widgets::TUI_BORDER_COLOR;
 use ratatui::layout::Alignment;
 use ratatui::prelude::{Color, Line, Style, Text};
 use ratatui::widgets::{Paragraph, Wrap};
 
-pub fn new_page(
-    index: usize,
-    links: &[Link],
-    extractor: &PageExtractor,
-    history_active: bool,
-) -> (String, Paragraph<'static>) {
-    if let Some(link) = links.get(index + 1) {
+pub fn new_page(index: usize, links: &[Extractable]) -> (String, Paragraph<'static>) {
+    if let Some(extractable) = links.get(index + 1) {
+        let extractor = &extractable.extract;
+        let link = &extractable.link;
         preload(link, extractor); // Initiate the call to get the page after this one
     }
     links
         .get(index)
         .inspect(|link| {
-            if history_active {
-                _ = add_history(link);
+            if link.tracked {
+                _ = add_history(&link.link);
             }
         })
-        .map(|link| (link, get_content(link, extractor)))
+        .map(|link| (link, get_content(&link.link, &link.extract)))
         .map_or_else(
             || {
                 (
@@ -33,7 +29,7 @@ pub fn new_page(
             },
             |(link, paragraph)| {
                 (
-                    extract_title(link),
+                    extract_title(&link.link),
                     paragraph
                         .style(Style::default().fg(Color::White))
                         .wrap(Wrap { trim: false })
