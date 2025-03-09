@@ -1,12 +1,14 @@
 use crate::errors::error::IsError;
 use crate::search::duckduckgo::DuckDuckGoSearch;
 use crate::search::google::GoogleSearch;
+use crate::search::kagi::KagiSearch;
 use crate::search::link::Link;
 
 #[derive(Debug, Clone)]
 pub enum SearchEngine {
     DuckDuckGo,
     Google,
+    Kagi,
 }
 
 /// # Adding a New Search Engine
@@ -49,6 +51,7 @@ impl Search for SearchEngine {
         match self {
             SearchEngine::DuckDuckGo => DuckDuckGoSearch.search(query),
             SearchEngine::Google => GoogleSearch.search(query),
+            SearchEngine::Kagi => KagiSearch.search(query),
         }
     }
 }
