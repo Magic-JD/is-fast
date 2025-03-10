@@ -44,6 +44,7 @@
           let
             fs = lib.fileset;
             sourceFiles = fs.unions [
+              ./tests
               ./Cargo.lock
               ./Cargo.toml
               ./src
