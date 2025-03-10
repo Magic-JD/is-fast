@@ -30,23 +30,32 @@ pub trait PageViewer {
 }
 
 #[enum_dispatch(App)]
-pub trait Shutdown {
+pub trait AppFunctions {
+    fn loading(&mut self);
     fn shutdown(&mut self);
     fn shutdown_with_error(&mut self, error: &str) -> !;
 }
 
-impl Shutdown for TextApp {
+impl AppFunctions for TextApp {
+    fn loading(&mut self) {
+        // Nothing needs to be shown when the app is loading.
+    }
+
     fn shutdown(&mut self) {
         // There is nothing that needs to be shutdown here.
     }
 
     fn shutdown_with_error(&mut self, error: &str) -> ! {
-        eprintln!("{}", error);
+        eprintln!("{error}");
         std::process::exit(1);
     }
 }
 
-impl Shutdown for TuiApp {
+impl AppFunctions for TuiApp {
+    fn loading(&mut self) {
+        self.display.loading();
+    }
+
     fn shutdown(&mut self) {
         self.display.shutdown();
     }

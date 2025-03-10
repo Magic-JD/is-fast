@@ -5,7 +5,7 @@ use crate::app::tui::TuiApp;
 use crate::database::connect::add_history;
 use crate::search_engine::link::PageSource;
 use crate::search_engine::scrape::format_url;
-use crate::tui::page_content::create_widgets;
+use crate::tui::page_content::PageContent;
 
 impl PageViewer for TuiApp {
     fn show_pages(&mut self, pages: &[PageSource]) {
@@ -17,9 +17,9 @@ impl PageViewer for TuiApp {
             return;
         }
         let mut index = 0;
-        self.display.loading();
-        let widgets = create_widgets(index, scroll, pages, self.display.area());
-        self.display.render(widgets);
+        let mut page_content = PageContent::new(pages, self.display.area());
+        self.display
+            .render(page_content.create_widgets(index, scroll, pages, self.display.area()));
         loop {
             match page_event_loop() {
                 PageAction::Exit => break,
@@ -54,8 +54,12 @@ impl PageViewer for TuiApp {
                 }
                 PageAction::Continue => continue,
             }
-            let widgets = create_widgets(index, scroll, pages, self.display.area());
-            self.display.render(widgets);
+            self.display.render(page_content.create_widgets(
+                index,
+                scroll,
+                pages,
+                self.display.area(),
+            ));
         }
         self.display.shutdown();
     }
@@ -67,7 +71,7 @@ impl PageViewer for TextApp {
             [page, ..] => {
                 let content = page.extract.get_plain_text(&page.link);
                 if page.tracked {
-                    add_history(&page.link).unwrap_or_else(|err| eprintln!("{}", err));
+                    add_history(&page.link).unwrap_or_else(|err| eprintln!("{err}"));
                 }
                 println!("{content}");
             }

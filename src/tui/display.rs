@@ -52,9 +52,14 @@ impl Display {
     }
 
     fn unwrap_terminal(&self) -> MutexGuard<Terminal<CrosstermBackend<Stdout>>> {
-        self.terminal
+        let mut terminal = self
+            .terminal
             .lock()
-            .unwrap_or_else(|err| self.shutdown_with_error(&err.to_string()))
+            .unwrap_or_else(|err| self.shutdown_with_error(&err.to_string()));
+        terminal
+            .autoresize()
+            .unwrap_or_else(|err| self.shutdown_with_error(&err.to_string()));
+        terminal
     }
 
     pub fn loading(&mut self) {
@@ -70,18 +75,18 @@ impl Display {
     pub fn render(&mut self, drawables: Vec<Widget>) {
         self.unwrap_terminal()
             .draw(|frame| {
-                drawables.into_iter().for_each(|widget| {
+                for widget in drawables {
                     widget.render(frame);
-                });
+                }
             })
             .unwrap_or_else(|err| self.shutdown_with_error(&err.to_string()));
     }
 }
 pub enum Widget<'a> {
-    Table(Table<'a>, &'a mut TableState, Rect),
-    Paragraph(Paragraph<'a>, Rect),
-    Text(Text<'a>, Rect),
-    Block(Block<'a>, Rect),
+    Table(&'a Table<'a>, &'a mut TableState, &'a Rect),
+    Paragraph(&'a Paragraph<'a>, &'a Rect),
+    Text(&'a Text<'a>, &'a Rect),
+    Block(&'a Block<'a>, &'a Rect),
 }
 
 impl Widget<'_> {
@@ -89,11 +94,11 @@ impl Widget<'_> {
     pub fn render(self, frame: &mut Frame) {
         match self {
             Widget::Table(table, table_state, rect) => {
-                frame.render_stateful_widget(table, rect, table_state)
+                frame.render_stateful_widget(table, *rect, table_state);
             }
-            Widget::Paragraph(paragraph, rect) => frame.render_widget(paragraph, rect),
-            Widget::Text(text, rect) => frame.render_widget(text, rect),
-            Widget::Block(block, rect) => frame.render_widget(block, rect),
+            Widget::Paragraph(paragraph, rect) => frame.render_widget(paragraph, *rect),
+            Widget::Text(text, rect) => frame.render_widget(text, *rect),
+            Widget::Block(block, rect) => frame.render_widget(block, *rect),
         }
     }
 }

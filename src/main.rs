@@ -16,9 +16,9 @@ mod tui;
 
 use crate::actions::prepare_pages::prepare_pages;
 use crate::app::enum_values::App;
+use crate::app::enum_values::AppFunctions;
 use crate::app::enum_values::HistoryViewer;
 use crate::app::enum_values::PageViewer;
-use crate::app::enum_values::Shutdown;
 use crate::cli::command::Cli;
 use actions::generate_config;
 use atty::{is, Stream};
@@ -33,6 +33,7 @@ fn main() {
     }
     let is_piped = args.piped || !is(Stream::Stdout);
     let mut app = App::from_type(is_piped);
+    app.loading();
     if args.history {
         if let Some(page) = app.show_history() {
             app.show_pages(&[page]);

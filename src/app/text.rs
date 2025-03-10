@@ -5,8 +5,8 @@ impl TextApp {
         Self {}
     }
 
-    pub fn terminating_error(&self, error_message: &str) -> ! {
-        eprintln!("{}", error_message);
+    pub fn terminating_error(error_message: &str) -> ! {
+        eprintln!("{error_message}");
         std::process::exit(1)
     }
 }

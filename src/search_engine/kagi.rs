@@ -28,7 +28,7 @@ pub struct KagiSearch;
 const API_KEY: &str = "IS_FAST_KAGI_API_KEY";
 
 impl KagiSearch {
-    fn extract_variables(&self) -> Result<String, IsError> {
+    fn extract_variables() -> Result<String, IsError> {
         let api_key = std::env::var(API_KEY).map_err(|_| {
             SearchError(format!("Unable to get the environment variable {API_KEY}",))
         })?;
@@ -51,7 +51,7 @@ impl KagiSearch {
             .collect()
     }
 
-    fn request_results(&self, api_key: &str, query: &str) -> Result<String, IsError> {
+    fn request_results(api_key: &str, query: &str) -> Result<String, IsError> {
         let url = format!("https://kagi.com/api/v0/search?q={query}");
         REQWEST_CLIENT
             .get(&url)
@@ -62,8 +62,8 @@ impl KagiSearch {
             .map_err(|e| Scrape(format!("Request failed for {url}: {e}")))
     }
 
-    fn get_links(&self, api_key: &str, query: &str) -> Result<Vec<Link>, IsError> {
-        self.request_results(api_key, query)
+    fn get_links(api_key: &str, query: &str) -> Result<Vec<Link>, IsError> {
+        Self::request_results(api_key, query)
             .and_then(|json| {
                 from_str::<SearchResult>(&json).map_err(|e| SearchError(e.to_string()))
             })
@@ -74,7 +74,6 @@ impl KagiSearch {
 
 impl Search for KagiSearch {
     fn search(&self, query: &str) -> Result<Vec<Link>, IsError> {
-        self.extract_variables()
-            .and_then(|api_key| self.get_links(&api_key, query))
+        Self::extract_variables().and_then(|api_key| Self::get_links(&api_key, query))
     }
 }

@@ -35,6 +35,7 @@ impl PageExtractor {
     pub fn get_paragraph(&self, link: &Link) -> Paragraph<'static> {
         Paragraph::new(self.get_tui_text(link))
     }
+
     fn get_tui_text(&self, link: &Link) -> Text<'static> {
         (self.convert_to_html)(link)
             .map(|html| PageExtractor::sanitize(&html))

@@ -9,15 +9,15 @@ use scraper::{Html, Selector};
 #[derive(Debug, Clone)]
 pub struct DuckDuckGoSearch;
 impl DuckDuckGoSearch {
-    pub fn get_links(&self, search_term: &str) -> Result<Vec<Link>, IsError> {
+    pub fn get_links(search_term: &str) -> Result<Vec<Link>, IsError> {
         scrape(&format!(
             "https://html.duckduckgo.com/html/?q={}",
             &search_term
         ))
-        .and_then(|html| self.links_from_html(&html))
+        .and_then(|html| Self::links_from_html(&html))
     }
 
-    fn links_from_html(&self, html: &str) -> Result<Vec<Link>, IsError> {
+    fn links_from_html(html: &str) -> Result<Vec<Link>, IsError> {
         let document = Html::parse_document(html);
         let selector_title = Selector::parse("a.result__a")
             .map_err(|_| SelectorError(String::from("Failed to create title selector")))?;
@@ -40,6 +40,6 @@ impl DuckDuckGoSearch {
 
 impl Search for DuckDuckGoSearch {
     fn search(&self, query: &str) -> Result<Vec<Link>, IsError> {
-        self.get_links(query)
+        Self::get_links(query)
     }
 }
