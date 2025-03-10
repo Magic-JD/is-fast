@@ -121,6 +121,13 @@ If not generated the configuration file should be placed in:
 
 If the `--generate-config` command is used a copy of the default configuration will be placed there automatically.
 
+If you don't want to use the default config location, setting the environment variable `IS_FAST_CONFIG_PATH` will enable you to
+place it whereever you like.
+
+```sh
+export IS_FAST_CONFIG_PATH="/full/path/to/config.toml"
+```
+
 ## 🏷 Block Elements
 
 ### Definition
