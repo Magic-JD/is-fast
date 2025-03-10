@@ -1,6 +1,6 @@
 use crate::errors::error::IsError;
 use crate::errors::error::IsError::{Access, DatabaseSql};
-use crate::search::link::Link;
+use crate::search_engine::link::Link;
 use chrono::NaiveDateTime;
 use dirs::data_dir;
 use once_cell::sync::Lazy;

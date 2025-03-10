@@ -67,7 +67,7 @@ impl Display {
             .unwrap_or_else(|err| self.shutdown_with_error(&err.to_string()));
     }
 
-    pub fn draw(&mut self, drawables: Vec<Widget>) {
+    pub fn render(&mut self, drawables: Vec<Widget>) {
         self.unwrap_terminal()
             .draw(|frame| {
                 drawables.into_iter().for_each(|widget| {

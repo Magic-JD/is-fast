@@ -10,16 +10,15 @@ mod config;
 mod database;
 mod errors;
 mod pipe;
-mod search;
+mod search_engine;
 mod transform;
 mod tui;
 
+use crate::actions::prepare_pages::prepare_pages;
 use crate::app::enum_values::App;
 use crate::app::enum_values::HistoryViewer;
 use crate::app::enum_values::PageViewer;
 use crate::app::enum_values::Shutdown;
-use crate::app::text::TextApp;
-use crate::app::tui::TuiApp;
 use crate::cli::command::Cli;
 use actions::generate_config;
 use atty::{is, Stream};
@@ -32,19 +31,17 @@ fn main() {
         generate_config::run();
         return;
     }
-    let mut is_piped = args.piped;
-    if !is(Stream::Stdout) {
-        is_piped = true;
-    }
-    let mut app = if is_piped {
-        App::Text(TextApp::new())
-    } else {
-        App::Tui(TuiApp::new())
-    };
+    let is_piped = args.piped || !is(Stream::Stdout);
+    let mut app = App::from_type(is_piped);
     if args.history {
-        app.show_history();
+        if let Some(page) = app.show_history() {
+            app.show_pages(&[page]);
+        }
     } else {
-        app.show_page(args);
+        let page_result = prepare_pages(args).unwrap_or_else(|err| {
+            app.shutdown_with_error(&err.to_string());
+        });
+        app.show_pages(&page_result);
     }
     app.shutdown();
 }

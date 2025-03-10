@@ -156,3 +156,32 @@ fn searched_on_to_string(search_on: &SearchOn) -> String {
         SearchOn::Url => String::from("URL"),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::database::connect::HistoryData;
+    use crate::tui::history_widgets::*;
+    use chrono::NaiveDateTime;
+
+    #[test]
+    fn test_create_rows() {
+        let history = vec![
+            HistoryData {
+                title: "Programming in Rust".to_string(),
+                url: "https://example.com".to_string(),
+                time: NaiveDateTime::parse_from_str("2023-10-01 12:10:00", "%Y-%m-%d %H:%M:%S")
+                    .unwrap(),
+            },
+            HistoryData {
+                title: "R U S T is great".to_string(),
+                url: "https://example.com".to_string(),
+                time: NaiveDateTime::parse_from_str("2023-10-01 12:15:00", "%Y-%m-%d %H:%M:%S")
+                    .unwrap(),
+            },
+        ];
+        let user_search = "Rust";
+        let rows = create_rows(&history, user_search, &SearchOn::Title);
+
+        assert_eq!(rows.len(), 2);
+    }
+}

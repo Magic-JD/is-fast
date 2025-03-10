@@ -1,7 +1,7 @@
 use crate::config::load::Config;
 use crate::errors::error::IsError;
-use crate::search::link::Link;
-use crate::search::search_type::{Search, SearchEngine};
+use crate::search_engine::link::Link;
+use crate::search_engine::search_type::{Search, SearchEngine};
 use once_cell::sync::Lazy;
 use std::thread::sleep;
 use std::time::Duration;
@@ -19,7 +19,10 @@ pub fn find_links(search_term: &str) -> Result<Vec<Link>, IsError> {
                 sleep(Duration::from_secs(1)); // Wait before retrying
                 None
             }
-            _ => None, // Empty links, try again
+            _ => {
+                sleep(Duration::from_secs(1)); // Wait before retrying
+                None
+            } // Empty links, try again
         })
         .ok_or(IsError::Search(last_error.unwrap_or_else(|| {
             String::from("No links were found, no error detected")

@@ -15,7 +15,7 @@ impl Link {
         }
     }
 }
-pub struct Extractable {
+pub struct PageSource {
     pub link: Link,
     pub extract: PageExtractor,
     pub tracked: bool,

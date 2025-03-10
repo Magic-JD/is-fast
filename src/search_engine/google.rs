@@ -1,9 +1,9 @@
 use crate::config::load::Config;
 use crate::errors::error::IsError;
 use crate::errors::error::IsError::Search as SearchError;
-use crate::search::link::Link;
-use crate::search::scrape::scrape;
-use crate::search::search_type::Search;
+use crate::search_engine::link::Link;
+use crate::search_engine::scrape::scrape;
+use crate::search_engine::search_type::Search;
 use serde_json::from_str;
 
 #[derive(serde::Deserialize)]

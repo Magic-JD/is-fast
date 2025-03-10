@@ -1,2 +1,2 @@
 pub mod generate_config;
-pub mod search;
+pub mod prepare_pages;

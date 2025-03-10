@@ -1,5 +1,5 @@
 use crate::config::load::Config;
-use crate::search::link::Extractable;
+use crate::search_engine::link::PageSource;
 use crate::tui::display::Widget;
 use crate::tui::display::Widget::{Block, Paragraph, Text};
 use crate::tui::general_widgets::default_block;
@@ -10,10 +10,10 @@ use ratatui::layout::{Constraint, Direction, Layout, Rect};
 static PAGE_INSTRUCTIONS: &str = " Quit: q/Esc | Scroll Down: j/↓ | Scroll Up: k/↑ | Page Down: CTRL+d | Page Up: CTRL+u | Next: n/→ | Back: b/← | Open in Browser: o ";
 static TUI_MARGIN: Lazy<u16> = Lazy::new(Config::get_page_margin);
 
-pub fn displayables(
+pub fn create_widgets(
     index: usize,
     scroll: u16,
-    extractables: &[Extractable],
+    extractables: &[PageSource],
     available_space: Rect,
 ) -> Vec<Widget> {
     let (title, mut page) = new_page(index, extractables);

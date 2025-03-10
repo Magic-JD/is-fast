@@ -1,12 +1,12 @@
 use crate::database::connect::add_history;
-use crate::search::link::{Extractable, Link};
+use crate::search_engine::link::{Link, PageSource};
 use crate::transform::cache::{get_content, preload};
 use crate::tui::general_widgets::TUI_BORDER_COLOR;
 use ratatui::layout::Alignment;
 use ratatui::prelude::{Color, Line, Style, Text};
 use ratatui::widgets::{Paragraph, Wrap};
 
-pub fn new_page(index: usize, links: &[Extractable]) -> (String, Paragraph<'static>) {
+pub fn new_page(index: usize, links: &[PageSource]) -> (String, Paragraph<'static>) {
     if let Some(extractable) = links.get(index + 1) {
         let extractor = &extractable.extract;
         let link = &extractable.link;
