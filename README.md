@@ -83,6 +83,9 @@ cargo install --git https://github.com/Magic-JD/is-fast.git
 - [ 🔄 Using `--piped`, `|` or `>` to Output to Standard Output](#-using---piped--or--to-output-to-standard-output)
 - [📜 Viewing History in `is-fast`](#-viewing-history-in-is-fast)
     - [`--history`](#--history)
+- [🔑 Customizing your results](#-customizing-your-results)
+  - [`--selector`](#--selector-s)
+  - [`--site`](#--site)
 
 ---
 
