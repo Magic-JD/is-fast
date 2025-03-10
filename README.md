@@ -400,7 +400,7 @@ engine = "google"
 ### Site
 
 If you want to restrict your search only to a certain domain, setting this value will only show you search results from
-that domain. This option is currently only compatible with duckduckgo. This can be overridden by the `--site` argument.
+that domain. This can be overridden by the `--site` argument.
 
 ### Example Configuration
 
@@ -576,7 +576,7 @@ is-fast --selector ".interesting" --direct "www.site.com"
 
 ### `--site`
 
-This will restrict the search to only the given site. Currently only compatible with duckduckgo as the search engine.
+This will restrict the search to only the given domain.
 
 ```sh
 is-fast --site "en.wikipedia.org" "Rust programming language"
