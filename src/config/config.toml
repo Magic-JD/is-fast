@@ -69,7 +69,7 @@ bg = "DarkGray"
 
 [styles.var]
 fg = "Red"
-italics = true
+italic = true
 
 [styles.samp]
 fg = "Magenta"
@@ -112,7 +112,6 @@ block_elements = ["p", "div", "table", "article", "img", "section", "pre", "bloc
 [syntax]
 # This is the language that will be used for syntax highlighting if it cannot be deduced from the CSS of the page.
 default_language = "rust"
-
 # Valid themes
 # InspiredGitHub
 # Solarized (dark)
@@ -145,5 +144,27 @@ text_color = "#74c7ec"
 # Defaults to fuzzy.
 search_type = "fuzzy"
 
+# Search settings.
 [search]
+# Available options:
+# - "duckduckgo" (default) - Uses DuckDuckGo for searches.
+# - "google" - Uses Google Custom Search (requires API setup).
+# - "kagi" - Uses Kagi Search (requires API setup)
+#
+# If using Google Search, you must configure the API:
+# 1. Enable the Google Custom Search API in the Google Cloud Console.
+# 2. Generate an API Key.
+# 3. Create a Custom Search Engine and obtain its Search Engine ID.
+# 4. Set the following environment variables:
+#    export IS_FAST_GOOGLE_API_KEY="your_api_key_here"
+#    export IS_FAST_GOOGLE_SEARCH_ENGINE_ID="your_search_engine_id_here"
+#
+# If using Kagi search you must configure the api: https://help.kagi.com/kagi/api/search.html
+# 1. Obtain access to the API (Currently in closed Beta)
+# 2. Generate an API key.
+# 3. Set the following environment variable:
+#   export IS_FAST_KAGI_API_KEY
+#
+# To add a custom search engine, fork the repository and follow the
+# instructions in src/search/search_type.rs.
 engine = "duckduckgo"

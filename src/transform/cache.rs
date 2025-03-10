@@ -1,4 +1,4 @@
-use crate::search::link::Link;
+use crate::search_engine::link::Link;
 use crate::transform::page::PageExtractor;
 use dashmap::DashMap;
 use once_cell::sync::Lazy;

@@ -1,7 +1,6 @@
-pub mod browser;
-mod browser_widgets;
-mod display;
+pub mod display;
 mod general_widgets;
-pub mod history;
-mod history_search;
+pub mod history_content;
 mod history_widgets;
+pub mod page_content;
+mod page_widgets;

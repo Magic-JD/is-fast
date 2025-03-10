@@ -2,9 +2,9 @@ use crate::config::load::Config;
 use crate::errors::error::IsError;
 use crate::errors::error::IsError::Scrape;
 use crate::errors::error::IsError::Search as SearchError;
-use crate::search::link::Link;
-use crate::search::scrape::REQWEST_CLIENT;
-use crate::search::search_type::Search;
+use crate::search_engine::link::Link;
+use crate::search_engine::scrape::REQWEST_CLIENT;
+use crate::search_engine::search_type::Search;
 use reqwest::blocking::Response;
 use serde_json::from_str;
 

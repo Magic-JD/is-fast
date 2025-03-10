@@ -1,5 +1,5 @@
-use crate::search::search_type::SearchEngine;
-use crate::search::search_type::SearchEngine::{DuckDuckGo, Google, Kagi};
+use crate::search_engine::search_type::SearchEngine;
+use crate::search_engine::search_type::SearchEngine::{DuckDuckGo, Google, Kagi};
 use globset::{Glob, GlobSet, GlobSetBuilder};
 use nucleo_matcher::pattern::AtomKind;
 use once_cell::sync::Lazy;

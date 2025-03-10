@@ -374,7 +374,7 @@ export IS_FAST_KAGI_API_KEY="your_api_key_here"
 
 ### Custom search engine
 
-If you want to add your own custom search engine, please fork the repository and follow the instructions on [this file](src/search/search_type.rs).
+If you want to add your own custom search engine, please fork the repository and follow the instructions on [this file](src/search_engine/search_type.rs).
 
 
 ### 🛠 Example Configuration

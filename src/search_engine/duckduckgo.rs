@@ -1,9 +1,9 @@
 use crate::config::load::Config;
 use crate::errors::error::IsError;
 use crate::errors::error::IsError::Selector as SelectorError;
-use crate::search::link::Link;
-use crate::search::scrape::scrape;
-use crate::search::search_type::Search;
+use crate::search_engine::link::Link;
+use crate::search_engine::scrape::scrape;
+use crate::search_engine::search_type::Search;
 use scraper::{Html, Selector};
 
 #[derive(Debug, Clone)]
