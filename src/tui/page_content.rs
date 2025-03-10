@@ -9,7 +9,7 @@ use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::text::Text as RText;
 use ratatui::widgets::{Block as RBlock, Paragraph as RParagraph};
 
-static PAGE_INSTRUCTIONS: &str = " Quit: q/Esc | Scroll Down: j/↓ | Scroll Up: k/↑ | Page Down: CTRL+d | Page Up: CTRL+u | Next: n/→ | Back: b/← | Open in Browser: o ";
+static PAGE_INSTRUCTIONS: &str = " Quit: q/Esc | Scroll Down: j/↓ | Scroll Up: k/↑ | Page Down: CTRL+d/PgDn | Page Up: CTRL+u/PgUp | Next: n/→ | Back: b/← | Open in Browser: o ";
 static TUI_MARGIN: Lazy<u16> = Lazy::new(Config::get_page_margin);
 
 pub struct PageContent<'a> {
