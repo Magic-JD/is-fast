@@ -33,7 +33,7 @@ pub fn prepare_pages(args: Cli) -> Result<Vec<PageSource>, IsError> {
             .or_else(|| Config::get_site().clone())
             .map(|s| format!("site:{s}"))
             .unwrap_or_default();
-        let links_result = find_links(&format!("{search_term}{site}"));
+        let links_result = find_links(&format!("{search_term} {site}"));
         let new_pages: Vec<PageSource> = links_result.map(|links| {
             links
                 .into_iter()
