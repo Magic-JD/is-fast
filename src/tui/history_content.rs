@@ -34,19 +34,20 @@ pub struct HistoryContent<'a> {
 
 impl HistoryContent<'_> {
     pub fn new(
-        current_history: Vec<HistoryData>,
+        mut current_history: Vec<HistoryData>,
         search_term: String,
         search_on: SearchOn,
         total_area: Rect,
         mut table_state: TableState,
     ) -> Self {
         let block = default_block(" History ", HISTORY_INSTRUCTIONS);
+        let full_history = current_history.clone();
+        let current_history = order_by_match(&mut current_history, &search_term, &search_on);
         let table = create_table(&current_history, search_term.clone(), search_on.clone());
         let search = draw_search_text(search_term.clone(), search_on.clone());
         let row_count = draw_history_count(current_history.len() as u16);
         let widgets = (block, table, search, row_count);
         let areas = HistoryContent::history_areas(total_area, current_history.len() as u16);
-        let full_history = current_history.clone();
         table_state.select_last();
         Self {
             total_area,
@@ -90,7 +91,7 @@ impl HistoryContent<'_> {
         self.search_term.push(c);
         self.current_history = order_by_match(
             &mut self.current_history,
-            &mut self.search_term,
+            &self.search_term,
             &self.search_on,
         );
         *self.table_state.offset_mut() = 0;
@@ -103,7 +104,7 @@ impl HistoryContent<'_> {
         self.current_history.clone_from(&self.full_history);
         self.current_history = order_by_match(
             &mut self.current_history,
-            &mut self.search_term,
+            &self.search_term,
             &self.search_on,
         );
         *self.table_state.offset_mut() = 0;
@@ -126,7 +127,7 @@ impl HistoryContent<'_> {
         self.current_history.clone_from(&self.full_history);
         self.current_history = order_by_match(
             &mut self.current_history,
-            &mut self.search_term,
+            &self.search_term,
             &self.search_on,
         );
         *self.table_state.offset_mut() = 0;
@@ -181,12 +182,12 @@ fn next_search(search_on: &SearchOn) -> SearchOn {
 }
 fn order_by_match(
     history: &mut [HistoryData],
-    user_search: &mut String,
+    user_search: &str,
     search_on: &SearchOn,
 ) -> Vec<HistoryData> {
     let mut matcher = Matcher::new(nucleo_matcher::Config::DEFAULT);
     let pattern = Pattern::new(
-        &*user_search,
+        user_search,
         CaseMatching::Ignore,
         Normalization::Smart,
         **SEARCH_TYPE,
@@ -260,8 +261,8 @@ mod tests {
                     .unwrap(),
             },
         ];
-        let mut search_query = "Rust".to_string();
-        let results = order_by_match(&mut history, &mut search_query, &SearchOn::Title);
+        let search_query = "Rust".to_string();
+        let results = order_by_match(&mut history, &search_query, &SearchOn::Title);
 
         assert_eq!(results.len(), 4);
         assert_eq!(results[0].title, "R U S T is great");
@@ -298,8 +299,8 @@ mod tests {
                     .unwrap(),
             },
         ];
-        let mut search_query = "rust".to_string();
-        let results = order_by_match(&mut history, &mut search_query, &SearchOn::Url);
+        let search_query = "rust".to_string();
+        let results = order_by_match(&mut history, &search_query, &SearchOn::Url);
 
         assert_eq!(results.len(), 3);
         assert_eq!(results[0].url, "https://example.com/r/u/s/t");
@@ -323,8 +324,8 @@ mod tests {
                     .unwrap(),
             },
         ];
-        let mut search_query = "Rust".to_string();
-        let results = order_by_match(&mut history, &mut search_query, &SearchOn::Title);
+        let search_query = "Rust".to_string();
+        let results = order_by_match(&mut history, &search_query, &SearchOn::Title);
 
         assert_eq!(results.len(), 2);
         assert!(results[0].time < results[1].time);
