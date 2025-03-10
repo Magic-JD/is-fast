@@ -1,7 +1,6 @@
+use crate::app::history::SearchOn;
 use crate::database::connect::HistoryData;
 use crate::tui::general_widgets::TUI_BORDER_COLOR;
-use crate::tui::history::SearchOn;
-use crate::tui::history::SearchOn::{Title, Url};
 use chrono::{NaiveDateTime, Utc};
 use nucleo_matcher::{Config, Matcher, Utf32Str};
 use once_cell::sync::Lazy;
@@ -16,10 +15,10 @@ pub static TEXT_COLOR: Lazy<&Style> = Lazy::new(crate::config::load::Config::get
 
 pub fn create_table<'a>(
     history: &[HistoryData],
-    user_search: &str,
-    search_on: &SearchOn,
+    user_search: String,
+    search_on: SearchOn,
 ) -> Table<'a> {
-    let rows = create_rows(history, user_search, search_on);
+    let rows = create_rows(history, &user_search, &search_on);
     let table = Table::from_iter(rows)
         .widths([
             Constraint::Percentage(50),
@@ -40,20 +39,18 @@ fn create_rows(
     let rows: Vec<Row> = history
         .iter()
         .map(|h| match search_on {
-            Title => {
+            SearchOn::Title => {
                 let cell = vec![
-                    Cell::from(highlight_text(clip_if_needed(&h.title, 100), user_search))
-                        .style(**TITLE_COLOR),
-                    Cell::from(clip_if_needed(&h.url, 60)).style(**URL_COLOR),
+                    Cell::from(highlight_text(h.title.clone(), user_search)).style(**TITLE_COLOR),
+                    Cell::from(h.url.clone()).style(**URL_COLOR),
                     Cell::from(date_to_display(&h.time)).style(**TIME_COLOR),
                 ];
                 Row::new(cell)
             }
-            Url => {
+            SearchOn::Url => {
                 let cells = vec![
-                    Cell::from(clip_if_needed(&h.title, 100)).style(**TITLE_COLOR),
-                    Cell::from(highlight_text(clip_if_needed(&h.url, 60), user_search))
-                        .style(**URL_COLOR),
+                    Cell::from(h.title.clone()).style(**TITLE_COLOR),
+                    Cell::from(highlight_text(h.url.clone(), user_search)).style(**URL_COLOR),
                     Cell::from(date_to_display(&h.time)).style(**TIME_COLOR),
                 ];
                 Row::new(cells)
@@ -104,12 +101,6 @@ fn highlight_text(plain_text: String, user_search: &str) -> Line<'static> {
     spans.push(Span::from(current));
     Line::from(spans)
 }
-fn clip_if_needed(text: &str, max_length: usize) -> String {
-    if text.len() > max_length {
-        return format!("{}...", &text[0..max_length - 3]);
-    }
-    text.to_string()
-}
 
 fn date_to_display(date: &NaiveDateTime) -> String {
     let duration = Utc::now().signed_duration_since(date.and_utc());
@@ -135,8 +126,8 @@ fn format_time(amount: i64, time_measurement: &str) -> String {
     format!("{amount} {time_measurement} ago")
 }
 
-pub fn draw_search_text<'a>(user_input: &'a str, search_on: &'a SearchOn) -> Paragraph<'a> {
-    let searched_on_text = searched_on_to_string(search_on);
+pub fn draw_search_text<'a>(user_input: String, search_on: SearchOn) -> Paragraph<'a> {
+    let searched_on_text = searched_on_to_string(&search_on);
     Paragraph::new(
         Line::from(format!(" [{searched_on_text}] {user_input}"))
             .style(TEXT_COLOR.add_modifier(Modifier::BOLD)),
@@ -161,7 +152,36 @@ fn count_result_text(row_count: u16) -> String {
 
 fn searched_on_to_string(search_on: &SearchOn) -> String {
     match search_on {
-        Title => String::from("TITLE"),
-        Url => String::from("URL"),
+        SearchOn::Title => String::from("TITLE"),
+        SearchOn::Url => String::from("URL"),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::database::connect::HistoryData;
+    use crate::tui::history_widgets::*;
+    use chrono::NaiveDateTime;
+
+    #[test]
+    fn test_create_rows() {
+        let history = vec![
+            HistoryData {
+                title: "Programming in Rust".to_string(),
+                url: "https://example.com".to_string(),
+                time: NaiveDateTime::parse_from_str("2023-10-01 12:10:00", "%Y-%m-%d %H:%M:%S")
+                    .unwrap(),
+            },
+            HistoryData {
+                title: "R U S T is great".to_string(),
+                url: "https://example.com".to_string(),
+                time: NaiveDateTime::parse_from_str("2023-10-01 12:15:00", "%Y-%m-%d %H:%M:%S")
+                    .unwrap(),
+            },
+        ];
+        let user_search = "Rust";
+        let rows = create_rows(&history, user_search, &SearchOn::Title);
+
+        assert_eq!(rows.len(), 2);
     }
 }

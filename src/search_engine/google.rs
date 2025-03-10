@@ -1,9 +1,9 @@
 use crate::config::load::Config;
 use crate::errors::error::IsError;
 use crate::errors::error::IsError::Search as SearchError;
-use crate::search::link::Link;
-use crate::search::scrape::scrape;
-use crate::search::search_type::Search;
+use crate::search_engine::link::Link;
+use crate::search_engine::scrape::scrape;
+use crate::search_engine::search_type::Search;
 use serde_json::from_str;
 
 #[derive(serde::Deserialize)]
@@ -24,7 +24,7 @@ const API_KEY: &str = "IS_FAST_GOOGLE_API_KEY";
 const SEARCH_ENGINE_ID: &str = "IS_FAST_GOOGLE_SEARCH_ENGINE_ID";
 
 impl GoogleSearch {
-    fn extract_variables(&self) -> Result<(String, String), IsError> {
+    fn extract_variables() -> Result<(String, String), IsError> {
         let api_key = std::env::var(API_KEY).map_err(|_| {
             SearchError(format!("Unable to get the environment variable {API_KEY}",))
         })?;
@@ -38,7 +38,6 @@ impl GoogleSearch {
     }
 
     fn extract_links(
-        &self,
         api_key: &str,
         search_engine_id: &str,
         query: &str,
@@ -67,9 +66,8 @@ impl GoogleSearch {
 }
 impl Search for GoogleSearch {
     fn search(&self, query: &str) -> Result<Vec<Link>, IsError> {
-        self.extract_variables()
-            .and_then(|(api_key, search_engine_id)| {
-                self.extract_links(&api_key, &search_engine_id, query)
-            })
+        Self::extract_variables().and_then(|(api_key, search_engine_id)| {
+            Self::extract_links(&api_key, &search_engine_id, query)
+        })
     }
 }

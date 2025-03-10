@@ -1,8 +1,8 @@
 use crate::errors::error::IsError;
-use crate::search::duckduckgo::DuckDuckGoSearch;
-use crate::search::google::GoogleSearch;
-use crate::search::kagi::KagiSearch;
-use crate::search::link::Link;
+use crate::search_engine::duckduckgo::DuckDuckGoSearch;
+use crate::search_engine::google::GoogleSearch;
+use crate::search_engine::kagi::KagiSearch;
+use crate::search_engine::link::Link;
 
 #[derive(Debug, Clone)]
 pub enum SearchEngine {

@@ -1,7 +1,7 @@
 use crate::errors::error::IsError;
 use crate::errors::error::IsError::General;
-use crate::search::link::Link;
-use crate::search::scrape::scrape;
+use crate::search_engine::link::Link;
+use crate::search_engine::scrape::scrape;
 use crate::transform::filter::filter;
 use crate::transform::format::to_display;
 use ratatui::prelude::Text;
@@ -35,6 +35,7 @@ impl PageExtractor {
     pub fn get_paragraph(&self, link: &Link) -> Paragraph<'static> {
         Paragraph::new(self.get_tui_text(link))
     }
+
     fn get_tui_text(&self, link: &Link) -> Text<'static> {
         (self.convert_to_html)(link)
             .map(|html| PageExtractor::sanitize(&html))

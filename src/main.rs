@@ -4,43 +4,45 @@
 #![cfg_attr(not(test), deny(clippy::todo))]
 
 mod actions;
+mod app;
 mod cli;
 mod config;
 mod database;
 mod errors;
-mod search;
+mod pipe;
+mod search_engine;
 mod transform;
 mod tui;
 
-use crate::actions::{direct, history};
+use crate::actions::prepare_pages::prepare_pages;
+use crate::app::enum_values::App;
+use crate::app::enum_values::AppFunctions;
+use crate::app::enum_values::HistoryViewer;
+use crate::app::enum_values::PageViewer;
 use crate::cli::command::Cli;
 use actions::generate_config;
-use actions::search as search_actions;
-use actions::view;
 use atty::{is, Stream};
 use clap::Parser;
 
 fn main() {
     let args = Cli::parse();
-    let mut is_piped = args.piped;
-    if !is(Stream::Stdout) {
-        is_piped = true;
-    }
+    // Generate config doesn't need a display, process and return.
     if args.generate_config {
         generate_config::run();
-    } else if args.history {
-        history::run(is_piped);
-    } else if let Some(file) = args.file {
-        view::run(file, args.url, args.selector, is_piped);
-    } else if let Some(url) = args.direct {
-        direct::run(None, &url, args.selector, is_piped);
-    } else if let Some(search_term) = args.query.map(|query| query.join(" ")) {
-        if args.selector.is_some() {
-            eprintln!("Selector cannot be used for a generalize search, only for a --file or --direct query");
-            return;
-        }
-        search_actions::run(&search_term, is_piped);
-    } else {
-        eprintln!("No actions term provided!");
+        return;
     }
+    let is_piped = args.piped || !is(Stream::Stdout);
+    let mut app = App::from_type(is_piped);
+    app.loading();
+    if args.history {
+        if let Some(page) = app.show_history() {
+            app.show_pages(&[page]);
+        }
+    } else {
+        let page_result = prepare_pages(args).unwrap_or_else(|err| {
+            app.shutdown_with_error(&err.to_string());
+        });
+        app.show_pages(&page_result);
+    }
+    app.shutdown();
 }
