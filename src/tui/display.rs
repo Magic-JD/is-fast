@@ -15,6 +15,8 @@ pub struct Display {
     terminal: Mutex<Terminal<CrosstermBackend<Stdout>>>,
 }
 
+impl Display {}
+
 const STARTUP_ERROR: &str = "Cannot properly enable TUI - shutting down.";
 const SHUTDOWN_ERROR: &str =
     "Cannot properly close TUI - shutting down. Try 'reset' if there are on going terminal issues.";
@@ -42,6 +44,15 @@ impl Display {
         let mut terminal = self.terminal.lock().expect(SHUTDOWN_ERROR);
         execute!(terminal.backend_mut(), LeaveAlternateScreen).expect(SHUTDOWN_ERROR);
         disable_raw_mode().expect(SHUTDOWN_ERROR);
+    }
+
+    pub fn refresh(&self) {
+        enable_raw_mode().expect(STARTUP_ERROR);
+        let mut out = stdout();
+        execute!(out, EnterAlternateScreen).expect(STARTUP_ERROR);
+        self.unwrap_terminal()
+            .clear()
+            .unwrap_or_else(|e| self.shutdown_with_error(&e.to_string()));
     }
 
     pub fn height(&self) -> u16 {

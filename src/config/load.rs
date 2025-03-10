@@ -68,6 +68,12 @@ struct SearchSection {
 }
 
 #[derive(Debug, Deserialize)]
+struct MiscSection {
+    #[serde(default)]
+    open_tool: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
 struct RawConfig {
     #[serde(default)]
     styles: HashMap<String, TagStyleConfig>,
@@ -83,6 +89,8 @@ struct RawConfig {
     history: Option<HistorySection>,
     #[serde(default)]
     search: Option<SearchSection>,
+    #[serde(default)]
+    misc: Option<MiscSection>,
 }
 
 #[derive(Debug)]
@@ -103,6 +111,7 @@ pub struct Config {
     text_color: Style,
     search_type: AtomKind,
     search_engine: SearchEngine,
+    open_tool: Option<String>,
 }
 
 impl Config {
@@ -117,6 +126,7 @@ impl Config {
                 display: None,
                 history: None,
                 search: None,
+                misc: None,
             });
         _ = get_user_specified_config().map(|u_config| override_defaults(&mut config, u_config));
         let (matcher, globs) = generate_globs(&mut config);
@@ -191,6 +201,7 @@ impl Config {
                     .and_then(|search| search.engine)
                     .unwrap_or_default(),
             ),
+            open_tool: config.misc.and_then(|misc| misc.open_tool).clone(),
         }
     }
 
@@ -253,6 +264,10 @@ impl Config {
     }
     pub fn get_search_engine() -> &'static SearchEngine {
         &CONFIG.search_engine
+    }
+
+    pub fn get_open_command() -> &'static Option<String> {
+        &CONFIG.open_tool
     }
 }
 
@@ -356,11 +371,24 @@ fn override_defaults(config: &mut RawConfig, u_config: RawConfig) {
             search.engine = Some(engine);
         }
     }
+
+    let mut misc = config
+        .misc
+        .take()
+        .unwrap_or(MiscSection { open_tool: None });
+
+    if let Some(u_misc) = u_config.misc {
+        if let Some(open_tool) = u_misc.open_tool {
+            misc.open_tool = Some(open_tool);
+        }
+    }
+
     config.search = Some(search);
     config.history = Some(history);
     config.format = Some(format);
     config.syntax = Some(syntax);
     config.display = Some(display);
+    config.misc = Some(misc);
 }
 
 fn parse_color(color: &str) -> Color {
@@ -556,6 +584,7 @@ mod tests {
             display: None,
             history: None,
             search: None,
+            misc: None,
         };
 
         let (matcher, globs) = generate_globs(&mut raw_config);
@@ -595,6 +624,7 @@ mod tests {
                 search_type: Some("fuzzy".to_string()),
             }),
             search: None,
+            misc: None,
         };
 
         let user_config = RawConfig {
@@ -624,6 +654,7 @@ mod tests {
                 search_type: Some("fuzzy".to_string()),
             }),
             search: None,
+            misc: None,
         };
 
         override_defaults(&mut default_config, user_config);

@@ -168,3 +168,6 @@ search_type = "fuzzy"
 # To add a custom search engine, fork the repository and follow the
 # instructions in src/search/search_type.rs.
 engine = "duckduckgo"
+
+[misc]
+# open_tool = "firefox" # Uses system open as default, only uncomment if you want to override this behaviour

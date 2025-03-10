@@ -4,7 +4,6 @@ use crate::app::text::TextApp;
 use crate::app::tui::TuiApp;
 use crate::database::connect::add_history;
 use crate::search_engine::link::PageSource;
-use crate::search_engine::scrape::format_url;
 use crate::tui::page_content::PageContent;
 
 impl PageViewer for TuiApp {
@@ -50,7 +49,8 @@ impl PageViewer for TuiApp {
                     scroll = scroll.saturating_add(height / 2);
                 }
                 PageAction::Open => {
-                    open_link(index, pages);
+                    self.open_link(index, pages)
+                        .unwrap_or_else(|err| self.display.shutdown_with_error(&err.to_string()));
                 }
                 PageAction::Continue => continue,
             }
@@ -78,13 +78,4 @@ impl PageViewer for TextApp {
             [] => eprintln!("No links found, no error detected."),
         }
     }
-}
-
-fn open_link(index: usize, links: &[PageSource]) {
-    links
-        .get(index)
-        .map(|link| format_url(&link.link.url))
-        .and_then(|url| open::that(&url).err())
-        .iter()
-        .for_each(|e| println!("{e}"));
 }
