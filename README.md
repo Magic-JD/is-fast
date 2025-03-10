@@ -72,7 +72,8 @@ cargo install --git https://github.com/Magic-JD/is-fast.git
     - [🌈 Syntax Highlighting](#-syntax-highlighting)
     - [🎨 Display Settings](#-display-settings)
     - [🕰️ History Settings](#-history-settings)
-    - [🔍 Search Engine Configuration](#-search-engine-configuration)
+    - [🔍 Search Configuration](#-search-configuration)
+    - [❓ Miscellaneous Configuration](#-miscellaneous-settings)
     - [📌 Summary](#-summary)
 - [🌐 Using `is-fast` to Open URLs Directly](#-using-is-fast-to-open-urls-directly)
     - [`--direct` / `-d`](#--direct---d)
@@ -338,7 +339,9 @@ text_color = "rgb(116, 199, 236)"
 search_type = "fuzzy"
 ```
 
-## 🔍 Search Engine Configuration
+## 🔍 Search Configuration
+
+### Engine
 
 Determines which search engine is used when performing searches. Available options:
 
@@ -377,11 +380,24 @@ export IS_FAST_KAGI_API_KEY="your_api_key_here"
 If you want to add your own custom search engine, please fork the repository and follow the instructions on [this file](src/search_engine/search_type.rs).
 
 
-### 🛠 Example Configuration
+### Example Configuration
 
 ```toml
 [search]
 engine = "google"
+```
+
+## ❓ Miscellaneous Settings
+
+### Open tool
+
+This setting is unset by default, and controls the program that is used to open the page if you choose to open in browser. If unset this will be your default open tool. If you set this value it will execute the tool given to it. The tool must be available in your system to be able to run.
+
+### Example Configuration
+
+```toml
+[misc]
+open_tool = "w3m"
 ```
 
 ## 📌 Summary
@@ -395,7 +411,8 @@ engine = "google"
 | **Syntax Highlighting** | Defines how the syntax highlighting should be handled.              |
 | **Display Settings**    | Controls visual aspects like borders and margins.                   |
 | **History Settings**    | Configures history display colors and search behavior.              |
-| **Search Engine**       | Determines whether to use DuckDuckGo or Google.                     |
+| **Search Settings**     | Determines whether to use DuckDuckGo or Google.                     |
+| **Misc**                | Miscellaneous settings.                                             |
 ---
 
 # 🌐 Using `is-fast` to Open URLs Directly

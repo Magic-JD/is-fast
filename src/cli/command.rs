@@ -28,8 +28,8 @@ pub struct Cli {
     )]
     pub(crate) url: Option<String>,
 
-    /// Open the given URL directly in the TUI viewer.
-    #[arg(short = 'd', long = "direct", help = "Open the given URL directly")]
+    /// Open the given URL/s directly in the TUI viewer. If multiple are given they will all open in the tui.
+    #[arg(short = 'd', long = "direct", help = "Open the given URL/s directly")]
     pub(crate) direct: Vec<String>,
 
     /// Output the result to standard out instead of rendering in the TUI. If | or > is detected this will be automatically applied.
