@@ -1,11 +1,18 @@
 use crate::config::load::DEFAULT_CONFIG_LOCATION;
+use std::env;
 use std::fs;
 
 pub fn run() {
     println!("Generating config file...");
-    let config_directory = dirs::config_dir();
+
+    let config_directory = env::var("XDG_CONFIG_HOME")
+        .map(std::path::PathBuf::from)
+        .or_else(|_| {
+            dirs::config_dir().ok_or_else(|| "Could not determine config directory".to_string())
+        });
+
     match config_directory {
-        Some(config_dir) => {
+        Ok(config_dir) => {
             let is_fast_dir = config_dir.join("is-fast");
             let config_path = is_fast_dir.join("config.toml");
 
@@ -24,8 +31,8 @@ pub fn run() {
                     |()| println!("Config file generated at {config_path:?}"),
                 );
         }
-        None => {
-            println!("Could not determine config directory");
+        Err(e) => {
+            println!("{e}");
         }
     }
 }
