@@ -2,6 +2,7 @@ use crate::app::enum_values::PageViewer;
 use crate::app::event_loop::{page_event_loop, PageAction};
 use crate::app::text::TextApp;
 use crate::app::tui::TuiApp;
+use crate::database::connect::add_history;
 use crate::search_engine::link::PageSource;
 use crate::search_engine::scrape::format_url;
 use crate::tui::page_content::create_widgets;
@@ -65,7 +66,10 @@ impl PageViewer for TextApp {
         match pages {
             [page, ..] => {
                 let content = page.extract.get_plain_text(&page.link);
-                println!("{}", content);
+                if page.tracked {
+                    add_history(&page.link).unwrap_or_else(|err| eprintln!("{}", err));
+                }
+                println!("{content}");
             }
             [] => eprintln!("No links found, no error detected."),
         }
