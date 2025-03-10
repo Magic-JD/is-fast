@@ -28,7 +28,12 @@ pub fn prepare_pages(args: Cli) -> Result<Vec<PageSource>, IsError> {
         });
     }
     if let Some(search_term) = args.query.map(|query| query.join(" ")) {
-        let links_result = find_links(&search_term);
+        let site = args
+            .site
+            .or_else(|| Config::get_site().clone())
+            .map(|s| format!("site:{s}"))
+            .unwrap_or_default();
+        let links_result = find_links(&format!("{search_term}{site}"));
         let new_pages: Vec<PageSource> = links_result.map(|links| {
             links
                 .into_iter()

@@ -44,6 +44,10 @@ pub struct Cli {
     )]
     pub(crate) selector: Option<String>,
 
+    /// Search only a specific site.
+    #[arg(long = "site", help = "Show results only from site.")]
+    pub(crate) site: Option<String>,
+
     /// Show previously viewed pages.
     #[arg(long = "history", help = "Show previously viewed pages")]
     pub(crate) history: bool,

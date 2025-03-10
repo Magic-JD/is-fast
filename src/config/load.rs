@@ -65,6 +65,8 @@ struct HistorySection {
 struct SearchSection {
     #[serde(default)]
     engine: Option<String>,
+    #[serde(default)]
+    site: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -112,6 +114,7 @@ pub struct Config {
     search_type: AtomKind,
     search_engine: SearchEngine,
     open_tool: Option<String>,
+    site: Option<String>,
 }
 
 impl Config {
@@ -198,10 +201,15 @@ impl Config {
             search_engine: to_search_engine(
                 &config
                     .search
-                    .and_then(|search| search.engine)
+                    .as_ref()
+                    .and_then(|search| search.engine.clone())
                     .unwrap_or_default(),
             ),
             open_tool: config.misc.and_then(|misc| misc.open_tool).clone(),
+            site: config
+                .search
+                .as_ref()
+                .and_then(|search| search.site.clone()),
         }
     }
 
@@ -268,6 +276,10 @@ impl Config {
 
     pub fn get_open_command() -> &'static Option<String> {
         &CONFIG.open_tool
+    }
+
+    pub fn get_site() -> &'static Option<String> {
+        &CONFIG.site
     }
 }
 
@@ -361,14 +373,17 @@ fn override_defaults(config: &mut RawConfig, u_config: RawConfig) {
         }
     }
 
-    let mut search = config
-        .search
-        .take()
-        .unwrap_or(SearchSection { engine: None });
+    let mut search = config.search.take().unwrap_or(SearchSection {
+        engine: None,
+        site: None,
+    });
 
     if let Some(u_search) = u_config.search {
         if let Some(engine) = u_search.engine {
             search.engine = Some(engine);
+        }
+        if let Some(site) = u_search.site {
+            search.site = Some(site);
         }
     }
 

@@ -168,6 +168,9 @@ search_type = "fuzzy"
 # To add a custom search engine, fork the repository and follow the
 # instructions in src/search/search_type.rs.
 engine = "duckduckgo"
+# Uncommnt to restrict search results to only the given domain. Only compatable with duckduckgo search.
+# Can be overriden with the --site flag.
+# site = "domain.name.org"
 
 [misc]
 # open_tool = "firefox" # Uses system open as default, only uncomment if you want to override this behaviour
