@@ -1,3 +1,5 @@
-# Unreleased
----
-FEAT - Add CHANGELOG.md for automating updating the release notes.
+# Changelog
+
+## [0.8.4] - 2025-03-11
+### Fixed
+- Automated changelog and release notes 🤞
