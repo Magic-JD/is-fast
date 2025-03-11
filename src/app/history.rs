@@ -46,7 +46,7 @@ impl HistoryViewer for TuiApp {
                     )
                     .map(|link| PageSource {
                         link,
-                        extract: PageExtractor::from_url(),
+                        extract: PageExtractor::from_url(Config::get_color_mode().clone()),
                         tracked: true,
                     });
                 }

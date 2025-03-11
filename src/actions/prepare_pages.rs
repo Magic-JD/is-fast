@@ -11,7 +11,11 @@ pub fn prepare_pages(args: Cli) -> Result<Vec<PageSource>, IsError> {
         let link = link_from_file(args.url, &args.selector, file);
         pages.push(PageSource {
             link,
-            extract: PageExtractor::from_file(),
+            extract: PageExtractor::from_file(
+                args.color
+                    .clone()
+                    .unwrap_or_else(|| Config::get_color_mode().clone()),
+            ),
             tracked: false,
         });
     }
@@ -23,7 +27,11 @@ pub fn prepare_pages(args: Cli) -> Result<Vec<PageSource>, IsError> {
         let link = Link::new(String::default(), url, selection_tag);
         pages.push(PageSource {
             link,
-            extract: PageExtractor::from_url(),
+            extract: PageExtractor::from_url(
+                args.color
+                    .clone()
+                    .unwrap_or_else(|| Config::get_color_mode().clone()),
+            ),
             tracked: false,
         });
     }
@@ -39,7 +47,11 @@ pub fn prepare_pages(args: Cli) -> Result<Vec<PageSource>, IsError> {
                 .into_iter()
                 .map(|link| PageSource {
                     link,
-                    extract: PageExtractor::from_url(),
+                    extract: PageExtractor::from_url(
+                        args.color
+                            .clone()
+                            .unwrap_or_else(|| Config::get_color_mode().clone()),
+                    ),
                     tracked: true,
                 })
                 .collect()
