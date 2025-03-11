@@ -113,6 +113,9 @@ impl HistoryContent<'_> {
     }
 
     pub(crate) fn remove_current(&mut self) {
+        if self.current_history.is_empty() {
+            return;
+        }
         let removed = self
             .current_history
             .remove(self.table_state.selected().unwrap_or(0));
