@@ -1,18 +1,11 @@
 use crate::config::load::DEFAULT_CONFIG_LOCATION;
-use std::env;
 use std::fs;
 
 pub fn run() {
     println!("Generating config file...");
-
-    let config_directory = env::var("XDG_CONFIG_HOME")
-        .map(std::path::PathBuf::from)
-        .or_else(|_| {
-            dirs::config_dir().ok_or_else(|| "Could not determine config directory".to_string())
-        });
-
+    let config_directory = dirs::config_dir();
     match config_directory {
-        Ok(config_dir) => {
+        Some(config_dir) => {
             let is_fast_dir = config_dir.join("is-fast");
             let config_path = is_fast_dir.join("config.toml");
 
@@ -31,8 +24,8 @@ pub fn run() {
                     |()| println!("Config file generated at {config_path:?}"),
                 );
         }
-        Err(e) => {
-            println!("{e}");
+        None => {
+            println!("Could not determine config directory");
         }
     }
 }
@@ -40,21 +33,30 @@ pub fn run() {
 mod tests {
     use super::*;
     use serial_test::serial;
+    use std::env;
+    use std::path::PathBuf;
     use tempfile::TempDir;
 
     #[test]
     #[serial]
     fn test_run_creates_config_file() {
-        use std::env;
-
         let temp_dir = TempDir::new().expect("Failed to create temp dir");
-        let fake_home = temp_dir.path();
 
-        env::set_var("XDG_CONFIG_HOME", fake_home);
+        let fake_home = convert_to_canon(temp_dir);
+
+        env::set_var("XDG_CONFIG_HOME", &fake_home);
         run();
 
         let config_path = fake_home.join("is-fast/config.toml");
         assert!(config_path.exists(), "Config file should be created");
+    }
+
+    fn convert_to_canon(temp_dir: TempDir) -> PathBuf {
+        if temp_dir.path().is_relative() {
+            fs::canonicalize(temp_dir.path()).expect("Failed to canonicalize temp dir")
+        } else {
+            temp_dir.path().to_path_buf()
+        }
     }
 
     #[test]
