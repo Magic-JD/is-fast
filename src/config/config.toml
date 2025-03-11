@@ -148,6 +148,8 @@ text_color = "#74c7ec"
 # Sets the type of search - valid options Fuzzy | Substring | Exact.
 # Defaults to fuzzy.
 search_type = "fuzzy"
+# Set this to `false` to stop tracking the sites you have visited.
+enabled = true
 
 # Search settings.
 [search]

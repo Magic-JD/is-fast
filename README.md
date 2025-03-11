@@ -349,6 +349,10 @@ Determines the type of search used for history entries. Available options:
 - `substring` - Matches substrings exactly.
 - `exact` - Requires an exact match.
 
+### Enabled
+
+Set this to `false` to stop tracking the sites you have visited.
+
 ### Example:
 
 ```toml
@@ -358,6 +362,7 @@ url_color = "rgb(186, 194, 222)"
 time_color = "rgb(242, 205, 205)"
 text_color = "rgb(116, 199, 236)"
 search_type = "fuzzy"
+enabled = false # Not currently tracking your history.
 ```
 
 ## 🔍 Search Configuration
@@ -509,8 +514,8 @@ is-fast -f example.html -u example.com
 Instead of rendering the content inside the TUI viewer, `is-fast` provides an option to output the processed result
 directly to **standard output (stdout)**. This allows you to **pipe the output** to other commands or **write it to a
 file**. This can be directly invoked using the `--piped` command in the case that you just want to print to stdout, or 
-added implicitly in the case that the output is not the terminal. The result is always plain text, but otherwise with
-the formatting you would see in the TUI.
+added implicitly in the case that the output is not the terminal. The result is in plain text unless `--color=always` 
+is applied, but otherwise with the formatting you would see in the TUI.
 
 ## Output type
 
@@ -564,8 +569,10 @@ rather than an interactive TUI viewer.
 **Show previously viewed pages.**
 
 If this option is provided, `is-fast` will display a list of previously visited webpages, numbered with the most recent
-entries at the bottom. You can scroll up and down and select to open. The entries are stored locally in a SQLlite
-database.
+entries at the bottom. You can scroll up and down and select to open. The entries are stored locally in a SQLite
+database. If you don't wish for your sites to be tracked, then you can switch this feature off in the Configuration. 
+The argument will still show your current history, but new searches will not add to your history. You can delete 
+from your history by using the delete key in the history view.
 
 #### Example Usage:
 

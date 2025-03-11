@@ -64,6 +64,8 @@ struct HistorySection {
     text_color: Option<String>,
     #[serde(default)]
     search_type: Option<String>,
+    #[serde(default)]
+    enabled: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -122,6 +124,7 @@ pub struct Config {
     site: Option<String>,
     scroll: Scroll,
     color_mode: ColorMode,
+    history_enabled: bool,
 }
 
 impl Config {
@@ -203,7 +206,8 @@ impl Config {
             search_type: to_atom_kind(
                 &config
                     .history
-                    .and_then(|history| history.search_type)
+                    .as_ref()
+                    .and_then(|history| history.search_type.clone())
                     .unwrap_or_default(),
             ),
             search_engine: to_search_engine(
@@ -232,6 +236,11 @@ impl Config {
                     .and_then(|display| display.color_mode.clone())
                     .unwrap_or_default(),
             ),
+            history_enabled: config
+                .history
+                .as_ref()
+                .and_then(|history| history.enabled)
+                .unwrap_or(true),
         }
     }
 
@@ -310,6 +319,10 @@ impl Config {
 
     pub fn get_color_mode() -> &'static ColorMode {
         &CONFIG.color_mode
+    }
+
+    pub fn get_history_enabled() -> &'static bool {
+        &CONFIG.history_enabled
     }
 }
 
@@ -411,6 +424,7 @@ fn override_defaults(config: &mut RawConfig, u_config: RawConfig) {
         time_color: None,
         text_color: None,
         search_type: None,
+        enabled: None,
     });
 
     if let Some(u_history) = u_config.history {
@@ -428,6 +442,9 @@ fn override_defaults(config: &mut RawConfig, u_config: RawConfig) {
         }
         if let Some(search_type) = u_history.search_type {
             history.search_type = Some(search_type);
+        }
+        if let Some(enabled) = u_history.enabled {
+            history.enabled = Some(enabled);
         }
     }
 
@@ -704,6 +721,7 @@ mod tests {
                 time_color: Some("gray".to_string()),
                 text_color: Some("white".to_string()),
                 search_type: Some("fuzzy".to_string()),
+                enabled: None,
             }),
             search: None,
             misc: None,
@@ -736,6 +754,7 @@ mod tests {
                 time_color: Some("black".to_string()),
                 text_color: None,
                 search_type: Some("fuzzy".to_string()),
+                enabled: None,
             }),
             search: None,
             misc: None,

@@ -7,6 +7,7 @@ use crate::transform::page::PageExtractor;
 
 pub fn prepare_pages(args: Cli) -> Result<Vec<PageSource>, IsError> {
     let mut pages = vec![];
+    let history_enabled = Config::get_history_enabled();
     if let Some(file) = args.file {
         let link = link_from_file(args.url, &args.selector, file);
         pages.push(PageSource {
@@ -16,7 +17,7 @@ pub fn prepare_pages(args: Cli) -> Result<Vec<PageSource>, IsError> {
                     .clone()
                     .unwrap_or_else(|| Config::get_color_mode().clone()),
             ),
-            tracked: false,
+            tracked: false, // Must check history enabled if this changes.
         });
     }
     for url in args.direct {
@@ -32,7 +33,7 @@ pub fn prepare_pages(args: Cli) -> Result<Vec<PageSource>, IsError> {
                     .clone()
                     .unwrap_or_else(|| Config::get_color_mode().clone()),
             ),
-            tracked: false,
+            tracked: false, // Must check history enabled if this changes.
         });
     }
     if let Some(search_term) = args.query.map(|query| query.join(" ")) {
@@ -52,7 +53,7 @@ pub fn prepare_pages(args: Cli) -> Result<Vec<PageSource>, IsError> {
                             .clone()
                             .unwrap_or_else(|| Config::get_color_mode().clone()),
                     ),
-                    tracked: true,
+                    tracked: *history_enabled,
                 })
                 .collect()
         })?;
