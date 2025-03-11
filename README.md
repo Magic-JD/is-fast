@@ -86,6 +86,7 @@ cargo install --git https://github.com/Magic-JD/is-fast.git
 - [🔑 Customizing your results](#-customizing-your-results)
   - [`--selector`](#--selector-s)
   - [`--site`](#--site)
+  - [`--color`](#--color)
 
 ---
 
@@ -307,6 +308,10 @@ A percentage of the page width that should be empty on either side.
 
 The amount that page down/page up should scroll you. Default to full page. Valid values are `full`, `half` and a numerical value, which will scroll that number of lines.
 
+### Color Mode
+
+This sets when color should be shown. The default behavior is for it to show in the TUI but not in the `--piped` or redirected output. Possible values are `tui` `never` and `always`. This can be overriden by applying the `--color` flag when running `is-fast`
+
 ### Example:
 
 ```toml
@@ -314,6 +319,7 @@ The amount that page down/page up should scroll you. Default to full page. Valid
 border_color = "#74c7ec"
 page_margin = 10
 scroll = "10"
+color_mode = "always"
 ```
 
 ## 🕰️ History Settings
@@ -585,4 +591,12 @@ This will restrict the search to only the given domain.
 
 ```sh
 is-fast --site "en.wikipedia.org" "Rust programming language"
+```
+
+### `--color`
+
+This allows the caller to specify the color mode. Default value is `tui`, which will only show color in the TUI mode. However it can also be set to `never` and `always`
+
+```sh
+is-fast --color=always "How to do a for loop in rust" | bat # Will output to bat with full colors
 ```

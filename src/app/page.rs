@@ -74,10 +74,10 @@ impl PageViewer for TextApp {
     fn show_pages(&mut self, pages: &[PageSource]) {
         match pages {
             [page, ..] => {
-                let content = page.extract.get_plain_text(&page.link);
                 if page.tracked {
                     add_history(&page.link).unwrap_or_else(|err| eprintln!("{err}"));
                 }
+                let content = page.extract.get_text(&page.link);
                 println!("{content}");
             }
             [] => eprintln!("No links found, no error detected."),

@@ -1105,7 +1105,7 @@ dependencies = [
 
 [[package]]
 name = "is-fast"
-version = "0.7.2"
+version = "0.8.0"
 dependencies = [
  "atty",
  "chrono",
@@ -1117,6 +1117,7 @@ dependencies = [
  "dirs",
  "enum_dispatch",
  "globset",
+ "nu-ansi-term",
  "nucleo-matcher",
  "once_cell",
  "open",
@@ -1313,6 +1314,15 @@ name = "new_debug_unreachable"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "650eef8c711430f1a879fdd01d4745a7deea475becfb90269c06775983bbf086"
+
+[[package]]
+name = "nu-ansi-term"
+version = "0.50.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d4a28e057d01f97e61255210fcff094d74ed0466038633e95017f5beb68e4399"
+dependencies = [
+ "windows-sys 0.52.0",
+]
 
 [[package]]
 name = "nucleo-matcher"

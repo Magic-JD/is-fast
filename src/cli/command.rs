@@ -1,4 +1,11 @@
-use clap::{ArgAction, Parser};
+use clap::{ArgAction, Parser, ValueEnum};
+
+#[derive(Debug, Clone, ValueEnum)]
+pub enum ColorMode {
+    Tui,
+    Always,
+    Never,
+}
 
 /// is-fast - Internet Search Fast from the Terminal
 ///
@@ -55,4 +62,7 @@ pub struct Cli {
     /// Generate a default configuration file if one doesn't already exist.
     #[arg(long, action = ArgAction::SetTrue, help = "Generate a default configuration file")]
     pub(crate) generate_config: bool,
+
+    #[arg(long, value_enum, help = "Set color mode (tui, always, never)")]
+    pub color: Option<ColorMode>,
 }

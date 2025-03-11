@@ -1,3 +1,4 @@
+use crate::cli::command::ColorMode;
 use crate::search_engine::search_type::SearchEngine;
 use crate::search_engine::search_type::SearchEngine::{DuckDuckGo, Google, Kagi};
 use globset::{Glob, GlobSet, GlobSetBuilder};
@@ -47,6 +48,8 @@ struct DisplaySection {
     page_margin: Option<u16>,
     #[serde(default)]
     scroll: Option<String>,
+    #[serde(default)]
+    color_mode: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -118,6 +121,7 @@ pub struct Config {
     open_tool: Option<String>,
     site: Option<String>,
     scroll: Scroll,
+    color_mode: ColorMode,
 }
 
 impl Config {
@@ -217,7 +221,15 @@ impl Config {
             scroll: convert_to_scroll(
                 config
                     .display
+                    .as_ref()
                     .and_then(|display| display.scroll.clone())
+                    .unwrap_or_default(),
+            ),
+            color_mode: convert_to_color_mode(
+                config
+                    .display
+                    .as_ref()
+                    .and_then(|display| display.color_mode.clone())
                     .unwrap_or_default(),
             ),
         }
@@ -295,6 +307,19 @@ impl Config {
     pub fn get_scroll() -> &'static Scroll {
         &CONFIG.scroll
     }
+
+    pub fn get_color_mode() -> &'static ColorMode {
+        &CONFIG.color_mode
+    }
+}
+
+fn convert_to_color_mode(color_mode: String) -> ColorMode {
+    match color_mode.to_lowercase().as_str() {
+        "tui" => ColorMode::Tui,
+        "always" => ColorMode::Always,
+        "never" => ColorMode::Never,
+        _ => ColorMode::Tui,
+    }
 }
 
 fn convert_to_scroll(scroll: String) -> Scroll {
@@ -361,6 +386,7 @@ fn override_defaults(config: &mut RawConfig, u_config: RawConfig) {
         border_color: None,
         page_margin: None,
         scroll: None,
+        color_mode: None,
     });
     if let Some(u_display) = u_config.display {
         if let Some(border_color) = u_display.border_color {
@@ -373,6 +399,9 @@ fn override_defaults(config: &mut RawConfig, u_config: RawConfig) {
         }
         if let Some(scroll) = u_display.scroll {
             display.scroll = Some(scroll);
+        }
+        if let Some(color_mode) = u_display.color_mode {
+            display.color_mode = Some(color_mode);
         }
     }
 
@@ -667,6 +696,7 @@ mod tests {
                 border_color: Some("green".to_string()),
                 page_margin: Some(3),
                 scroll: None,
+                color_mode: None,
             }),
             history: Some(HistorySection {
                 title_color: Some("blue".to_string()),
@@ -698,6 +728,7 @@ mod tests {
                 border_color: Some("yellow".to_string()),
                 page_margin: Some(5),
                 scroll: None,
+                color_mode: None,
             }),
             history: Some(HistorySection {
                 title_color: Some("red".to_string()),
