@@ -2,13 +2,14 @@ use crate::app::enum_values::PageViewer;
 use crate::app::event_loop::{page_event_loop, PageAction};
 use crate::app::text::TextApp;
 use crate::app::tui::TuiApp;
+use crate::config::load::{Config, Scroll};
 use crate::database::connect::add_history;
 use crate::search_engine::link::PageSource;
 use crate::tui::page_content::PageContent;
 
 impl PageViewer for TuiApp {
     fn show_pages(&mut self, pages: &[PageSource]) {
-        let height = self.display.height();
+        let height = self.display.height() - 2; // Subtract for the border
         let mut scroll: u16 = 0;
         if pages.is_empty() {
             self.display.shutdown();
@@ -42,12 +43,16 @@ impl PageViewer for TuiApp {
                 PageAction::Up => {
                     scroll = scroll.saturating_sub(1);
                 }
-                PageAction::PageUp => {
-                    scroll = scroll.saturating_sub(height / 2);
-                }
-                PageAction::PageDown => {
-                    scroll = scroll.saturating_add(height / 2);
-                }
+                PageAction::PageUp => match Config::get_scroll() {
+                    Scroll::Full => scroll = scroll.saturating_sub(height),
+                    Scroll::Half => scroll = scroll.saturating_sub(height / 2),
+                    Scroll::Discrete(amount) => scroll = scroll.saturating_sub(*amount),
+                },
+                PageAction::PageDown => match Config::get_scroll() {
+                    Scroll::Full => scroll = scroll.saturating_add(height),
+                    Scroll::Half => scroll = scroll.saturating_add(height / 2),
+                    Scroll::Discrete(amount) => scroll = scroll.saturating_add(*amount),
+                },
                 PageAction::Open => {
                     self.open_link(index, pages)
                         .unwrap_or_else(|err| self.display.shutdown_with_error(&err.to_string()));

@@ -45,6 +45,8 @@ struct DisplaySection {
     border_color: Option<String>,
     #[serde(default)]
     page_margin: Option<u16>,
+    #[serde(default)]
+    scroll: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -115,6 +117,7 @@ pub struct Config {
     search_engine: SearchEngine,
     open_tool: Option<String>,
     site: Option<String>,
+    scroll: Scroll,
 }
 
 impl Config {
@@ -165,7 +168,8 @@ impl Config {
                 .unwrap_or_default(),
             border_color: config
                 .display
-                .and_then(|display| display.border_color)
+                .as_ref()
+                .and_then(|display| display.border_color.clone())
                 .map(|color| Style::new().fg(parse_color(&color)))
                 .unwrap_or_default(),
             title_color: config
@@ -210,6 +214,12 @@ impl Config {
                 .search
                 .as_ref()
                 .and_then(|search| search.site.clone()),
+            scroll: convert_to_scroll(
+                config
+                    .display
+                    .and_then(|display| display.scroll.clone())
+                    .unwrap_or_default(),
+            ),
         }
     }
 
@@ -281,6 +291,21 @@ impl Config {
     pub fn get_site() -> &'static Option<String> {
         &CONFIG.site
     }
+
+    pub fn get_scroll() -> &'static Scroll {
+        &CONFIG.scroll
+    }
+}
+
+fn convert_to_scroll(scroll: String) -> Scroll {
+    match scroll.to_lowercase().as_str() {
+        "full" => Scroll::Full,
+        "half" => Scroll::Half,
+        num_str if num_str.parse::<u16>().is_ok() => {
+            Scroll::Discrete(num_str.parse().unwrap_or_default())
+        }
+        _ => Scroll::Full,
+    }
 }
 
 fn generate_globs(config: &mut RawConfig) -> (GlobSet, Vec<Glob>) {
@@ -335,6 +360,7 @@ fn override_defaults(config: &mut RawConfig, u_config: RawConfig) {
     let mut display = config.display.take().unwrap_or(DisplaySection {
         border_color: None,
         page_margin: None,
+        scroll: None,
     });
     if let Some(u_display) = u_config.display {
         if let Some(border_color) = u_display.border_color {
@@ -344,6 +370,9 @@ fn override_defaults(config: &mut RawConfig, u_config: RawConfig) {
             if margin < 50 {
                 display.page_margin = Some(margin);
             }
+        }
+        if let Some(scroll) = u_display.scroll {
+            display.scroll = Some(scroll);
         }
     }
 
@@ -521,6 +550,13 @@ fn to_search_engine(search_engine: &str) -> SearchEngine {
     }
 }
 
+#[derive(Debug)]
+pub enum Scroll {
+    Full,
+    Half,
+    Discrete(u16),
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -630,6 +666,7 @@ mod tests {
             display: Some(DisplaySection {
                 border_color: Some("green".to_string()),
                 page_margin: Some(3),
+                scroll: None,
             }),
             history: Some(HistorySection {
                 title_color: Some("blue".to_string()),
@@ -660,6 +697,7 @@ mod tests {
             display: Some(DisplaySection {
                 border_color: Some("yellow".to_string()),
                 page_margin: Some(5),
+                scroll: None,
             }),
             history: Some(HistorySection {
                 title_color: Some("red".to_string()),

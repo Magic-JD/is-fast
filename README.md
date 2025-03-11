@@ -303,12 +303,17 @@ This sets the border color used in the UI.
 
 A percentage of the page width that should be empty on either side.
 
+### Scroll Amount
+
+The amount that page down/page up should scroll you. Default to full page. Valid values are `full`, `half` and a numerical value, which will scroll that number of lines.
+
 ### Example:
 
 ```toml
 [display]
 border_color = "#74c7ec"
 page_margin = 10
+scroll = "10"
 ```
 
 ## 🕰️ History Settings
