@@ -2,24 +2,29 @@
 # but rather just some examples of neat functions that I put together to show how you could use this tool in your workflow.
 
 # Check stock prices using is-fast. Args must be a stock symbol (e.g. AAPL).
+# Insert the stock symbol into the url
+# Select span elements with the base class
+# We want this output to display directly in the terminal, rather than being shown in the tui so we use --piped.
+# By default these spans are not colored, but if displaying in the terminal it is fine to include ansi-codes
 isf_stock() {
     is-fast \
-        --direct "https://finance.yahoo.com/quote/${1}/" \ # Insert the stock symbol into the url
-        --selector "span.base" \ # Select span elements with the base class
-        --piped \ # We want this output to display directly in the terminal, rather than being shown in the tui.
-        --color=always # By default these spans are not colored, but if displaying in the terminal it is fine to include ansi-codes
+        --direct "https://finance.yahoo.com/quote/${1}/" \
+        --selector "span.base" \
+        --piped \
+        --color=always 
 }
 
 # What is something? Give it a word or a name and it will return the first wikipedia paragraph of that thing. This will work if there is a wikipedia article with that
 # exact name. Works for most people and things. E.g. isf_what albert einstein
 isf_what() {
     is-fast \
-        --direct "en.wikipedia.org/wiki/${*}" \ # Adds all words to the url
-        --selector "div.mw-content-ltr > p" \  # Selects the child p's of div.mw-content-ltr
+        --direct "en.wikipedia.org/wiki/${*}" \
+        --selector "div.mw-content-ltr > p" \
         --color=always \
         --piped \
-        --nth-element 1 # We get the first paragraph with content only 
-        #note: the first paragraph can be achieved with css selectors only, but is sometimes empty on the site - this then avoids any issues with the selected paragraph being empty.)
+        --nth-element 1 
+# We get the first paragraph with content only from the child p's of div.mw-content-ltr
+# note: the first paragraph can be achieved with css selectors only, but is sometimes empty on the site - this then avoids any issues with the selected paragraph being empty.)
 }
 
 # Search stack overflow, showing only the question and answer text. Note must use --last for this, as the history output/order is not deterministic.
