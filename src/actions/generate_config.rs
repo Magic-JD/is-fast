@@ -33,21 +33,30 @@ pub fn run() {
 mod tests {
     use super::*;
     use serial_test::serial;
+    use std::env;
+    use std::path::PathBuf;
     use tempfile::TempDir;
 
     #[test]
     #[serial]
     fn test_run_creates_config_file() {
-        use std::env;
-
         let temp_dir = TempDir::new().expect("Failed to create temp dir");
-        let fake_home = temp_dir.path();
 
-        env::set_var("XDG_CONFIG_HOME", fake_home);
+        let fake_home = convert_to_canon(temp_dir);
+
+        env::set_var("XDG_CONFIG_HOME", &fake_home);
         run();
 
         let config_path = fake_home.join("is-fast/config.toml");
         assert!(config_path.exists(), "Config file should be created");
+    }
+
+    fn convert_to_canon(temp_dir: TempDir) -> PathBuf {
+        if temp_dir.path().is_relative() {
+            fs::canonicalize(temp_dir.path()).expect("Failed to canonicalize temp dir")
+        } else {
+            temp_dir.path().to_path_buf()
+        }
     }
 
     #[test]

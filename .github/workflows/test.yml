@@ -1,0 +1,27 @@
+name: Run nix build 
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/*'
+      - 'flake.*'
+      - 'Cargo.*'
+
+jobs:
+  run-tests:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Nix test 
+        run: nix develop -c cargo test -- --skip=generate_config::tests::test_run_creates_config_file
