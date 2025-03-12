@@ -1,4 +1,3 @@
-use crate::config::load::Config;
 use crate::errors::error::IsError;
 use crate::errors::error::IsError::Selector as SelectorError;
 use crate::search_engine::link::Link;
@@ -31,7 +30,6 @@ impl DuckDuckGoSearch {
                 Link::new(
                     title.text().collect::<Vec<_>>().join(" ").trim().to_owned(),
                     url.clone(),
-                    Config::get_selectors(&url),
                 )
             })
             .collect())

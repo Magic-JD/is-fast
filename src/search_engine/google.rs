@@ -1,4 +1,3 @@
-use crate::config::load::Config;
 use crate::errors::error::IsError;
 use crate::errors::error::IsError::Search as SearchError;
 use crate::search_engine::link::Link;
@@ -54,13 +53,7 @@ impl GoogleSearch {
         search_result
             .items
             .iter()
-            .map(|item| {
-                Link::new(
-                    item.title.clone(),
-                    item.link.clone(),
-                    Config::get_selectors(&item.link),
-                )
-            })
+            .map(|item| Link::new(item.title.clone(), item.link.clone()))
             .collect()
     }
 }

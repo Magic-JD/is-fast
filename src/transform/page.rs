@@ -1,4 +1,5 @@
 use crate::cli::command::ColorMode;
+use crate::config::load::Config;
 use crate::errors::error::IsError;
 use crate::errors::error::IsError::General;
 use crate::search_engine::link::Link;
@@ -11,7 +12,7 @@ use ratatui::style::Style as RatStyle;
 use ratatui::style::{Color as RatColor, Modifier};
 use ratatui::text::Line;
 use ratatui::widgets::Paragraph;
-use scraper::Html;
+use scraper::{ElementRef, Html};
 use std::fs;
 use std::sync::Arc;
 
@@ -21,22 +22,36 @@ type ToHtml = Arc<dyn Fn(&Link) -> Result<String, IsError> + Send + Sync + 'stat
 pub struct PageExtractor {
     pub convert_to_html: ToHtml,
     pub color_mode: ColorMode,
+    pub selector: Option<String>,
+    pub nth_element: Vec<usize>,
 }
 
 impl PageExtractor {
-    pub fn from_url(color_mode: ColorMode) -> Self {
+    pub fn from_url(
+        color_mode: ColorMode,
+        selector: Option<String>,
+        nth_element: Vec<usize>,
+    ) -> Self {
         Self {
             convert_to_html: Arc::new(|link| scrape(&link.url)),
             color_mode,
+            selector,
+            nth_element,
         }
     }
 
-    pub fn from_file(color_mode: ColorMode) -> Self {
+    pub fn from_file(
+        color_mode: ColorMode,
+        selector: Option<String>,
+        nth_element: Vec<usize>,
+    ) -> Self {
         Self {
             convert_to_html: Arc::new(|link| {
                 fs::read_to_string(&link.title).map_err(|e| General(e.to_string()))
             }),
             color_mode,
+            selector,
+            nth_element,
         }
     }
 
@@ -58,8 +73,38 @@ impl PageExtractor {
         (self.convert_to_html)(link)
             .map(|html| PageExtractor::sanitize(&html))
             .map(|res| Html::parse_document(res.as_str()))
-            .and_then(|html| filter(&html, &link.selector).and_then(to_display))
+            .and_then(|html| {
+                filter(
+                    &html,
+                    self.selector
+                        .clone()
+                        .unwrap_or_else(|| Config::get_selectors(&link.url)),
+                )
+                .map(|elements| self.process_elements(elements))
+            })
             .unwrap_or_else(|_| Text::from("Failed to convert to text"))
+    }
+
+    fn process_elements(&self, elements: Vec<ElementRef>) -> Text<'static> {
+        let mut lines: Vec<Vec<Line>> = elements
+            .into_iter()
+            .map(to_display)
+            .filter(|lines| !lines.is_empty())
+            .collect();
+        if !self.nth_element.is_empty() {
+            lines = lines
+                .into_iter()
+                .enumerate()
+                .filter_map(|(index, text_block)| {
+                    if self.nth_element.contains(&(index + 1)) {
+                        Some(text_block)
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<Vec<Line>>>();
+        }
+        Text::from(lines.into_iter().flatten().collect::<Vec<Line>>())
     }
 
     pub fn get_text(&self, link: &Link) -> String {
@@ -137,9 +182,9 @@ mod tests {
     #[test]
     fn test_ansi_text_as_expected() {
         let path_sample = String::from("tests/data/sample.html");
-        let link = Link::new(path_sample, String::default(), String::from("body"));
+        let link = Link::new(path_sample, String::default());
 
-        let ansi_text = PageExtractor::from_file(ColorMode::Always)
+        let ansi_text = PageExtractor::from_file(ColorMode::Always, None, vec![])
             .get_text(&link)
             .to_owned();
 
@@ -154,9 +199,9 @@ mod tests {
     #[test]
     fn test_plain_text_as_expected() {
         let path_sample = String::from("tests/data/sample.html");
-        let link = Link::new(path_sample, String::default(), String::from("body"));
+        let link = Link::new(path_sample, String::default());
 
-        let plain_text = PageExtractor::from_file(ColorMode::Never)
+        let plain_text = PageExtractor::from_file(ColorMode::Never, None, vec![])
             .get_text(&link)
             .to_owned();
 
@@ -171,14 +216,14 @@ mod tests {
     #[test]
     fn test_tui_text_as_expected() {
         let path_sample = String::from("tests/data/sample.html");
-        let link = Link::new(path_sample, String::default(), String::from("body"));
+        let link = Link::new(path_sample, String::default());
 
         let path_output = Path::new("tests/data/expected_text.txt");
         let expected_content = fs::read_to_string(path_output)
             .expect("Failed to read expected text file")
             .to_owned();
 
-        let result = PageExtractor::from_file(ColorMode::Always).get_tui_text(&link);
+        let result = PageExtractor::from_file(ColorMode::Always, None, vec![]).get_tui_text(&link);
 
         let expected_lines: Vec<_> = expected_content.lines().collect();
         let binding = result.to_string();

@@ -1,10 +1,8 @@
 use crate::config::load::Config;
-use crate::errors::error::IsError;
-use crate::errors::error::IsError::General;
 use crate::transform::syntax_highlight::highlight_code;
 use once_cell::sync::Lazy;
 use ratatui::style::{Style, Styled};
-use ratatui::text::{Line, Span, Text};
+use ratatui::text::{Line, Span};
 use scraper::{ElementRef, Node};
 use std::collections::{HashMap, HashSet};
 
@@ -12,17 +10,13 @@ static IGNORED_TAGS: Lazy<&HashSet<String>> = Lazy::new(Config::get_ignored_tags
 static BLOCK_ELEMENTS: Lazy<&HashSet<String>> = Lazy::new(Config::get_block_elements);
 static TAG_STYLES: Lazy<&HashMap<String, Style>> = Lazy::new(Config::get_styles);
 
-pub fn to_display(elements: Vec<ElementRef>) -> Result<Text<'static>, IsError> {
-    let mut lines = elements
+pub fn to_display(element: ElementRef) -> Vec<Line<'static>> {
+    let mut lines = to_lines(element, element.value().name() == "pre")
         .into_iter()
-        .flat_map(|e| to_lines(e, e.value().name() == "pre"))
         .map(standardize_empty)
         .collect::<Vec<Line>>();
     lines.dedup();
-    if lines.is_empty() {
-        return Err(General("No content found".into()));
-    }
-    Ok(Text::from(lines))
+    lines
 }
 
 fn to_lines(element: ElementRef, pre_formatted: bool) -> Vec<Line<'static>> {
@@ -218,7 +212,9 @@ fn merge_with_previous_line(lines: &mut Vec<Line<'static>>, mut new_lines: Vec<L
 mod tests {
     use super::*;
     use ratatui::style::{Color, Modifier};
+    use ratatui::text::Text;
     use scraper::{Html, Selector};
+
     #[test]
     fn test_to_display_simple_html() {
         let html = r#"
@@ -232,8 +228,12 @@ mod tests {
         "#;
 
         let binding = Html::parse_document(html);
-        let select = binding.select(&Selector::parse("body").unwrap()).collect();
-        let result = to_display(select).expect("Expected valid parsed output");
+        let result = Text::from(
+            binding
+                .select(&Selector::parse("body").unwrap())
+                .flat_map(to_display)
+                .collect::<Vec<Line>>(),
+        );
 
         let expected = Text::from(vec![
             Line::default(),
@@ -265,8 +265,12 @@ mod tests {
         "#;
 
         let binding = Html::parse_document(html);
-        let select = binding.select(&Selector::parse("body").unwrap()).collect();
-        let result = to_display(select).expect("Expected valid parsed output");
+        let result = Text::from(
+            binding
+                .select(&Selector::parse("body").unwrap())
+                .flat_map(to_display)
+                .collect::<Vec<Line>>(),
+        );
 
         // Since `highlight_code` transforms the code, we check if the output contains expected text
         assert!(result
@@ -308,14 +312,11 @@ mod tests {
         let html = "<html><body><div style='display: none;'>Hidden</div></body></html>";
 
         let binding = Html::parse_document(html);
-        let select = binding.select(&Selector::parse("body").unwrap()).collect();
-        let result = to_display(select);
-
-        assert!(result.is_err());
-        assert_eq!(
-            result.unwrap_err().to_string(),
-            "General errors: No content found"
-        );
+        let list = binding
+            .select(&Selector::parse("body").unwrap())
+            .flat_map(to_display)
+            .collect::<Vec<Line>>();
+        assert!(list.is_empty());
     }
 
     #[test]
@@ -329,8 +330,12 @@ This is line one.
         "#;
 
         let binding = Html::parse_document(html);
-        let select = binding.select(&Selector::parse("body").unwrap()).collect();
-        let result = to_display(select).unwrap();
+        let result = Text::from(
+            binding
+                .select(&Selector::parse("body").unwrap())
+                .flat_map(to_display)
+                .collect::<Vec<Line>>(),
+        );
 
         let expected = Text::from(vec![
             Line::default(),

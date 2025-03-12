@@ -47,9 +47,16 @@ pub struct Cli {
     #[arg(
         short = 's',
         long = "selector",
-        help = "Use selector overriding existing configuration."
+        help = "Use the given css selector for this query."
     )]
     pub(crate) selector: Option<String>,
+
+    /// Show only the nth elements. Can be specified multiple times.
+    #[arg(
+        long = "nth-element",
+        help = "Show only the nth element with content that matches the provided selector"
+    )]
+    pub(crate) nth_element: Vec<usize>,
 
     /// Search only a specific site.
     #[arg(long = "site", help = "Show results only from site.")]
@@ -58,6 +65,10 @@ pub struct Cli {
     /// Show previously viewed pages.
     #[arg(long = "history", help = "Show previously viewed pages")]
     pub(crate) history: bool,
+
+    /// Show last page.
+    #[arg(long = "last", help = "Show last viewed page")]
+    pub(crate) last: bool,
 
     /// Generate a default configuration file if one doesn't already exist.
     #[arg(long, action = ArgAction::SetTrue, help = "Generate a default configuration file")]

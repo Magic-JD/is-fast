@@ -1,4 +1,3 @@
-use crate::config::load::Config;
 use crate::errors::error::IsError;
 use crate::errors::error::IsError::Scrape;
 use crate::errors::error::IsError::Search as SearchError;
@@ -41,13 +40,7 @@ impl KagiSearch {
             .data
             .iter()
             .filter(|item| item.t == 0)
-            .map(|item| {
-                Link::new(
-                    item.title.clone(),
-                    item.url.clone(),
-                    Config::get_selectors(&item.url),
-                )
-            })
+            .map(|item| Link::new(item.title.clone(), item.url.clone()))
             .collect()
     }
 

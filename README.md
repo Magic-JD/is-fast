@@ -85,9 +85,12 @@ cargo install --git https://github.com/Magic-JD/is-fast.git
     - [`--history`](#--history)
 - [🔑 Customizing your results](#-customizing-your-results)
   - [`--selector`](#--selector-s)
+  - [`--nth-element`](#--nth-element)
   - [`--site`](#--site)
   - [`--color`](#--color)
-
+  - [`--last`](#--last)
+- [Example scripts](#example-scripts)
+- [Contributors](#contributors)
 ---
 
 # Configuration Guide
@@ -592,6 +595,14 @@ Apply the given CSS selector to the page. This will only apply to --file and --d
 is-fast --selector ".interesting" --direct "www.site.com"
 ```
 
+### `--nth-element`
+
+Normally used in conjunction with `--selector` this allows you to only return the nth element that matches that selector.
+
+```sh
+    is-fast --direct "www.example.com/site" --selector "div.sb" --nth-element 1 --nth-element 3 # There are multiple div.sb elements - we only want to see the first and third
+```
+
 ### `--site`
 
 This will restrict the search to only the given domain.
@@ -607,3 +618,38 @@ This allows the caller to specify the color mode. Default value is `tui`, which 
 ```sh
 is-fast --color=always "How to do a for loop in rust" | bat # Will output to bat with full colors
 ```
+
+### `--last`
+
+This will show the last page from your history. History must be enabled and have entries for this flag to work. This is very useful for scripts where a search is involved, as search resuts are non deterministic, so repeating with the same search might lead you to have *different results*.
+
+```sh
+isf_so() {
+    QUESTION=$(is-fast ${*} --site "www.stackoverflow.com" --selector "div.question .js-post-body" --color=always --piped) # Find the question content.
+    ANSWER=$(is-fast --last --selector "div.accepted-answer .js-post-body" --color=always --piped) # Separately find the answer content, using last to ensure the same result is shown.
+    cat << EOF # Format as desired
+QUESTION:
+
+$QUESTION
+
+ANSWER:
+
+$ANSWER
+EOF
+}
+```
+
+# Example scripts
+
+Please see the [scripts](scripts) folder for some fun little functions that show how `is-fast` can be be used in a powerful and flexible way as a cli utility for retrieving information from the web.
+
+## Contributors
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
