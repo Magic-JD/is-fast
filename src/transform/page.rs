@@ -23,27 +23,27 @@ pub struct PageExtractor {
     pub convert_to_html: ToHtml,
     pub color_mode: ColorMode,
     pub selector: Option<String>,
-    pub element_nth: Vec<usize>,
+    pub nth_element: Vec<usize>,
 }
 
 impl PageExtractor {
     pub fn from_url(
         color_mode: ColorMode,
         selector: Option<String>,
-        element_nth: Vec<usize>,
+        nth_element: Vec<usize>,
     ) -> Self {
         Self {
             convert_to_html: Arc::new(|link| scrape(&link.url)),
             color_mode,
             selector,
-            element_nth,
+            nth_element,
         }
     }
 
     pub fn from_file(
         color_mode: ColorMode,
         selector: Option<String>,
-        element_nth: Vec<usize>,
+        nth_element: Vec<usize>,
     ) -> Self {
         Self {
             convert_to_html: Arc::new(|link| {
@@ -51,7 +51,7 @@ impl PageExtractor {
             }),
             color_mode,
             selector,
-            element_nth,
+            nth_element,
         }
     }
 
@@ -91,12 +91,12 @@ impl PageExtractor {
             .map(to_display)
             .filter(|lines| !lines.is_empty())
             .collect();
-        if !self.element_nth.is_empty() {
+        if !self.nth_element.is_empty() {
             lines = lines
                 .into_iter()
                 .enumerate()
                 .filter_map(|(index, text_block)| {
-                    if self.element_nth.contains(&(index + 1)) {
+                    if self.nth_element.contains(&(index + 1)) {
                         Some(text_block)
                     } else {
                         None

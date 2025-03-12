@@ -34,7 +34,7 @@ fn main() {
     let is_piped = args.piped || !is(Stream::Stdout);
     let mut app = App::from_type(is_piped);
     app.loading();
-    if args.history && !args.last {
+    if args.history {
         if let Some(page) = app.show_history() {
             app.show_pages(&[page]);
         }

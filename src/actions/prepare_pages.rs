@@ -18,7 +18,7 @@ pub fn prepare_pages(args: Cli) -> Result<Vec<PageSource>, IsError> {
                         .clone()
                         .unwrap_or_else(|| Config::get_color_mode().clone()),
                     args.selector.clone(),
-                    args.element_nth.clone(),
+                    args.nth_element.clone(),
                 ),
                 tracked: true,
             })
@@ -34,7 +34,7 @@ pub fn prepare_pages(args: Cli) -> Result<Vec<PageSource>, IsError> {
                     .clone()
                     .unwrap_or_else(|| Config::get_color_mode().clone()),
                 args.selector.clone(),
-                args.element_nth.clone(),
+                args.nth_element.clone(),
             ),
             tracked: false, // Must check history enabled if this changes.
         });
@@ -49,7 +49,7 @@ pub fn prepare_pages(args: Cli) -> Result<Vec<PageSource>, IsError> {
                     .clone()
                     .unwrap_or_else(|| Config::get_color_mode().clone()),
                 selection_tag,
-                args.element_nth.clone(),
+                args.nth_element.clone(),
             ),
             tracked: false, // Must check history enabled if this changes.
         });
@@ -71,7 +71,7 @@ pub fn prepare_pages(args: Cli) -> Result<Vec<PageSource>, IsError> {
                             .clone()
                             .unwrap_or_else(|| Config::get_color_mode().clone()),
                         args.selector.clone(),
-                        args.element_nth.clone(),
+                        args.nth_element.clone(),
                     ),
                     tracked: *history_enabled,
                 })

@@ -47,16 +47,16 @@ pub struct Cli {
     #[arg(
         short = 's',
         long = "selector",
-        help = "Use selector overriding existing configuration."
+        help = "Use the given css selector for this query."
     )]
     pub(crate) selector: Option<String>,
 
     /// Show only the nth elements. Can be specified multiple times.
     #[arg(
-        long = "element-nth",
-        help = "Show only the nth matching element with content"
+        long = "nth-element",
+        help = "Show only the nth element with content that matches the provided selector"
     )]
-    pub(crate) element_nth: Vec<usize>,
+    pub(crate) nth_element: Vec<usize>,
 
     /// Search only a specific site.
     #[arg(long = "site", help = "Show results only from site.")]
