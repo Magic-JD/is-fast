@@ -83,6 +83,20 @@ pub fn get_history() -> Result<Vec<HistoryData>, IsError> {
     Ok(history)
 }
 
+pub fn get_latest_history() -> Result<Option<HistoryData>, IsError> {
+    let conn = CONNECTION.lock().map_err(|e| Access(e.to_string()))?;
+    let mut stmt =
+        conn.prepare("SELECT title, url, time FROM history ORDER BY time DESC LIMIT 1")?;
+
+    let mut rows = stmt.query_map([], convert_to_history_data)?;
+
+    if let Some(result) = rows.next().transpose().map_err(DatabaseSql)? {
+        Ok(Some(result))
+    } else {
+        Ok(None) // No history available
+    }
+}
+
 pub fn remove_history(url: &str) -> Result<(), IsError> {
     let conn = CONNECTION.lock().map_err(|e| Access(e.to_string()))?;
     conn.execute("DELETE FROM history WHERE url = ?", [url])

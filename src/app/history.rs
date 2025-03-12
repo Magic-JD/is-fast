@@ -49,7 +49,7 @@ impl HistoryViewer for TuiApp {
                         extract: PageExtractor::from_url(
                             Config::get_color_mode().clone(),
                             None,
-                            None,
+                            vec![],
                         ),
                         tracked: true,
                     });

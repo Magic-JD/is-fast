@@ -12,7 +12,7 @@ use ratatui::style::Style as RatStyle;
 use ratatui::style::{Color as RatColor, Modifier};
 use ratatui::text::Line;
 use ratatui::widgets::Paragraph;
-use scraper::Html;
+use scraper::{ElementRef, Html};
 use std::fs;
 use std::sync::Arc;
 
@@ -23,27 +23,27 @@ pub struct PageExtractor {
     pub convert_to_html: ToHtml,
     pub color_mode: ColorMode,
     pub selector: Option<String>,
-    pub element_separator: Option<char>,
+    pub element_nth: Vec<usize>,
 }
 
 impl PageExtractor {
     pub fn from_url(
         color_mode: ColorMode,
         selector: Option<String>,
-        element_separator: Option<char>,
+        element_nth: Vec<usize>,
     ) -> Self {
         Self {
             convert_to_html: Arc::new(|link| scrape(&link.url)),
             color_mode,
             selector,
-            element_separator,
+            element_nth,
         }
     }
 
     pub fn from_file(
         color_mode: ColorMode,
         selector: Option<String>,
-        element_separator: Option<char>,
+        element_nth: Vec<usize>,
     ) -> Self {
         Self {
             convert_to_html: Arc::new(|link| {
@@ -51,7 +51,7 @@ impl PageExtractor {
             }),
             color_mode,
             selector,
-            element_separator,
+            element_nth,
         }
     }
 
@@ -80,9 +80,31 @@ impl PageExtractor {
                         .clone()
                         .unwrap_or_else(|| Config::get_selectors(&link.url)),
                 )
-                .and_then(|elements| to_display(elements, self.element_separator))
+                .map(|elements| self.process_elements(elements))
             })
             .unwrap_or_else(|_| Text::from("Failed to convert to text"))
+    }
+
+    fn process_elements(&self, elements: Vec<ElementRef>) -> Text<'static> {
+        let mut lines: Vec<Vec<Line>> = elements
+            .into_iter()
+            .map(to_display)
+            .filter(|lines| !lines.is_empty())
+            .collect();
+        if !self.element_nth.is_empty() {
+            lines = lines
+                .into_iter()
+                .enumerate()
+                .filter_map(|(index, text_block)| {
+                    if self.element_nth.contains(&(index + 1)) {
+                        Some(text_block)
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<Vec<Line>>>();
+        }
+        Text::from(lines.into_iter().flatten().collect::<Vec<Line>>())
     }
 
     pub fn get_text(&self, link: &Link) -> String {
@@ -162,7 +184,7 @@ mod tests {
         let path_sample = String::from("tests/data/sample.html");
         let link = Link::new(path_sample, String::default());
 
-        let ansi_text = PageExtractor::from_file(ColorMode::Always, None, None)
+        let ansi_text = PageExtractor::from_file(ColorMode::Always, None, vec![])
             .get_text(&link)
             .to_owned();
 
@@ -179,7 +201,7 @@ mod tests {
         let path_sample = String::from("tests/data/sample.html");
         let link = Link::new(path_sample, String::default());
 
-        let plain_text = PageExtractor::from_file(ColorMode::Never, None, None)
+        let plain_text = PageExtractor::from_file(ColorMode::Never, None, vec![])
             .get_text(&link)
             .to_owned();
 
@@ -201,7 +223,7 @@ mod tests {
             .expect("Failed to read expected text file")
             .to_owned();
 
-        let result = PageExtractor::from_file(ColorMode::Always, None, None).get_tui_text(&link);
+        let result = PageExtractor::from_file(ColorMode::Always, None, vec![]).get_tui_text(&link);
 
         let expected_lines: Vec<_> = expected_content.lines().collect();
         let binding = result.to_string();

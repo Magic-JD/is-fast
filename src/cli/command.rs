@@ -51,8 +51,12 @@ pub struct Cli {
     )]
     pub(crate) selector: Option<String>,
 
-    #[arg(long = "element-separator", help = "Show a separator between elements")]
-    pub(crate) element_separator: Option<char>,
+    /// Show only the nth elements. Can be specified multiple times.
+    #[arg(
+        long = "element-nth",
+        help = "Show only the nth matching element with content"
+    )]
+    pub(crate) element_nth: Vec<usize>,
 
     /// Search only a specific site.
     #[arg(long = "site", help = "Show results only from site.")]
@@ -61,6 +65,10 @@ pub struct Cli {
     /// Show previously viewed pages.
     #[arg(long = "history", help = "Show previously viewed pages")]
     pub(crate) history: bool,
+
+    /// Show last page.
+    #[arg(long = "last", help = "Show last viewed page")]
+    pub(crate) last: bool,
 
     /// Generate a default configuration file if one doesn't already exist.
     #[arg(long, action = ArgAction::SetTrue, help = "Generate a default configuration file")]
