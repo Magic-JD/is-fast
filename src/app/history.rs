@@ -46,7 +46,11 @@ impl HistoryViewer for TuiApp {
                     )
                     .map(|link| PageSource {
                         link,
-                        extract: PageExtractor::from_url(Config::get_color_mode().clone()),
+                        extract: PageExtractor::from_url(
+                            Config::get_color_mode().clone(),
+                            None,
+                            None,
+                        ),
                         tracked: true,
                     });
                 }
@@ -85,11 +89,5 @@ fn current_link(history: &[HistoryData], state: &TableState) -> Option<Link> {
         .iter()
         .collect::<Vec<_>>()
         .get(idx)
-        .map(|history_data| {
-            Link::new(
-                history_data.title.clone(),
-                history_data.url.clone(),
-                Config::get_selectors(&history_data.url),
-            )
-        })
+        .map(|history_data| Link::new(history_data.title.clone(), history_data.url.clone()))
 }

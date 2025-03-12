@@ -51,6 +51,9 @@ pub struct Cli {
     )]
     pub(crate) selector: Option<String>,
 
+    #[arg(long = "element-separator", help = "Show a separator between elements")]
+    pub(crate) element_separator: Option<char>,
+
     /// Search only a specific site.
     #[arg(long = "site", help = "Show results only from site.")]
     pub(crate) site: Option<String>,

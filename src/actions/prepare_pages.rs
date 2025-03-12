@@ -9,29 +9,31 @@ pub fn prepare_pages(args: Cli) -> Result<Vec<PageSource>, IsError> {
     let mut pages = vec![];
     let history_enabled = Config::get_history_enabled();
     if let Some(file) = args.file {
-        let link = link_from_file(args.url, &args.selector, file);
+        let url = args.url.unwrap_or_else(|| file.clone());
+        let link = Link::new(file, url);
         pages.push(PageSource {
             link,
             extract: PageExtractor::from_file(
                 args.color
                     .clone()
                     .unwrap_or_else(|| Config::get_color_mode().clone()),
+                args.selector.clone(),
+                args.element_separator,
             ),
             tracked: false, // Must check history enabled if this changes.
         });
     }
     for url in args.direct {
-        let selection_tag = args
-            .selector
-            .clone()
-            .unwrap_or_else(|| Config::get_selectors(&url));
-        let link = Link::new(String::default(), url, selection_tag);
+        let selection_tag = args.selector.clone();
+        let link = Link::new(String::default(), url);
         pages.push(PageSource {
             link,
             extract: PageExtractor::from_url(
                 args.color
                     .clone()
                     .unwrap_or_else(|| Config::get_color_mode().clone()),
+                selection_tag,
+                args.element_separator,
             ),
             tracked: false, // Must check history enabled if this changes.
         });
@@ -52,6 +54,8 @@ pub fn prepare_pages(args: Cli) -> Result<Vec<PageSource>, IsError> {
                         args.color
                             .clone()
                             .unwrap_or_else(|| Config::get_color_mode().clone()),
+                        args.selector.clone(),
+                        args.element_separator,
                     ),
                     tracked: *history_enabled,
                 })
@@ -62,12 +66,4 @@ pub fn prepare_pages(args: Cli) -> Result<Vec<PageSource>, IsError> {
         }
     }
     Ok(pages)
-}
-
-fn link_from_file(url: Option<String>, selector: &Option<String>, file: String) -> Link {
-    let url = url.unwrap_or_else(|| file.clone());
-    let selection_tag = selector
-        .clone()
-        .unwrap_or_else(|| Config::get_selectors(&url));
-    Link::new(file, url, selection_tag)
 }

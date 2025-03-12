@@ -12,10 +12,21 @@ static IGNORED_TAGS: Lazy<&HashSet<String>> = Lazy::new(Config::get_ignored_tags
 static BLOCK_ELEMENTS: Lazy<&HashSet<String>> = Lazy::new(Config::get_block_elements);
 static TAG_STYLES: Lazy<&HashMap<String, Style>> = Lazy::new(Config::get_styles);
 
-pub fn to_display(elements: Vec<ElementRef>) -> Result<Text<'static>, IsError> {
+pub fn to_display(
+    elements: Vec<ElementRef>,
+    element_separator: Option<char>,
+) -> Result<Text<'static>, IsError> {
     let mut lines = elements
         .into_iter()
-        .flat_map(|e| to_lines(e, e.value().name() == "pre"))
+        .flat_map(|e| {
+            let mut lines = to_lines(e, e.value().name() == "pre");
+            if let Some(separator) = &element_separator {
+                lines.push(Line::from(
+                    String::from_utf16(&[*separator as u16; 50]).unwrap_or_default(),
+                ));
+            }
+            lines
+        })
         .map(standardize_empty)
         .collect::<Vec<Line>>();
     lines.dedup();
@@ -233,7 +244,7 @@ mod tests {
 
         let binding = Html::parse_document(html);
         let select = binding.select(&Selector::parse("body").unwrap()).collect();
-        let result = to_display(select).expect("Expected valid parsed output");
+        let result = to_display(select, None).expect("Expected valid parsed output");
 
         let expected = Text::from(vec![
             Line::default(),
@@ -266,7 +277,7 @@ mod tests {
 
         let binding = Html::parse_document(html);
         let select = binding.select(&Selector::parse("body").unwrap()).collect();
-        let result = to_display(select).expect("Expected valid parsed output");
+        let result = to_display(select, None).expect("Expected valid parsed output");
 
         // Since `highlight_code` transforms the code, we check if the output contains expected text
         assert!(result
@@ -309,7 +320,7 @@ mod tests {
 
         let binding = Html::parse_document(html);
         let select = binding.select(&Selector::parse("body").unwrap()).collect();
-        let result = to_display(select);
+        let result = to_display(select, None);
 
         assert!(result.is_err());
         assert_eq!(
@@ -330,7 +341,7 @@ This is line one.
 
         let binding = Html::parse_document(html);
         let select = binding.select(&Selector::parse("body").unwrap()).collect();
-        let result = to_display(select).unwrap();
+        let result = to_display(select, None).unwrap();
 
         let expected = Text::from(vec![
             Line::default(),
