@@ -4,10 +4,10 @@ on:
   push:
     branches:
       - main
-    # paths:
-    #   - 'src/*'
-    #   - 'flake.*'
-    #   - 'Cargo.*'
+    paths:
+      - 'src/*'
+      - 'flake.*'
+      - 'Cargo.*'
 
 jobs:
   run-tests:
