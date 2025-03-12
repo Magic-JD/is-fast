@@ -14,7 +14,7 @@ isf_what() {
         --selector "div.mw-content-ltr > p" \
         --color=always \
         --piped \
-        --element-nth 1
+        --nth-element 1
 }
 
 # Search stack overflow, showing only the question and answer text. Note must use --last for this, as the history output/order is not deterministic.
@@ -37,7 +37,7 @@ isf_define() {
     is-fast \
         --direct "www.merriam-webster.com/dictionary/${1}" \
         --selector "div.sb" \
-        --element-nth 1 \
+        --nth-element 1 \
         --color=always \
         --piped
 }
