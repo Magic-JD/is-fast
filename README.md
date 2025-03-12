@@ -6,6 +6,7 @@ results, and view content seamlessly in the terminal. It supports custom configu
 and syntax highlighting, and allows direct URL viewing, local HTML file rendering, and history tracking. is-fast is
 fast, lightweight, and perfect for developers and terminal enthusiasts.
 
+
 This tool makes **searching from the terminal fast and simple!** 🚀
 
 ![demo](demos/main_demo.gif)
