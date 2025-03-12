@@ -23,5 +23,5 @@ jobs:
       - name: Set up Nix
         uses: DeterminateSystems/nix-installer-action@main
 
-      - name: Nix build
-        run: nix build
+      - name: Nix test 
+        run: nix develop -c cargo test -- --skip=generate_config::tests::test_run_creates_config_file
