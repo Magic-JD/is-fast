@@ -607,3 +607,14 @@ This allows the caller to specify the color mode. Default value is `tui`, which 
 ```sh
 is-fast --color=always "How to do a for loop in rust" | bat # Will output to bat with full colors
 ```
+
+## Contributors
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
