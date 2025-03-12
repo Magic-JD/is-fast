@@ -1,5 +1,21 @@
 {
   "projectName": "is-fast",
-  "projectOwner": "magic-jd"
+  "projectOwner": "Magic-JD",
+  "files": [
+    "README.md"
+  ],
+  "commitType": "docs",
+  "commitConvention": "angular",
+  "contributorsPerLine": 7,
+  "contributors": [
+    {
+      "login": "pwnwriter",
+      "name": "Nabeen Tiwaree",
+      "avatar_url": "https://avatars.githubusercontent.com/u/90331517?v=4",
+      "profile": "http://pwnwriter.me",
+      "contributions": [
+        "platform"
+      ]
+    }
+  ]
 }
-
