@@ -11,6 +11,7 @@ isf_stock() {
         --direct "https://finance.yahoo.com/quote/${1}/" \
         --selector "span.base" \
         --piped \
+        --no-cache \
         --color=always 
 }
 

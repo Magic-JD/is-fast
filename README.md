@@ -6,7 +6,6 @@ results, and view content seamlessly in the terminal. It supports custom configu
 and syntax highlighting, and allows direct URL viewing, local HTML file rendering, and history tracking. is-fast is
 fast, lightweight, and perfect for developers and terminal enthusiasts.
 
-
 This tool makes **searching from the terminal fast and simple!** 🚀
 
 ![demo](demos/main_demo.gif)
@@ -572,11 +571,7 @@ rather than an interactive TUI viewer.
 
 **Show previously viewed pages.**
 
-If this option is provided, `is-fast` will display a list of previously visited webpages, numbered with the most recent
-entries at the bottom. You can scroll up and down and select to open. The entries are stored locally in a SQLite
-database. If you don't wish for your sites to be tracked, then you can switch this feature off in the Configuration. 
-The argument will still show your current history, but new searches will not add to your history. You can delete 
-from your history by using the delete key in the history view.
+If this option is provided, `is-fast` will display a list of previously visited webpages, numbered with the most recent entries at the bottom. You can scroll up and down and select to open. The entries are stored locally in a SQLite database. If you don't wish for your sites to be tracked, then you can switch this feature off in the Configuration. The argument will still show your current history, but new searches will not add to your history. You can delete from your history by using the delete key in the history view, or by running the command `--clear-history`.
 
 #### Example Usage:
 
@@ -584,7 +579,114 @@ from your history by using the delete key in the history view.
 is-fast --history
 ```
 
+### `--last`
+
+This will show the last page from your history. History must be enabled and have entries for this flag to work. This is very useful for scripts where a search is involved, as search resuts are non deterministic, so repeating with the same search might lead you to have *different results*.
+
+#### Example Usage in a script:
+
+```sh
+isf_so() {
+    QUESTION=$(is-fast ${*} --site "www.stackoverflow.com" --selector "div.question .js-post-body" --color=always --flash-cache --piped) # Find the question content.
+    ANSWER=$(is-fast --last --selector "div.accepted-answer .js-post-body" --color=always --flash-cache --piped) # Separately find the answer content, using last to ensure the same result is shown.
+    cat << EOF # Format as desired
+QUESTION:
+
+$QUESTION
+
+ANSWER:
+
+$ANSWER
+EOF
+}
+```
+
+### `--no-history`
+
+When this flag is used with a search command will not log history for that request.
+
+#### Example Usage:
+
+```sh
+is-fast --no-history "how to deal with an obnoxious boss"
+```
+
 ---
+
+# ⚡ Caching in `is-fast`
+
+`is-fast` includes an optional caching system to speed up the loading of static pages when revisiting them. By default, caching is disabled, but you can enable it and configure its behavior. The default behaviour of the cache when enabled is to have a TTL of 5 minutes, and a max cache size of 1000. When testing the average size of 1000 results was around 23MB, but this will vary depending on the size of the html you are processing.
+
+As the vast majority of the time is-fast spends is waiting for the results of the webscraping to be returned, when a cache hit occurs the result is basically instant. This is very useful if you are reading a little, closing the program, making some changes, then coming back to the same result.
+
+### `--cache` 
+
+This will cache the result even if caching is normally disabled.
+
+#### Example Usage:
+
+```sh
+is-fast --cache "Java how to use entity manager"
+```
+
+### `--no-cache`
+
+This will not cache the result even if caching is normally enabled.
+
+#### Example Usage:
+
+```sh
+is-fast --no-cache --direct "www.football.com/live/game" --selector "div.scores"
+```
+
+### `--flash-cache`
+
+This uses a special mode where the cache size is maximum for the duration of the request, but the TTL is only 5 seconds. This is useful for scripting, where you want temporary caching without filling your cache.
+
+#### Example Usage:
+
+```sh
+isf_find() {
+    local index=1
+    local element
+    
+    while :; do
+        element=$(is-fast --direct "en.wikipedia.org/wiki/rome" --selector "div.mw-content-ltr > p" --nth-element "$index" --color=always --flash-cache --piped)
+        
+        # Break if the element is empty - means all elements have been searched.
+        if [[ -z "$element" ]]; then
+            break
+        fi
+        
+        # If the element contains "given word", print and exit
+        if echo "$element" | grep -qi "$1"; then
+            echo "$element"
+            return
+        fi
+        
+        ((index++))
+    done
+}
+```
+
+---
+
+# 🧹 Clearing Data
+
+To remove stored history or cached pages, use the following options:
+
+- `--clear-history` clears all stored history.
+- `--clear-cache` clears all cached pages.
+- `--clear-all` clears both cache and history.
+
+#### Example Usage:
+
+```sh
+is-fast --clear-history
+is-fast --clear-cache
+is-fast --clear-all
+```
+
 
 # 🔑 Customizing your results
 
@@ -620,25 +722,6 @@ This allows the caller to specify the color mode. Default value is `tui`, which 
 is-fast --color=always "How to do a for loop in rust" | bat # Will output to bat with full colors
 ```
 
-### `--last`
-
-This will show the last page from your history. History must be enabled and have entries for this flag to work. This is very useful for scripts where a search is involved, as search resuts are non deterministic, so repeating with the same search might lead you to have *different results*.
-
-```sh
-isf_so() {
-    QUESTION=$(is-fast ${*} --site "www.stackoverflow.com" --selector "div.question .js-post-body" --color=always --piped) # Find the question content.
-    ANSWER=$(is-fast --last --selector "div.accepted-answer .js-post-body" --color=always --piped) # Separately find the answer content, using last to ensure the same result is shown.
-    cat << EOF # Format as desired
-QUESTION:
-
-$QUESTION
-
-ANSWER:
-
-$ANSWER
-EOF
-}
-```
 
 # Example scripts
 

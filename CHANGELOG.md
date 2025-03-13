@@ -2,6 +2,30 @@
 
 ## [0.9.0]
 ### Added
+- The ability to cache your results. Although this option is off by default, enabling it speeds up the time mostly static pages take to reload if you close and open them again.
+- Added configuration for this
+  - TTL
+  - Max cache size
+  - Setting for it (Disabled, Read, Write, ReadWrite)
+- Added command flags for this:
+  - `--cache` will cache the result even if caching is normally disabled.
+  - `--no-cache` will not cache the result even if caching is normally enabled.
+  - `--flash-cache` uses a special mode where the cache size is maximum for the duration of the request, but the TTL is only 5 seconds. This has some application for scripting, where you don't want to fill your cache, but you want results to persist there throughout the duration of your script.
+  - `--clear-cache` removes all items from the cache.
+- Added additional command flags for history too.
+  - `--clear-history` clears the history.
+  - `--clear-all` clears both cache and history.
+  - `--no-history` will not log history for that request.
+
+### Changed
+- Enabled command flags to be able to be passed into the config, centralizing the configuration logic.
+- Split config file into the raw and processed config.
+
+### Fixed
+- Clippy pedantic issues.
+
+## [0.9.0]
+### Added
 - A number of exciting features for scripting with `is-fast`
 - Scripts Directory containing a number of example scripts for how you could use `is-fast` for useful programs.
 - New flag `--last` - will immediately open the last viewed page (requires history to be enabled)
