@@ -20,6 +20,7 @@ use crate::app::enum_values::AppFunctions;
 use crate::app::enum_values::HistoryViewer;
 use crate::app::enum_values::PageViewer;
 use crate::cli::command::Cli;
+use crate::config::load::Config;
 use crate::database::connect::clear_history;
 use crate::search_engine::cache;
 use actions::generate_config;
@@ -29,6 +30,13 @@ use clap::Parser;
 fn main() {
     env_logger::init();
     let args = Cli::parse();
+    Config::init(
+        args.color.clone(),
+        args.cache,
+        args.no_cache,
+        args.flash_cache,
+        args.no_history,
+    );
     // Generate config doesn't need a display, process and return.
     if args.generate_config {
         generate_config::run();
@@ -61,7 +69,7 @@ fn process_clear_command(args: &Cli) -> bool {
                 args.clear_cache,
                 args.clear_all
             );
-            cache::clear()
+            cache::clear();
         }
         if args.clear_history || args.clear_all {
             log::debug!(

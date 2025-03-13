@@ -85,4 +85,19 @@ pub struct Cli {
 
     #[arg(long, help = "Wipe all data")]
     pub(crate) clear_all: bool,
+
+    #[arg(long, help = "Apply caching for the given search")]
+    pub(crate) cache: bool,
+
+    #[arg(long, help = "Disable caching for the given search")]
+    pub(crate) no_cache: bool,
+
+    #[arg(long, help = "Disable history for the given search")]
+    pub(crate) no_history: bool,
+
+    #[arg(
+        long,
+        help = "Enable caching with an extremely short ttl, and maximal cache size, useful for scripting"
+    )]
+    pub(crate) flash_cache: bool,
 }

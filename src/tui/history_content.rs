@@ -43,8 +43,8 @@ impl HistoryContent<'_> {
         let block = default_block(" History ", HISTORY_INSTRUCTIONS);
         let full_history = current_history.clone();
         let current_history = order_by_match(&mut current_history, &search_term, &search_on);
-        let table = create_table(&current_history, search_term.clone(), search_on.clone());
-        let search = draw_search_text(search_term.clone(), search_on.clone());
+        let table = create_table(&current_history, &search_term, &search_on);
+        let search = draw_search_text(&search_term.clone(), &search_on);
         let row_count = draw_history_count(current_history.len() as u16);
         let widgets = (block, table, search, row_count);
         let areas = HistoryContent::history_areas(total_area, current_history.len() as u16);
@@ -68,12 +68,9 @@ impl HistoryContent<'_> {
             self.areas = Self::history_areas(available_space, self.current_history.len() as u16);
         }
         if self.needs_update {
-            self.widgets.1 = create_table(
-                &self.current_history,
-                self.search_term.clone(),
-                self.search_on.clone(),
-            );
-            self.widgets.2 = draw_search_text(self.search_term.clone(), self.search_on.clone());
+            self.widgets.1 =
+                create_table(&self.current_history, &self.search_term, &self.search_on);
+            self.widgets.2 = draw_search_text(&self.search_term, &self.search_on);
             self.widgets.3 = draw_history_count(self.current_history.len() as u16);
             self.needs_update = false;
         }

@@ -14,14 +14,14 @@ pub static REQWEST_CLIENT: Lazy<Client> = Lazy::new(|| {
 
 pub fn scrape(url: &str) -> Result<String, IsError> {
     let url = &format_url(url);
-    if let Some(html) = cached_pages_read(url.parse().unwrap()) {
+    if let Some(html) = cached_pages_read(url) {
         log::debug!("Cache hit for: {}", url);
         return Ok(html);
     }
     log::debug!("Cache miss for: {}", url);
     reqwest_scrape(url)
         .or_else(|_| curl_scrape(url))
-        .inspect(|html| cached_pages_write(url.clone(), html.clone()))
+        .inspect(|html| cached_pages_write(url, html))
 }
 
 pub fn format_url(url: &str) -> String {

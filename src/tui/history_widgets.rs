@@ -15,10 +15,10 @@ pub static TEXT_COLOR: Lazy<&Style> = Lazy::new(crate::config::load::Config::get
 
 pub fn create_table<'a>(
     history: &[HistoryData],
-    user_search: String,
-    search_on: SearchOn,
+    user_search: &str,
+    search_on: &SearchOn,
 ) -> Table<'a> {
-    let rows = create_rows(history, &user_search, &search_on);
+    let rows = create_rows(history, user_search, search_on);
     let table = Table::from_iter(rows)
         .widths([
             Constraint::Percentage(50),
@@ -126,8 +126,8 @@ fn format_time(amount: i64, time_measurement: &str) -> String {
     format!("{amount} {time_measurement} ago")
 }
 
-pub fn draw_search_text<'a>(user_input: String, search_on: SearchOn) -> Paragraph<'a> {
-    let searched_on_text = searched_on_to_string(&search_on);
+pub fn draw_search_text<'a>(user_input: &str, search_on: &SearchOn) -> Paragraph<'a> {
+    let searched_on_text = searched_on_to_string(search_on);
     Paragraph::new(
         Line::from(format!(" [{searched_on_text}] {user_input}"))
             .style(TEXT_COLOR.add_modifier(Modifier::BOLD)),

@@ -76,7 +76,8 @@ impl PageExtractor {
             .and_then(|html| {
                 filter(
                     &html,
-                    self.selector
+                    &self
+                        .selector
                         .clone()
                         .unwrap_or_else(|| Config::get_selectors(&link.url)),
                 )
@@ -165,7 +166,7 @@ impl PageExtractor {
             };
         }
         let paint = style.paint(content);
-        format!("{}", paint)
+        format!("{paint}")
     }
 
     fn sanitize(html: &str) -> String {

@@ -14,14 +14,12 @@ pub fn prepare_pages(args: Cli) -> Result<Vec<PageSource>, IsError> {
             pages.push(PageSource {
                 link: Link::new(history.title, history.url),
                 extract: PageExtractor::from_url(
-                    args.color
-                        .clone()
-                        .unwrap_or_else(|| Config::get_color_mode().clone()),
+                    Config::get_color_mode().clone(),
                     args.selector.clone(),
                     args.nth_element.clone(),
                 ),
-                tracked: true,
-            })
+                tracked: *history_enabled,
+            });
         }
     }
     if let Some(file) = args.file {
@@ -30,9 +28,7 @@ pub fn prepare_pages(args: Cli) -> Result<Vec<PageSource>, IsError> {
         pages.push(PageSource {
             link,
             extract: PageExtractor::from_file(
-                args.color
-                    .clone()
-                    .unwrap_or_else(|| Config::get_color_mode().clone()),
+                Config::get_color_mode().clone(),
                 args.selector.clone(),
                 args.nth_element.clone(),
             ),
@@ -45,9 +41,7 @@ pub fn prepare_pages(args: Cli) -> Result<Vec<PageSource>, IsError> {
         pages.push(PageSource {
             link,
             extract: PageExtractor::from_url(
-                args.color
-                    .clone()
-                    .unwrap_or_else(|| Config::get_color_mode().clone()),
+                Config::get_color_mode().clone(),
                 selection_tag,
                 args.nth_element.clone(),
             ),
@@ -67,9 +61,7 @@ pub fn prepare_pages(args: Cli) -> Result<Vec<PageSource>, IsError> {
                 .map(|link| PageSource {
                     link,
                     extract: PageExtractor::from_url(
-                        args.color
-                            .clone()
-                            .unwrap_or_else(|| Config::get_color_mode().clone()),
+                        Config::get_color_mode().clone(),
                         args.selector.clone(),
                         args.nth_element.clone(),
                     ),

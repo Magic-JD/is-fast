@@ -129,7 +129,7 @@ impl Cache {
             .iter()
             .filter_map(|item| {
                 item.map_err(|e| IsError::Cache(e.to_string()))
-                    .and_then(|(key, value)| self.remove_expired(current_time, key, value))
+                    .and_then(|(key, value)| self.remove_expired(current_time, key, &value))
                     .unwrap_or_else(|e| {
                         log::error!("Failed to purge expired {:?}", e);
                         None
@@ -154,9 +154,9 @@ impl Cache {
         &self,
         current_time: i64,
         key: IVec,
-        value: IVec,
+        value: &IVec,
     ) -> Result<Option<(IVec, i64)>, IsError> {
-        let (html, _) = bincode::borrow_decode_from_slice::<HtmlCached, _>(&value, standard())?;
+        let (html, _) = bincode::borrow_decode_from_slice::<HtmlCached, _>(value, standard())?;
         let expires = html.timestamp;
         if expires < current_time {
             log::trace!("Remove expired {:?}", key.to_vec());
@@ -167,14 +167,14 @@ impl Cache {
     }
 }
 
-pub fn cached_pages_write(url: String, html: String) {
+pub fn cached_pages_write(url: &str, html: &str) {
     HTML_CACHE
-        .insert(&url, &html)
+        .insert(url, html)
         .unwrap_or_else(|e| log::error!("Error when writing page to cache: {:?}", e));
 }
 
-pub fn cached_pages_read(url: String) -> Option<String> {
-    HTML_CACHE.get(&url).unwrap_or_else(|e| {
+pub fn cached_pages_read(url: &str) -> Option<String> {
+    HTML_CACHE.get(url).unwrap_or_else(|e| {
         log::error!("Error when reading page from cache: {:?}", e);
         None
     })
