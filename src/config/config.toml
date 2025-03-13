@@ -180,5 +180,18 @@ engine = "duckduckgo"
 # Can be overriden with the --site flag.
 # site = "domain.name.org"
 
+# Caching stores the raw html that is called associated with the url. When enabled it provides results you have seen
+# before much faster. It is especially useful for scripts where you might want to select a number of different elements
+# from the same page by repeatedly calling is fast on that page with different selectors.
+[cache]
+# The mode to use for caching. Caching is disabled by default. Options are disabled, read, write, and readwrite.
+cache_mode = "disabled"
+# Max size of the cache if it is used. During tests, it took around 2MB per 100 entries, but will vary with page size.
+max_size = 100
+# How long the cached value should be valid in seconds. NOTE: the cached data is stored with the TTL being added to the
+# cached time. This means that if you change this to a longer value then change it back again the longer lived data might
+# persist. If you want to remove that data you should use the --clear-cache flag.
+ttl = 300
+
 [misc]
 # open_tool = "firefox" # Uses system open as default, only uncomment if you want to override this behaviour

@@ -29,6 +29,7 @@ pub fn run() {
         }
     }
 }
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -66,9 +67,9 @@ mod tests {
         use std::fs;
 
         let temp_dir = TempDir::new().expect("Failed to create temp dir");
-        let fake_home = temp_dir.path();
+        let fake_home = convert_to_canon(temp_dir);
 
-        env::set_var("XDG_CONFIG_HOME", fake_home);
+        env::set_var("XDG_CONFIG_HOME", &fake_home);
 
         let config_path = fake_home.join("is-fast/config.toml");
         fs::create_dir_all(config_path.parent().unwrap()).unwrap();

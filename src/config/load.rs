@@ -1,4 +1,5 @@
 use crate::cli::command::ColorMode;
+use crate::search_engine::cache::{CacheConfig, CacheMode};
 use crate::search_engine::search_type::SearchEngine;
 use crate::search_engine::search_type::SearchEngine::{DuckDuckGo, Google, Kagi};
 use globset::{Glob, GlobSet, GlobSetBuilder};
@@ -13,6 +14,7 @@ use toml;
 
 static CONFIG: Lazy<Config> = Lazy::new(Config::load);
 pub const DEFAULT_CONFIG_LOCATION: &str = include_str!("config.toml");
+const MS_IN_SECOND: i64 = 1000;
 
 #[derive(Debug, Deserialize)]
 struct TagStyleConfig {
@@ -77,6 +79,16 @@ struct SearchSection {
 }
 
 #[derive(Debug, Deserialize)]
+struct CacheSection {
+    #[serde(default)]
+    cache_mode: Option<String>,
+    #[serde(default)]
+    max_size: Option<usize>,
+    #[serde(default)]
+    ttl: Option<i64>,
+}
+
+#[derive(Debug, Deserialize)]
 struct MiscSection {
     #[serde(default)]
     open_tool: Option<String>,
@@ -98,6 +110,8 @@ struct RawConfig {
     history: Option<HistorySection>,
     #[serde(default)]
     search: Option<SearchSection>,
+    #[serde(default)]
+    cache: Option<CacheSection>,
     #[serde(default)]
     misc: Option<MiscSection>,
 }
@@ -125,6 +139,7 @@ pub struct Config {
     scroll: Scroll,
     color_mode: ColorMode,
     history_enabled: bool,
+    cache: CacheConfig,
 }
 
 impl Config {
@@ -139,6 +154,7 @@ impl Config {
                 display: None,
                 history: None,
                 search: None,
+                cache: None,
                 misc: None,
             });
         _ = get_user_specified_config().map(|u_config| override_defaults(&mut config, u_config));
@@ -241,6 +257,24 @@ impl Config {
                 .as_ref()
                 .and_then(|history| history.enabled)
                 .unwrap_or(true),
+            cache: config
+                .cache
+                .as_ref()
+                .map(|cache_section| {
+                    CacheConfig::new(
+                        cache_section
+                            .cache_mode
+                            .clone()
+                            .map(convert_to_cache_mode)
+                            .unwrap_or(CacheMode::Disabled),
+                        cache_section.max_size.unwrap_or(100),
+                        cache_section.ttl.unwrap_or(300) * MS_IN_SECOND,
+                        10,
+                    )
+                })
+                .unwrap_or_else(|| {
+                    CacheConfig::new(CacheMode::Disabled, 100, 300 * MS_IN_SECOND, 10)
+                }),
         }
     }
 
@@ -324,6 +358,10 @@ impl Config {
     pub fn get_history_enabled() -> &'static bool {
         &CONFIG.history_enabled
     }
+
+    pub fn get_cache_config() -> CacheConfig {
+        CONFIG.cache.clone()
+    }
 }
 
 fn convert_to_color_mode(color_mode: String) -> ColorMode {
@@ -343,6 +381,16 @@ fn convert_to_scroll(scroll: String) -> Scroll {
             Scroll::Discrete(num_str.parse().unwrap_or_default())
         }
         _ => Scroll::Full,
+    }
+}
+
+fn convert_to_cache_mode(cache_mode: String) -> CacheMode {
+    match cache_mode.to_lowercase().as_str() {
+        "disabled" => CacheMode::Disabled,
+        "readwrite" => CacheMode::ReadWrite,
+        "read" => CacheMode::Read,
+        "write" => CacheMode::Write,
+        _ => CacheMode::Disabled,
     }
 }
 
@@ -462,6 +510,23 @@ fn override_defaults(config: &mut RawConfig, u_config: RawConfig) {
         }
     }
 
+    let mut cache = config.cache.take().unwrap_or(CacheSection {
+        cache_mode: None,
+        max_size: None,
+        ttl: None,
+    });
+    if let Some(u_cache) = u_config.cache {
+        if let Some(cache_mode) = u_cache.cache_mode {
+            cache.cache_mode = Some(cache_mode);
+        }
+        if let Some(max_size) = u_cache.max_size {
+            cache.max_size = Some(max_size);
+        }
+        if let Some(ttl) = u_cache.ttl {
+            cache.ttl = Some(ttl);
+        }
+    }
+
     let mut misc = config
         .misc
         .take()
@@ -478,6 +543,7 @@ fn override_defaults(config: &mut RawConfig, u_config: RawConfig) {
     config.format = Some(format);
     config.syntax = Some(syntax);
     config.display = Some(display);
+    config.cache = Some(cache);
     config.misc = Some(misc);
 }
 
@@ -681,6 +747,7 @@ mod tests {
             display: None,
             history: None,
             search: None,
+            cache: None,
             misc: None,
         };
 
@@ -724,6 +791,7 @@ mod tests {
                 enabled: None,
             }),
             search: None,
+            cache: None,
             misc: None,
         };
 
@@ -757,6 +825,7 @@ mod tests {
                 enabled: None,
             }),
             search: None,
+            cache: None,
             misc: None,
         };
 

@@ -97,6 +97,12 @@ pub fn get_latest_history() -> Result<Option<HistoryData>, IsError> {
     }
 }
 
+pub fn clear_history() -> Result<(), IsError> {
+    let conn = CONNECTION.lock().map_err(|e| Access(e.to_string()))?;
+    conn.execute("DROP TABLE history", [])?;
+    Ok(())
+}
+
 pub fn remove_history(url: &str) -> Result<(), IsError> {
     let conn = CONNECTION.lock().map_err(|e| Access(e.to_string()))?;
     conn.execute("DELETE FROM history WHERE url = ?", [url])

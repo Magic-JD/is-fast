@@ -76,4 +76,13 @@ pub struct Cli {
 
     #[arg(long, value_enum, help = "Set color mode (tui, always, never)")]
     pub color: Option<ColorMode>,
+
+    #[arg(long, help = "Wipe the cache")]
+    pub(crate) clear_cache: bool,
+
+    #[arg(long, help = "Wipe history")]
+    pub(crate) clear_history: bool,
+
+    #[arg(long, help = "Wipe all data")]
+    pub(crate) clear_all: bool,
 }
