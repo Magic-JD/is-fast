@@ -23,6 +23,7 @@
 
 ### Fixed
 - Clippy pedantic issues.
+- Bug where input is buffered while waiting for the loading screen causing unexpected behaviour on page load.
 
 ## [0.9.0]
 ### Added

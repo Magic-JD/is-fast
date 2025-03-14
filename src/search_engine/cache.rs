@@ -4,13 +4,15 @@ use bincode;
 use bincode::{Decode, Encode};
 use dirs::data_dir;
 use once_cell::sync::Lazy;
+use parking_lot::Mutex;
+use parking_lot::MutexGuard;
 use rusqlite::{params, Connection};
 use serde::Deserialize;
 use std::fs;
 use std::io::Cursor;
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex, MutexGuard};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::sync::Arc;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use zstd::{decode_all, encode_all};
 
 static HTML_CACHE: Lazy<Cache> = Lazy::new(Cache::new);
@@ -172,7 +174,7 @@ impl Cache {
 
     fn get_connection(&self) -> MutexGuard<Connection> {
         self.connection
-            .lock()
+            .try_lock_for(Duration::from_millis(100))
             .expect("Failed to get database connection")
     }
 }

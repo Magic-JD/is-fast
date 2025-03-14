@@ -1239,6 +1239,7 @@ dependencies = [
  "nucleo-matcher",
  "once_cell",
  "open",
+ "parking_lot",
  "ratatui",
  "reqwest",
  "rusqlite",
