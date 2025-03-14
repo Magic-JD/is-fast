@@ -5,9 +5,6 @@ pub enum IsError {
     #[error("General errors: {0}")]
     General(String),
 
-    #[error("Cache error: {0}")]
-    Cache(String),
-
     #[error("Time error: {0}")]
     Time(#[from] std::time::SystemTimeError),
 
@@ -40,10 +37,4 @@ pub enum IsError {
 
     #[error("Csv errors: {0}")]
     Csv(String),
-}
-
-impl From<sled::Error> for IsError {
-    fn from(err: sled::Error) -> Self {
-        IsError::Cache(err.to_string())
-    }
 }
