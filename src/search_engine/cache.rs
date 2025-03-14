@@ -7,11 +7,14 @@ use once_cell::sync::Lazy;
 use rusqlite::{params, Connection};
 use serde::Deserialize;
 use std::fs;
+use std::io::Cursor;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::{SystemTime, UNIX_EPOCH};
+use zstd::{decode_all, encode_all};
 
 static HTML_CACHE: Lazy<Cache> = Lazy::new(Cache::new);
+static VERSION: u16 = 0;
 
 #[derive(Debug, Deserialize, Clone)]
 pub enum CacheMode {
@@ -67,8 +70,9 @@ impl Cache {
         self.get_connection().execute(
             "CREATE TABLE IF NOT EXISTS cache (
                 url TEXT PRIMARY KEY,
-                html TEXT NOT NULL,
-                timestamp INTEGER NOT NULL
+                html BLOB NOT NULL,
+                timestamp INTEGER NOT NULL,
+                version INTEGER NOT NULL
             )",
             [],
         )?;
@@ -85,10 +89,11 @@ impl Cache {
         if cache_size >= self.config.max_size {
             self.purge_cache()?;
         }
+        let compressed_html = encode_all(Cursor::new(value), 3)?;
         self.get_connection().execute(
-            "INSERT INTO cache (url, html, timestamp) VALUES (?, ?, ?)
+            "INSERT INTO cache (url, html, timestamp, version) VALUES (?, ?, ?, ?)
              ON CONFLICT(url) DO UPDATE SET html = excluded.html, timestamp = excluded.timestamp",
-            params![key, value, timestamp],
+            params![key, compressed_html, timestamp, VERSION],
         )?;
         Ok(())
     }
@@ -141,8 +146,9 @@ impl Cache {
         match rows.next()? {
             None => Ok(None),
             Some(row) => {
-                let html: String = row.get(0)?;
+                let compressed_html: Vec<u8> = row.get(0)?;
                 let timestamp: i64 = row.get(1)?;
+                let html = String::from_utf8(decode_all(Cursor::new(compressed_html))?)?;
                 Ok(Some((html, timestamp)))
             }
         }
@@ -156,7 +162,7 @@ impl Cache {
     }
 
     pub fn clear(&self) -> Result<(), IsError> {
-        self.get_connection().execute("DELETE FROM cache", [])?;
+        self.get_connection().execute("DROP TABLE cache", [])?;
         Ok(())
     }
 

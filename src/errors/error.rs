@@ -23,6 +23,9 @@ pub enum IsError {
     #[error("Parse errors: {0}")]
     Parse(#[from] chrono::format::ParseError),
 
+    #[error("String errors: {0}")]
+    String(#[from] std::string::FromUtf8Error),
+
     #[error("Access errors: {0}")]
     Access(String),
 
