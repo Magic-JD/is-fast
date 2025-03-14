@@ -1,5 +1,8 @@
 use clap::CommandFactory;
-use clap_complete::{generate_to, shells::*};
+use clap_complete::{
+    generate_to,
+    shells::{Bash, Fish, PowerShell, Zsh},
+};
 use clap_mangen::Man;
 use std::fs::File;
 use std::io::Write;

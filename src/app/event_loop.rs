@@ -35,6 +35,10 @@ pub enum HistoryAction {
     ChangeSearch,
 }
 pub fn page_event_loop() -> PageAction {
+    // As the next page load can take some time especially this can cause an issue if the user
+    // enters input while in the loading screen. To fix this we drain the buffer before we read the
+    // next event.
+    drain_buffer();
     if let Ok(event::Event::Key(KeyEvent {
         code,
         modifiers,
@@ -57,6 +61,12 @@ pub fn page_event_loop() -> PageAction {
         };
     }
     PageAction::Continue
+}
+
+fn drain_buffer() {
+    while event::poll(std::time::Duration::from_secs(0)).unwrap_or(false) {
+        let _ = event::read();
+    }
 }
 
 pub(crate) enum PageAction {

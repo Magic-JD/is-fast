@@ -1,3 +1,4 @@
+pub mod cache;
 mod duckduckgo;
 mod google;
 pub mod kagi;

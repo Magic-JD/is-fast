@@ -5,14 +5,26 @@ pub enum IsError {
     #[error("General errors: {0}")]
     General(String),
 
+    #[error("Time error: {0}")]
+    Time(#[from] std::time::SystemTimeError),
+
     #[error("I/O errors: {0}")]
     Io(#[from] std::io::Error),
+
+    #[error("Encode errors: {0}")]
+    Encode(#[from] bincode::error::EncodeError),
+
+    #[error("Decode errors: {0}")]
+    Decode(#[from] bincode::error::DecodeError),
 
     #[error("Database errors: {0}")]
     DatabaseSql(#[from] rusqlite::Error),
 
     #[error("Parse errors: {0}")]
     Parse(#[from] chrono::format::ParseError),
+
+    #[error("String errors: {0}")]
+    String(#[from] std::string::FromUtf8Error),
 
     #[error("Access errors: {0}")]
     Access(String),

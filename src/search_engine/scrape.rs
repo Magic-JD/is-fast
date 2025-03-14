@@ -1,5 +1,6 @@
 use crate::errors::error::IsError;
 use crate::errors::error::IsError::Scrape;
+use crate::search_engine::cache::{cached_pages_read, cached_pages_write};
 use once_cell::sync::Lazy;
 use reqwest::blocking::{Client, Response};
 use std::process::Command;
@@ -13,7 +14,14 @@ pub static REQWEST_CLIENT: Lazy<Client> = Lazy::new(|| {
 
 pub fn scrape(url: &str) -> Result<String, IsError> {
     let url = &format_url(url);
-    reqwest_scrape(url).or_else(|_| curl_scrape(url))
+    if let Some(html) = cached_pages_read(url) {
+        log::debug!("Cache hit for: {}", url);
+        return Ok(html);
+    }
+    log::debug!("Cache miss for: {}", url);
+    reqwest_scrape(url)
+        .or_else(|_| curl_scrape(url))
+        .inspect(|html| cached_pages_write(url, html))
 }
 
 pub fn format_url(url: &str) -> String {

@@ -11,6 +11,7 @@ isf_stock() {
         --direct "https://finance.yahoo.com/quote/${1}/" \
         --selector "span.base" \
         --piped \
+        --no-cache \
         --color=always 
 }
 
@@ -29,8 +30,8 @@ isf_what() {
 
 # Search stack overflow, showing only the question and answer text. Note must use --last for this, as the history output/order is not deterministic.
 isf_so() {
-    QUESTION=$(is-fast ${*} --site "www.stackoverflow.com" --selector "div.question .js-post-body" --color=always --piped) # Find the question content.
-    ANSWER=$(is-fast --last --selector "div.accepted-answer .js-post-body" --color=always --piped) # Separately find the answer content.
+    QUESTION=$(is-fast ${*} --site "www.stackoverflow.com" --selector "div.question .js-post-body" --color=always --piped --flash-cache) # Find the question content.
+    ANSWER=$(is-fast --last --selector "div.accepted-answer .js-post-body" --color=always --piped --flash-cache) # Separately find the answer content.
     cat << EOF # Format as desired
 QUESTION:
 

@@ -30,7 +30,7 @@ impl TuiApp {
                 .map_err(|e| General(format!("{e} - you are trying to open with '{tool}' - confirm running this tool with url {url} externally for more information")))?;
         } else {
             // Use system open tool
-            open::that(url).map_err(|err| General(err.to_string()))?
+            open::that(url).map_err(|err| General(err.to_string()))?;
         }
         self.display.refresh(); // Refresh display to protect against screen issues.
         Ok(())
