@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.9.0]
+## [0.10.1]
 ### Added
 - The ability to cache your results. Although this option is off by default, enabling it speeds up the time mostly static pages take to reload if you close and open them again.
 - Added configuration for this
@@ -16,6 +16,10 @@
   - `--clear-history` clears the history.
   - `--clear-all` clears both cache and history.
   - `--no-history` will not log history for that request.
+
+## [0.10.0]
+### Fixed
+- Accidentally skipped updating in 0.10.1
 
 ### Changed
 - Enabled command flags to be able to be passed into the config, centralizing the configuration logic.
