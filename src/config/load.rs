@@ -6,6 +6,7 @@ use crate::config::raw::{
 use crate::search_engine::cache::{CacheConfig, CacheMode};
 use crate::search_engine::search_type::SearchEngine;
 use crate::search_engine::search_type::SearchEngine::{DuckDuckGo, Google, Kagi};
+use crate::{CacheCommand, DisplayConfig};
 use globset::{Glob, GlobSet};
 use nucleo_matcher::pattern::AtomKind;
 use once_cell::sync::OnceCell;
@@ -41,42 +42,44 @@ pub struct Config {
     color_mode: ColorMode,
     history_enabled: bool,
     cache: CacheConfig,
+    pretty_print: Vec<DisplayConfig>,
 }
 
 impl Config {
     pub fn init(
         args_color_mode: Option<ColorMode>,
-        cache: bool,
-        no_cache: bool,
-        flash_cache: bool,
+        cache_command: Option<CacheCommand>,
         no_history: bool,
+        pretty_print: Vec<DisplayConfig>,
     ) {
-        let this = Self::new(args_color_mode, cache, no_cache, flash_cache, no_history);
+        let this = Self::new(args_color_mode, cache_command, no_history, pretty_print);
         CONFIG.try_insert(this).expect("Failed to insert config");
     }
 
     fn default() -> Config {
-        Self::new(None, false, false, false, false)
+        Self::new(None, None, false, vec![])
     }
 
     fn new(
         args_color_mode: Option<ColorMode>,
-        cache: bool,
-        no_cache: bool,
-        flash_cache: bool,
+        cache_command: Option<CacheCommand>,
         no_history: bool,
+        pretty_print: Vec<DisplayConfig>,
     ) -> Self {
-        let mut cache_mode_override = None;
-        if cache {
-            cache_mode_override = Some(CacheMode::ReadWrite);
-        }
-        if no_cache {
-            cache_mode_override = Some(CacheMode::Disabled);
-        }
         let mut config: RawConfig = toml::from_str(DEFAULT_CONFIG_LOCATION)
             .map_err(|e| println!("{e}"))
             .unwrap_or(RawConfig::default());
         _ = get_user_specified_config().map(|u_config| override_defaults(&mut config, u_config));
+        let flag_cache_mode = || {
+            cache_command.clone().map(|val| match val {
+                CacheCommand::Cache => CacheMode::ReadWrite,
+                CacheCommand::Disable => CacheMode::Disabled,
+                CacheCommand::Flash => {
+                    log::error!("Flash mode enabled but not initialized");
+                    CacheMode::Disabled
+                }
+            })
+        };
         let (matcher, globs) = generate_globs(&mut config);
         Self {
             styles: convert_styles(config.styles),
@@ -182,7 +185,7 @@ impl Config {
                     .and_then(|history| history.enabled)
                     .unwrap_or(true)
             },
-            cache: if flash_cache {
+            cache: if let Some(CacheCommand::Flash) = cache_command {
                 CacheConfig::new(CacheMode::ReadWrite, usize::MAX, 5 * MS_IN_SECOND, 0)
             } else {
                 config
@@ -190,7 +193,7 @@ impl Config {
                     .as_ref()
                     .map(|cache_section| {
                         CacheConfig::new(
-                            cache_mode_override
+                            flag_cache_mode()
                                 .clone()
                                 .or_else(|| {
                                     cache_section
@@ -207,13 +210,14 @@ impl Config {
                     })
                     .unwrap_or_else(|| {
                         CacheConfig::new(
-                            cache_mode_override.unwrap_or(CacheMode::Disabled),
+                            flag_cache_mode().unwrap_or(CacheMode::Disabled),
                             100,
                             300 * MS_IN_SECOND,
                             10,
                         )
                     })
             },
+            pretty_print,
         }
     }
 
@@ -304,6 +308,10 @@ impl Config {
 
     pub fn get_cache_config() -> CacheConfig {
         Self::get_config().cache.clone()
+    }
+
+    pub fn get_display_configuration() -> &'static [DisplayConfig] {
+        &Self::get_config().pretty_print
     }
 }
 

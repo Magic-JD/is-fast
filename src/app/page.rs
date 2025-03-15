@@ -2,10 +2,15 @@ use crate::app::enum_values::PageViewer;
 use crate::app::event_loop::{page_event_loop, PageAction};
 use crate::app::text::TextApp;
 use crate::app::tui::TuiApp;
+use crate::cli::command::ColorMode;
 use crate::config::load::{Config, Scroll};
 use crate::database::connect::add_history;
 use crate::search_engine::link::PageSource;
 use crate::tui::page_content::PageContent;
+use crate::DisplayConfig;
+use nu_ansi_term::Style;
+use terminal_size::{terminal_size, Width};
+use textwrap::{fill, Options, WrapAlgorithm};
 
 impl PageViewer for TuiApp {
     fn show_pages(&mut self, pages: &[PageSource]) {
@@ -78,9 +83,62 @@ impl PageViewer for TextApp {
                     add_history(&page.link).unwrap_or_else(|err| eprintln!("{err}"));
                 }
                 let content = page.extract.get_text(&page.link);
-                println!("{content}");
+                let width = match terminal_size() {
+                    Some((Width(w), _)) => w,
+                    None => {
+                        log::error!("Failed to get terminal size - defaulting to sane value");
+                        80
+                    }
+                };
+                println!("{}", conditional_formatting(content, width));
             }
             [] => eprintln!("No links found, no error detected."),
         }
     }
+}
+
+fn conditional_formatting(mut content: String, mut width: u16) -> String {
+    let display_configuration_list = Config::get_display_configuration();
+    // No additional configuration, early return.
+    if display_configuration_list.is_empty() {
+        return format!("\n{}\n", content.trim()); //Ensure consistent blank first and last line
+    }
+
+    let mut margin = 0;
+    let mut wrap = false;
+    let mut title = None;
+    for display_config in display_configuration_list {
+        match display_config {
+            DisplayConfig::Margin(amount) => {
+                margin = *amount;
+                wrap = true;
+            }
+            // As we always wrap if there is an object in the list, we don't need to do
+            // anything further here.
+            DisplayConfig::Wrap => wrap = true,
+            DisplayConfig::Title(title_val) => title = Some(title_val),
+        }
+    }
+    if let Some(title_val) = title {
+        let mut title = format!("\n{title_val}\n");
+        if let ColorMode::Always = Config::get_color_mode() {
+            let style = Style::new().bold();
+            title = style.paint(&title).to_string();
+        }
+        content.insert_str(0, &title);
+    }
+    if wrap {
+        let total_margin = margin * 2;
+        if width > total_margin {
+            width -= total_margin;
+        }
+        content = fill(
+            &content,
+            Options::new(width as usize).wrap_algorithm(WrapAlgorithm::FirstFit),
+        );
+        if margin > 0 {
+            content = textwrap::indent(&content, &" ".repeat(margin as usize))
+        }
+    }
+    content
 }

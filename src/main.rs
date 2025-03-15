@@ -27,15 +27,35 @@ use actions::generate_config;
 use atty::{is, Stream};
 use clap::Parser;
 
+#[derive(Clone, Debug)]
+enum DisplayConfig {
+    Margin(u16),
+    Wrap,
+    Title(String),
+}
+
+#[derive(Clone, Debug)]
+enum CacheCommand {
+    Cache,
+    Disable,
+    Flash,
+}
+
 fn main() {
     env_logger::init();
     let args = Cli::parse();
+    let pretty_print = parse_pretty_print(&args.pretty_print.join(","));
+    let cache_command = match (args.cache, args.no_cache, args.flash_cache) {
+        (true, false, false) => Some(CacheCommand::Cache),
+        (false, true, false) => Some(CacheCommand::Disable),
+        (false, false, true) => Some(CacheCommand::Flash),
+        (_, _, _) => None,
+    };
     Config::init(
         args.color.clone(),
-        args.cache,
-        args.no_cache,
-        args.flash_cache,
+        cache_command,
         args.no_history,
+        pretty_print,
     );
     // Generate config doesn't need a display, process and return.
     if args.generate_config {
@@ -59,6 +79,28 @@ fn main() {
         app.show_pages(&page_result);
     }
     app.shutdown();
+}
+
+fn parse_pretty_print(line: &str) -> Vec<DisplayConfig> {
+    if line.is_empty() {
+        return vec![];
+    }
+    line.split(',')
+        .filter_map(|s| {
+            let mut parts = s.split(':');
+            match (parts.next(), parts.next()) {
+                (Some("wrap"), None) => Some(DisplayConfig::Wrap),
+                (Some("margin"), Some(value)) => {
+                    value.parse::<u16>().ok().map(DisplayConfig::Margin)
+                }
+                (Some("title"), Some(value)) => Some(DisplayConfig::Title(value.to_string())),
+                _ => {
+                    log::error!("Invalid display configuration: {}", s);
+                    None
+                }
+            }
+        })
+        .collect()
 }
 
 fn process_clear_command(args: &Cli) -> bool {

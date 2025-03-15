@@ -12,7 +12,7 @@ isf_stock() {
         --selector "span.base" \
         --piped \
         --no-cache \
-        --color=always 
+        --pretty-print="margin:5"
 }
 
 # What is something? Give it a word or a name and it will return the first wikipedia paragraph of that thing. This will work if there is a wikipedia article with that
@@ -23,21 +23,18 @@ isf_what() {
         --selector "div.mw-content-ltr > p" \
         --color=always \
         --piped \
-        --nth-element 1 
+        --nth-element 1 \
+        --pretty-print="margin:20"
 # We get the first paragraph with content only from the child p's of div.mw-content-ltr
 # note: the first paragraph can be achieved with css selectors only, but is sometimes empty on the site - this then avoids any issues with the selected paragraph being empty.)
 }
 
 # Search stack overflow, showing only the question and answer text. Note must use --last for this, as the history output/order is not deterministic.
 isf_so() {
-    QUESTION=$(is-fast ${*} --site "www.stackoverflow.com" --selector "div.question .js-post-body" --color=always --piped --flash-cache) # Find the question content.
-    ANSWER=$(is-fast --last --selector "div.accepted-answer .js-post-body" --color=always --piped --flash-cache) # Separately find the answer content.
+    QUESTION=$(RUST_LOG=is_fast=trace is-fast ${*} --site "www.stackoverflow.com" --selector "div.question .js-post-body" --color=always --pretty-print="margin:20,title:Question" --piped --flash-cache) # Find the question content.
+    ANSWER=$(RUST_LOG=is_fast=trace is-fast --last --selector "div.accepted-answer .js-post-body" --color=always --pretty-print="margin:20,title:Answer" --piped --flash-cache) # Separately find the answer content.
     cat << EOF # Format as desired
-QUESTION:
-
 $QUESTION
-
-ANSWER:
 
 $ANSWER
 EOF
@@ -50,5 +47,6 @@ isf_define() {
         --selector "div.sb" \
         --nth-element 1 \
         --color=always \
+        --pretty-print="margin:20" \
         --piped
 }

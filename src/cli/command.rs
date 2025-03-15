@@ -100,4 +100,10 @@ pub struct Cli {
         help = "Enable caching with an extremely short ttl, and maximal cache size, useful for scripting"
     )]
     pub(crate) flash_cache: bool,
+
+    #[arg(
+        long,
+        help = "Additional display configuration when printing to the terminal."
+    )]
+    pub(crate) pretty_print: Vec<String>,
 }
