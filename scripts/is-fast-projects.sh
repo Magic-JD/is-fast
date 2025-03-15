@@ -9,7 +9,7 @@
 isf_stock() {
     is-fast \
         --direct "https://finance.yahoo.com/quote/${1}/" \
-        --selector "span.base" \
+        --selector "section.container > h1, span.base" \
         --piped \
         --no-cache \
         --pretty-print="margin:5"
@@ -31,22 +31,24 @@ isf_what() {
 
 # Search stack overflow, showing only the question and answer text. Note must use --last for this, as the history output/order is not deterministic.
 isf_so() {
-    QUESTION=$(RUST_LOG=is_fast=trace is-fast ${*} --site "www.stackoverflow.com" --selector "div.question .js-post-body" --color=always --pretty-print="margin:20,title:Question" --piped --flash-cache) # Find the question content.
-    ANSWER=$(RUST_LOG=is_fast=trace is-fast --last --selector "div.accepted-answer .js-post-body" --color=always --pretty-print="margin:20,title:Answer" --piped --flash-cache) # Separately find the answer content.
+    QUESTION=$(is-fast ${*} --site "www.stackoverflow.com" --selector "div.question .js-post-body" --color=always --pretty-print="margin:20,title:Question" --piped --flash-cache) # Find the question content.
+    ANSWER=$(is-fast --last --selector "div.accepted-answer .js-post-body" --color=always --pretty-print="margin:20,title:Answer" --piped --flash-cache) # Separately find the answer content.
     cat << EOF # Format as desired
-$QUESTION
 
+$QUESTION
 $ANSWER
+
 EOF
 }
 
-# Get a simple definition of a word.
+# Get a simple definition of a word. 
+# NOTE capitalization is specific for ZSH - for BASH change to ${1^}
 isf_define() {
     is-fast \
         --direct "www.merriam-webster.com/dictionary/${1}" \
         --selector "div.sb" \
         --nth-element 1 \
         --color=always \
-        --pretty-print="margin:20" \
+        --pretty-print="margin:20,title:${(C)1}" \
         --piped
 }

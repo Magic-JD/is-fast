@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.11.0]
+### Added
+- Additional configuration for printed output using the --pretty-print command.
+- Format is command:value,command:value
+ - Can wrap the output. - Command = wrap, no value needed, use --pretty-print="wrap"
+ - Can apply a margin to the output. - Command = margin, value = number, use --pretty-print="margin:10"
+ - NOTE: Margin this will automatically wrap. I think this should be the desired behaviour anyway if you want margins.
+ - Can apply a title to the output. - Command = title, value = string, use --pretty-print="title:TITLE"
+ - NOTE: The title cannot contain the characters , or : due to parsing issues.
+
+### Changed
+- Updated documentation to include these configuration changes.
+- Updated the example scripts to take advantage of these new features.
+
+### Fixed
+- Bug where ad results would sometimes be retrieved from duckduckgo
+
 ## [0.10.1]
 ### Added
 - The ability to cache your results. Although this option is off by default, enabling it speeds up the time mostly static pages take to reload if you close and open them again.

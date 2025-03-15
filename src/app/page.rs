@@ -83,27 +83,28 @@ impl PageViewer for TextApp {
                     add_history(&page.link).unwrap_or_else(|err| eprintln!("{err}"));
                 }
                 let content = page.extract.get_text(&page.link);
-                let width = match terminal_size() {
-                    Some((Width(w), _)) => w,
-                    None => {
-                        log::error!("Failed to get terminal size - defaulting to sane value");
-                        80
-                    }
-                };
-                println!("{}", conditional_formatting(content, width));
+                println!("{}", conditional_formatting(content));
             }
             [] => eprintln!("No links found, no error detected."),
         }
     }
 }
 
-fn conditional_formatting(mut content: String, mut width: u16) -> String {
+fn conditional_formatting(mut content: String) -> String {
+    content = content.trim().to_string(); // Trim content, should be no leading spaces.
     let display_configuration_list = Config::get_display_configuration();
     // No additional configuration, early return.
     if display_configuration_list.is_empty() {
-        return format!("\n{}\n", content.trim()); //Ensure consistent blank first and last line
+        return format!("\n{content}\n"); //Ensure consistent blank first and last line
     }
 
+    let mut width = match terminal_size() {
+        Some((Width(w), _)) => w,
+        None => {
+            log::error!("Failed to get terminal size - defaulting to sane value");
+            80
+        }
+    };
     let mut margin = 0;
     let mut wrap = false;
     let mut title = None;
@@ -120,11 +121,12 @@ fn conditional_formatting(mut content: String, mut width: u16) -> String {
         }
     }
     if let Some(title_val) = title {
-        let mut title = format!("\n{title_val}\n");
+        let mut title = title_val.to_string();
         if let ColorMode::Always = Config::get_color_mode() {
             let style = Style::new().bold();
-            title = style.paint(&title).to_string();
+            title = style.paint(title).to_string();
         }
+        title = format!("{title}\n\n"); // Don't need leading newline as that is added later.
         content.insert_str(0, &title);
     }
     if wrap {
@@ -140,5 +142,5 @@ fn conditional_formatting(mut content: String, mut width: u16) -> String {
             content = textwrap::indent(&content, &" ".repeat(margin as usize))
         }
     }
-    content
+    format!("\n{content}\n") //Ensure consistent blank first and last line
 }
