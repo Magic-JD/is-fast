@@ -13,7 +13,6 @@ struct SearchResult {
 #[derive(serde::Deserialize)]
 struct SearchItem {
     link: String,
-    title: String,
 }
 
 #[derive(Debug, Clone)]
@@ -53,7 +52,7 @@ impl GoogleSearch {
         search_result
             .items
             .iter()
-            .map(|item| Link::new(item.title.clone(), item.link.clone()))
+            .map(|item| Link::new(item.link.clone()))
             .collect()
     }
 }

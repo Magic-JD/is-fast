@@ -2,7 +2,8 @@ use crate::cli::command::Cli;
 use crate::config::load::Config;
 use crate::database::connect::get_latest_history;
 use crate::errors::error::IsError;
-use crate::search_engine::link::{Link, PageSource};
+use crate::search_engine::link::HtmlSource::{FileSource, LinkSource};
+use crate::search_engine::link::{File, Link, PageSource};
 use crate::search_engine::search::find_links;
 use crate::transform::page::PageExtractor;
 
@@ -12,8 +13,8 @@ pub fn prepare_pages(args: Cli) -> Result<Vec<PageSource>, IsError> {
     if args.last {
         if let Some(history) = get_latest_history()? {
             pages.push(PageSource {
-                link: Link::new(history.title, history.url),
-                extract: PageExtractor::from_url(
+                html_source: LinkSource(Link::new(history.url)),
+                extract: PageExtractor::new(
                     Config::get_color_mode().clone(),
                     args.selector.clone(),
                     args.nth_element.clone(),
@@ -22,30 +23,29 @@ pub fn prepare_pages(args: Cli) -> Result<Vec<PageSource>, IsError> {
             });
         }
     }
-    if let Some(file) = args.file {
-        let url = args.url.unwrap_or_else(|| file.clone());
-        let link = Link::new(file, url);
+    if let Some(file_location) = args.file {
+        let file = File::new(file_location, args.url.unwrap_or_default());
         pages.push(PageSource {
-            link,
-            extract: PageExtractor::from_file(
+            html_source: FileSource(file),
+            extract: PageExtractor::new(
                 Config::get_color_mode().clone(),
                 args.selector.clone(),
                 args.nth_element.clone(),
             ),
-            tracked: false, // Must check history enabled if this changes.
+            tracked: false, // Cannot track history for file.
         });
     }
     for url in args.direct {
         let selection_tag = args.selector.clone();
-        let link = Link::new(String::default(), url);
+        let html_source = LinkSource(Link::new(url));
         pages.push(PageSource {
-            link,
-            extract: PageExtractor::from_url(
+            html_source,
+            extract: PageExtractor::new(
                 Config::get_color_mode().clone(),
                 selection_tag,
                 args.nth_element.clone(),
             ),
-            tracked: false, // Must check history enabled if this changes.
+            tracked: *history_enabled,
         });
     }
     if let Some(search_term) = args.query.map(|query| query.join(" ")) {
@@ -58,9 +58,10 @@ pub fn prepare_pages(args: Cli) -> Result<Vec<PageSource>, IsError> {
         let new_pages: Vec<PageSource> = links_result.map(|links| {
             links
                 .into_iter()
-                .map(|link| PageSource {
-                    link,
-                    extract: PageExtractor::from_url(
+                .map(LinkSource)
+                .map(|html_source| PageSource {
+                    html_source,
+                    extract: PageExtractor::new(
                         Config::get_color_mode().clone(),
                         args.selector.clone(),
                         args.nth_element.clone(),

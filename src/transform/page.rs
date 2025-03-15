@@ -1,8 +1,8 @@
 use crate::cli::command::ColorMode;
 use crate::config::load::Config;
 use crate::errors::error::IsError;
-use crate::errors::error::IsError::General;
-use crate::search_engine::link::Link;
+use crate::errors::error::IsError::Io;
+use crate::search_engine::link::HtmlSource;
 use crate::search_engine::scrape::scrape;
 use crate::transform::filter::filter;
 use crate::transform::format::to_display;
@@ -12,52 +12,28 @@ use ratatui::style::Style as RatStyle;
 use ratatui::style::{Color as RatColor, Modifier};
 use ratatui::text::Line;
 use ratatui::widgets::Paragraph;
-use scraper::{ElementRef, Html};
+use scraper::{ElementRef, Html, Selector};
 use std::fs;
-use std::sync::Arc;
-
-type ToHtml = Arc<dyn Fn(&Link) -> Result<String, IsError> + Send + Sync + 'static>;
 
 #[derive(Clone)]
 pub struct PageExtractor {
-    pub convert_to_html: ToHtml,
     pub color_mode: ColorMode,
     pub selector: Option<String>,
     pub nth_element: Vec<usize>,
 }
 
 impl PageExtractor {
-    pub fn from_url(
-        color_mode: ColorMode,
-        selector: Option<String>,
-        nth_element: Vec<usize>,
-    ) -> Self {
+    pub fn new(color_mode: ColorMode, selector: Option<String>, nth_element: Vec<usize>) -> Self {
         Self {
-            convert_to_html: Arc::new(|link| scrape(&link.url)),
             color_mode,
             selector,
             nth_element,
         }
     }
 
-    pub fn from_file(
-        color_mode: ColorMode,
-        selector: Option<String>,
-        nth_element: Vec<usize>,
-    ) -> Self {
-        Self {
-            convert_to_html: Arc::new(|link| {
-                fs::read_to_string(&link.title).map_err(|e| General(e.to_string()))
-            }),
-            color_mode,
-            selector,
-            nth_element,
-        }
-    }
-
-    pub fn get_paragraph(&self, link: &Link) -> Paragraph<'static> {
-        let text = self.get_tui_text(link);
-        match self.color_mode {
+    pub fn get_paragraph(&self, link: &HtmlSource) -> (String, Paragraph<'static>) {
+        let (title, text) = self.get_tui_text(link);
+        let paragraph = match self.color_mode {
             ColorMode::Never => Paragraph::new(
                 text.lines
                     .iter()
@@ -66,24 +42,35 @@ impl PageExtractor {
                     .collect::<Vec<Line>>(),
             ),
             _ => Paragraph::new(text),
-        }
+        };
+        (title, paragraph)
     }
 
-    fn get_tui_text(&self, link: &Link) -> Text<'static> {
-        (self.convert_to_html)(link)
+    fn get_tui_text(&self, html_source: &HtmlSource) -> (String, Text<'static>) {
+        let html_result: Result<String, IsError> = match html_source {
+            HtmlSource::LinkSource(link) => scrape(&link.url),
+            HtmlSource::FileSource(file) => fs::read_to_string(&file.file_path).map_err(Io),
+        };
+        let html_string = html_result
             .map(|html| PageExtractor::sanitize(&html))
-            .map(|res| Html::parse_document(res.as_str()))
-            .and_then(|html| {
-                filter(
-                    &html,
-                    &self
-                        .selector
-                        .clone()
-                        .unwrap_or_else(|| Config::get_selectors(&link.url)),
-                )
-                .map(|elements| self.process_elements(elements))
-            })
-            .unwrap_or_else(|_| Text::from("Failed to convert to text"))
+            .unwrap_or_default();
+        let html = Html::parse_document(&html_string);
+        let selector = Selector::parse("title").expect("invalid title selector");
+        let title = html
+            .select(&selector)
+            .next()
+            .map(|t| t.text().collect::<String>())
+            .unwrap_or_default();
+        let text = filter(
+            &html,
+            &self
+                .selector
+                .clone()
+                .unwrap_or_else(|| Config::get_selectors(html_source.get_url())),
+        )
+        .map(|elements| self.process_elements(elements))
+        .unwrap_or_else(|_| Text::from("Failed to convert to text"));
+        (title, text)
     }
 
     fn process_elements(&self, elements: Vec<ElementRef>) -> Text<'static> {
@@ -108,8 +95,9 @@ impl PageExtractor {
         Text::from(lines.into_iter().flatten().collect::<Vec<Line>>())
     }
 
-    pub fn get_text(&self, link: &Link) -> String {
-        self.get_tui_text(link)
+    pub fn get_text(&self, html_source: &HtmlSource) -> (String, String) {
+        let (title, text) = self.get_tui_text(html_source);
+        let plaintext = text
             .lines
             .into_iter()
             .map(|line| match self.color_mode {
@@ -117,7 +105,8 @@ impl PageExtractor {
                 _ => line.to_string(),
             })
             .collect::<Vec<String>>()
-            .join("\n")
+            .join("\n");
+        (title, plaintext)
     }
 
     fn convert_rat_to_ansi(line: Line) -> String {
@@ -177,33 +166,36 @@ impl PageExtractor {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::search_engine::link::File;
+    use crate::search_engine::link::HtmlSource::FileSource;
     use ratatui::text::Span;
     use std::path::Path;
 
     #[test]
     fn test_ansi_text_as_expected() {
         let path_sample = String::from("tests/data/sample.html");
-        let link = Link::new(path_sample, String::default());
+        let file = File::new(path_sample, String::new());
 
-        let ansi_text = PageExtractor::from_file(ColorMode::Always, None, vec![])
-            .get_text(&link)
+        let (filename, ansi_text) = PageExtractor::new(ColorMode::Always, None, vec![])
+            .get_text(&FileSource(file))
             .to_owned();
 
         let path_output = Path::new("tests/data/expected_ansi_text.txt");
         let expected_content = fs::read_to_string(path_output)
             .expect("Failed to read expected text file")
             .to_owned();
-
+        let expected_filename = String::from("for and range - Rust By Example");
+        assert_eq!(filename, expected_filename);
         assert_eq!(ansi_text, expected_content);
     }
 
     #[test]
     fn test_plain_text_as_expected() {
         let path_sample = String::from("tests/data/sample.html");
-        let link = Link::new(path_sample, String::default());
+        let file = File::new(path_sample, String::new());
 
-        let plain_text = PageExtractor::from_file(ColorMode::Never, None, vec![])
-            .get_text(&link)
+        let (filename, plain_text) = PageExtractor::new(ColorMode::Never, None, vec![])
+            .get_text(&FileSource(file))
             .to_owned();
 
         let path_output = Path::new("tests/data/expected_text.txt");
@@ -211,23 +203,26 @@ mod tests {
             .expect("Failed to read expected text file")
             .to_owned();
 
+        let expected_filename = String::from("for and range - Rust By Example");
+        assert_eq!(filename, expected_filename);
         assert_eq!(plain_text, expected_content);
     }
 
     #[test]
     fn test_tui_text_as_expected() {
         let path_sample = String::from("tests/data/sample.html");
-        let link = Link::new(path_sample, String::default());
+        let file = File::new(path_sample, String::new());
+        let source = FileSource(file);
 
         let path_output = Path::new("tests/data/expected_text.txt");
         let expected_content = fs::read_to_string(path_output)
             .expect("Failed to read expected text file")
             .to_owned();
 
-        let result = PageExtractor::from_file(ColorMode::Always, None, vec![]).get_tui_text(&link);
+        let result = PageExtractor::new(ColorMode::Always, None, vec![]).get_tui_text(&source);
 
         let expected_lines: Vec<_> = expected_content.lines().collect();
-        let binding = result.to_string();
+        let binding = result.1.to_string();
         let result_lines: Vec<_> = binding.lines().collect();
 
         let min_len = expected_lines.len().min(result_lines.len());
@@ -245,6 +240,7 @@ mod tests {
         }
 
         let length = result
+            .1
             .lines
             .iter()
             .flat_map(|line| line.spans.clone())

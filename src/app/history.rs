@@ -5,7 +5,8 @@ use crate::app::tui::TuiApp;
 use crate::config::load::Config;
 use crate::database::connect::{get_history, HistoryData};
 use crate::pipe::history::pipe_history;
-use crate::search_engine::link::{Link, PageSource};
+use crate::search_engine::link::HtmlSource::LinkSource;
+use crate::search_engine::link::{HtmlSource, Link, PageSource};
 use crate::transform::page::PageExtractor;
 use crate::tui::history_content::HistoryContent;
 use ratatui::widgets::TableState;
@@ -44,13 +45,9 @@ impl HistoryViewer for TuiApp {
                         &history_content.current_history,
                         &history_content.table_state,
                     )
-                    .map(|link| PageSource {
-                        link,
-                        extract: PageExtractor::from_url(
-                            Config::get_color_mode().clone(),
-                            None,
-                            vec![],
-                        ),
+                    .map(|html_source| PageSource {
+                        html_source,
+                        extract: PageExtractor::new(Config::get_color_mode().clone(), None, vec![]),
                         tracked: true,
                     });
                 }
@@ -83,11 +80,11 @@ impl HistoryViewer for TextApp {
     }
 }
 
-fn current_link(history: &[HistoryData], state: &TableState) -> Option<Link> {
+fn current_link(history: &[HistoryData], state: &TableState) -> Option<HtmlSource> {
     let idx = state.selected().unwrap_or(0);
     history
         .iter()
         .collect::<Vec<_>>()
         .get(idx)
-        .map(|history_data| Link::new(history_data.title.clone(), history_data.url.clone()))
+        .map(|history_data| LinkSource(Link::new(history_data.url.clone())))
 }

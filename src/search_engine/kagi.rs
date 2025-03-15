@@ -17,8 +17,6 @@ struct SearchItem {
     t: i32,
     #[serde(default)]
     url: String,
-    #[serde(default)]
-    title: String,
 }
 
 #[derive(Debug, Clone)]
@@ -40,7 +38,7 @@ impl KagiSearch {
             .data
             .iter()
             .filter(|item| item.t == 0)
-            .map(|item| Link::new(item.title.clone(), item.url.clone()))
+            .map(|item| Link::new(item.url.clone()))
             .collect()
     }
 

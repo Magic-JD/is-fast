@@ -20,17 +20,14 @@ impl DuckDuckGoSearch {
         let document = Html::parse_document(html);
         let selector = Selector::parse("div.web-result")
             .map_err(|_| SelectorError(String::from("Failed to create a result selector")))?;
-        let selector_title = Selector::parse("a.result__a")
-            .map_err(|_| SelectorError(String::from("Failed to create title selector")))?;
         let selector_url = Selector::parse("a.result__url")
             .map_err(|_| SelectorError(String::from("Failed to create url selector")))?;
         document
             .select(&selector)
             .map(|element_ref| Html::parse_document(&element_ref.html()))
             .map(|element_html| {
-                let title = Self::extract_value(&selector_title, &element_html)?;
                 let url = Self::extract_value(&selector_url, &element_html)?;
-                Ok(Link::new(title, url))
+                Ok(Link::new(url))
             })
             .collect::<Result<Vec<Link>, IsError>>()
     }
@@ -39,7 +36,7 @@ impl DuckDuckGoSearch {
         let title = element_html
             .select(selector)
             .next()
-            .ok_or(SelectorError(String::from("Could not parse title")))?
+            .ok_or(SelectorError(String::from("Could not parse")))?
             .text()
             .collect::<Vec<_>>()
             .join("")

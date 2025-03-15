@@ -36,7 +36,7 @@ pub fn conditional_formatting(
         } else {
             title_val.trim().to_string()
         };
-        content.insert_str(0, &format!("{}\n\n", title));
+        content.insert_str(0, &format!("{title}\n\n"));
     }
 
     if wrap {

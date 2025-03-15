@@ -1,5 +1,5 @@
 use crate::errors::error::IsError;
-use crate::errors::error::IsError::Scrape;
+use crate::errors::error::IsError::{General, Scrape};
 use crate::search_engine::cache::{cached_pages_read, cached_pages_write};
 use once_cell::sync::Lazy;
 use reqwest::blocking::{Client, Response};
@@ -13,7 +13,7 @@ pub static REQWEST_CLIENT: Lazy<Client> = Lazy::new(|| {
 });
 
 pub fn scrape(url: &str) -> Result<String, IsError> {
-    let url = &format_url(url);
+    let url = &format_url(url).ok_or(General(String::from("invalid url")))?;
     if let Some(html) = cached_pages_read(url) {
         log::debug!("Cache hit for: {}", url);
         return Ok(html);
@@ -24,11 +24,14 @@ pub fn scrape(url: &str) -> Result<String, IsError> {
         .inspect(|html| cached_pages_write(url, html))
 }
 
-pub fn format_url(url: &str) -> String {
-    if url.starts_with("http") {
-        return url.to_string();
+pub fn format_url(url: &str) -> Option<String> {
+    if url.is_empty() {
+        return None;
     }
-    format!("https://{url}")
+    if url.starts_with("http") {
+        return Some(url.to_string());
+    }
+    Some(format!("https://{url}"))
 }
 
 fn reqwest_scrape(url: &str) -> Result<String, IsError> {
