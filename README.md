@@ -89,6 +89,8 @@ cargo install --git https://github.com/Magic-JD/is-fast.git
   - [`--site`](#--site)
   - [`--color`](#--color)
   - [`--last`](#--last)
+  - [`--pretty-print`](#--pretty-print)
+- [🧹 Clearing Data](#-clearing-data) 
 - [Example scripts](#example-scripts)
 - [Contributors](#contributors)
 ---
@@ -671,23 +673,6 @@ isf_find() {
 
 ---
 
-# 🧹 Clearing Data
-
-To remove stored history or cached pages, use the following options:
-
-- `--clear-history` clears all stored history.
-- `--clear-cache` clears all cached pages.
-- `--clear-all` clears both cache and history.
-
-#### Example Usage:
-
-```sh
-is-fast --clear-history
-is-fast --clear-cache
-is-fast --clear-all
-```
-
-
 # 🔑 Customizing your results
 
 ### `--selector/-s`
@@ -722,6 +707,71 @@ This allows the caller to specify the color mode. Default value is `tui`, which 
 is-fast --color=always "How to do a for loop in rust" | bat # Will output to bat with full colors
 ```
 
+### `--pretty-print`
+
+Customize the format of the output to the terminal with the following commands. This flag does not affect the TUI and would normally be use in conjunction with the `--piped` command:
+
+- **`wrap`**: This will automatically wrap the output.
+  ```sh
+  is-fast --pretty-print="wrap" "Some search term"
+  ```
+
+- **`margin:<value>`**: This will apply a margin to the output. If a margin is applied, it will also automatically wrap the output. The value should be a number indicating the desired margin in characters.
+  ```sh
+  is-fast --pretty-print="margin:10" "Some search term"
+  ```
+
+- **`title:<value>`**: This will apply a title to the output. The value should be a string. Note that the title cannot contain the characters `,` or `:` due to parsing issues.
+  ```sh
+  is-fast --pretty-print="title:My Custom Title" "Some search term"
+  ```
+
+- **Combining commands**: You can combine the different commands to apply multiple customizations at once.
+  ```sh
+  is-fast --pretty-print="wrap,margin:10,title:Search Results" "Some search term"
+  ```
+
+### Example usage of `--pretty-print`:
+
+- Apply wrapping with a margin of 10 and a custom title:
+  ```sh
+  is-fast --pretty-print="wrap,margin:10,title:Rust Programming" "Rust programming language"
+  ```
+
+- Apply a title without wrapping:
+  ```sh
+  is-fast --pretty-print="title:Rust Info" "Rust programming language"
+  ```
+
+- Apply wrapping alone:
+  ```sh
+  is-fast --pretty-print="wrap" "Rust programming language"
+  ```
+
+- Apply margin and wrapping together:
+  ```sh
+  is-fast --pretty-print="margin:15" "Rust programming language"
+  ```
+
+---
+
+# 🧹 Clearing Data
+
+To remove stored history or cached pages, use the following options:
+
+- `--clear-history` clears all stored history.
+- `--clear-cache` clears all cached pages.
+- `--clear-all` clears both cache and history.
+
+#### Example Usage:
+
+```sh
+is-fast --clear-history
+is-fast --clear-cache
+is-fast --clear-all
+```
+
+---
 
 # Example scripts
 

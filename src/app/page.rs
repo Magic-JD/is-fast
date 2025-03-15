@@ -5,6 +5,7 @@ use crate::app::tui::TuiApp;
 use crate::config::load::{Config, Scroll};
 use crate::database::connect::add_history;
 use crate::search_engine::link::PageSource;
+use crate::transform::pretty_print::conditional_formatting;
 use crate::tui::page_content::PageContent;
 
 impl PageViewer for TuiApp {
@@ -78,7 +79,10 @@ impl PageViewer for TextApp {
                     add_history(&page.link).unwrap_or_else(|err| eprintln!("{err}"));
                 }
                 let content = page.extract.get_text(&page.link);
-                println!("{content}");
+                println!(
+                    "{}",
+                    conditional_formatting(content, Config::get_pretty_print())
+                );
             }
             [] => eprintln!("No links found, no error detected."),
         }

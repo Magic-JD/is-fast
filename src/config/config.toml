@@ -128,7 +128,7 @@ theme = "base16-ocean.dark"
 [display]
 # The color of the border.
 border_color = "#89b4fa"
-# A percentage of the page width to be applied on either side
+# A percentage of the page width to be applied on either side.
 page_margin = 10
 # The amount page down/up scrolls - can be set to full, half, or a number of lines (as a string)
 page_scroll = "full"
