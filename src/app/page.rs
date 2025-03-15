@@ -79,7 +79,10 @@ impl PageViewer for TextApp {
                     add_history(&page.link).unwrap_or_else(|err| eprintln!("{err}"));
                 }
                 let content = page.extract.get_text(&page.link);
-                println!("{}", conditional_formatting(content));
+                println!(
+                    "{}",
+                    conditional_formatting(content, Config::get_pretty_print())
+                );
             }
             [] => eprintln!("No links found, no error detected."),
         }

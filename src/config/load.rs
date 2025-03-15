@@ -310,7 +310,7 @@ impl Config {
         Self::get_config().cache.clone()
     }
 
-    pub fn get_display_configuration() -> &'static [DisplayConfig] {
+    pub fn get_pretty_print() -> &'static [DisplayConfig] {
         &Self::get_config().pretty_print
     }
 }
