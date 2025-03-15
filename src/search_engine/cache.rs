@@ -131,7 +131,7 @@ impl Cache {
         let values = self.retrieve_value(key)?;
 
         if let Some((html, timestamp)) = values {
-            if timestamp < Self::current_time()? {
+            if timestamp <= Self::current_time()? {
                 self.remove(key)?;
                 return Ok(None);
             }
