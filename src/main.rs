@@ -53,7 +53,7 @@ fn main() {
     };
     Config::init(
         args.color.clone(),
-        cache_command,
+        &cache_command,
         args.no_history,
         pretty_print,
     );

@@ -48,7 +48,7 @@ pub struct Config {
 impl Config {
     pub fn init(
         args_color_mode: Option<ColorMode>,
-        cache_command: Option<CacheCommand>,
+        cache_command: &Option<CacheCommand>,
         no_history: bool,
         pretty_print: Vec<DisplayConfig>,
     ) {
@@ -57,12 +57,12 @@ impl Config {
     }
 
     fn default() -> Config {
-        Self::new(None, None, false, vec![])
+        Self::new(None, &None, false, vec![])
     }
 
     fn new(
         args_color_mode: Option<ColorMode>,
-        cache_command: Option<CacheCommand>,
+        cache_command: &Option<CacheCommand>,
         no_history: bool,
         pretty_print: Vec<DisplayConfig>,
     ) -> Self {

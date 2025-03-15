@@ -98,12 +98,11 @@ fn conditional_formatting(mut content: String) -> String {
         return format!("\n{content}\n"); //Ensure consistent blank first and last line
     }
 
-    let mut width = match terminal_size() {
-        Some((Width(w), _)) => w,
-        None => {
-            log::error!("Failed to get terminal size - defaulting to sane value");
-            80
-        }
+    let mut width = if let Some((Width(w), _)) = terminal_size() {
+        w
+    } else {
+        log::error!("Failed to get terminal size - defaulting to sane value");
+        80
     };
     let mut margin = 0;
     let mut wrap = false;
@@ -139,7 +138,7 @@ fn conditional_formatting(mut content: String) -> String {
             Options::new(width as usize).wrap_algorithm(WrapAlgorithm::FirstFit),
         );
         if margin > 0 {
-            content = textwrap::indent(&content, &" ".repeat(margin as usize))
+            content = textwrap::indent(&content, &" ".repeat(margin as usize));
         }
     }
     format!("\n{content}\n") //Ensure consistent blank first and last line
