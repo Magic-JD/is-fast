@@ -103,7 +103,7 @@ pub struct Cli {
 
     #[arg(
         long,
-        help = "Additional display configuration when printing to the terminal."
+        help = "Additional display configuration when printing to the terminal. Available options are wrap, margin and title"
     )]
     pub(crate) pretty_print: Vec<String>,
 }
