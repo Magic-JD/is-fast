@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.11.1]
+## [0.11.2]
 ### Added
 - Logging to file when the `RUST_LOG` env var is enabled.
     - The log file will only be created if that environment variable is enabled.
@@ -16,6 +16,10 @@
 - History tracking now works with everything except the `--file` flag.
 - Parallel loading of the next page is much more efficient.
 - Errors or non-content now lead to that url being purged from the cache, preventing a bad cache causing lasting issues.
+
+## [0.11.1]
+### Changed
+- Error when updating
 
 ## [0.11.0]
 ### Added
