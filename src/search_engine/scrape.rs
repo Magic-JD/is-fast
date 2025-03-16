@@ -52,9 +52,9 @@ fn reqwest_scrape(url: &str) -> Result<String, IsError> {
 fn curl_scrape(url: &str) -> Result<String, IsError> {
     let output = Command::new("curl")
         .args([
-            "-A",
             "--max-time",
             "2",
+            "-A",
             "Mozilla/5.0 (compatible; MSIE 7.01; Windows NT 5.0)",
             url,
         ])
