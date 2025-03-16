@@ -1,12 +1,12 @@
-use crate::cli::command::ColorMode;
+use crate::cli::command::{CacheMode, ColorMode};
 use crate::config::raw::{
     convert_styles, generate_globs, get_user_specified_config, override_defaults, parse_color,
     RawConfig,
 };
-use crate::search_engine::cache::{CacheConfig, CacheMode};
+use crate::search_engine::cache::CacheConfig;
 use crate::search_engine::search_type::SearchEngine;
 use crate::search_engine::search_type::SearchEngine::{DuckDuckGo, Google, Kagi};
-use crate::{CacheCommand, DisplayConfig};
+use crate::DisplayConfig;
 use globset::{Glob, GlobSet};
 use nucleo_matcher::pattern::AtomKind;
 use once_cell::sync::OnceCell;
@@ -48,7 +48,7 @@ pub struct Config {
 impl Config {
     pub fn init(
         args_color_mode: Option<ColorMode>,
-        cache_command: &Option<CacheCommand>,
+        cache_command: &Option<CacheMode>,
         no_history: bool,
         pretty_print: Vec<DisplayConfig>,
     ) {
@@ -62,7 +62,7 @@ impl Config {
 
     fn new(
         args_color_mode: Option<ColorMode>,
-        cache_command: &Option<CacheCommand>,
+        cache_mode: &Option<CacheMode>,
         no_history: bool,
         pretty_print: Vec<DisplayConfig>,
     ) -> Self {
@@ -70,16 +70,6 @@ impl Config {
             .map_err(|e| println!("{e}"))
             .unwrap_or(RawConfig::default());
         _ = get_user_specified_config().map(|u_config| override_defaults(&mut config, u_config));
-        let flag_cache_mode = || {
-            cache_command.clone().map(|val| match val {
-                CacheCommand::Cache => CacheMode::ReadWrite,
-                CacheCommand::Disable => CacheMode::Disabled,
-                CacheCommand::Flash => {
-                    log::error!("Flash mode enabled but not initialized");
-                    CacheMode::Disabled
-                }
-            })
-        };
         let (matcher, globs) = generate_globs(&mut config);
         Self {
             styles: convert_styles(config.styles),
@@ -185,7 +175,7 @@ impl Config {
                     .and_then(|history| history.enabled)
                     .unwrap_or(true)
             },
-            cache: if let Some(CacheCommand::Flash) = cache_command {
+            cache: if let Some(CacheMode::Flash) = cache_mode {
                 CacheConfig::new(CacheMode::ReadWrite, usize::MAX, 5 * MS_IN_SECOND, 0)
             } else {
                 config
@@ -193,7 +183,7 @@ impl Config {
                     .as_ref()
                     .map(|cache_section| {
                         CacheConfig::new(
-                            flag_cache_mode()
+                            cache_mode
                                 .clone()
                                 .or_else(|| {
                                     cache_section
@@ -202,7 +192,7 @@ impl Config {
                                         .as_deref()
                                         .map(convert_to_cache_mode)
                                 })
-                                .unwrap_or(CacheMode::Disabled),
+                                .unwrap_or(CacheMode::Never),
                             cache_section.max_size.unwrap_or(100),
                             cache_section.ttl.unwrap_or(300) * MS_IN_SECOND,
                             10,
@@ -210,7 +200,7 @@ impl Config {
                     })
                     .unwrap_or_else(|| {
                         CacheConfig::new(
-                            flag_cache_mode().unwrap_or(CacheMode::Disabled),
+                            cache_mode.clone().unwrap_or(CacheMode::Never),
                             100,
                             300 * MS_IN_SECOND,
                             10,
@@ -337,11 +327,11 @@ fn convert_to_scroll(scroll: &str) -> Scroll {
 
 fn convert_to_cache_mode(cache_mode: &str) -> CacheMode {
     match cache_mode.to_lowercase().as_str() {
-        "disabled" => CacheMode::Disabled,
+        "disabled" => CacheMode::Never,
         "readwrite" => CacheMode::ReadWrite,
         "read" => CacheMode::Read,
         "write" => CacheMode::Write,
-        _ => CacheMode::Disabled,
+        _ => CacheMode::Never,
     }
 }
 

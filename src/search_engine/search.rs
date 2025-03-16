@@ -15,11 +15,13 @@ pub fn find_links(search_term: &str) -> Result<Vec<Link>, IsError> {
         .find_map(|result| match result {
             Ok(links) if !links.is_empty() => Some(links),
             Err(e) => {
+                log::debug!("failed to search links: {:?}", e);
                 last_error = Some(e.to_string());
                 sleep(Duration::from_secs(1)); // Wait before retrying
                 None
             }
             _ => {
+                log::debug!("failed to search links: no links found");
                 sleep(Duration::from_secs(1)); // Wait before retrying
                 None
             } // Empty links, try again

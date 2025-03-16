@@ -4,10 +4,12 @@ use crate::search_engine::cache::{cached_pages_read, cached_pages_write};
 use once_cell::sync::Lazy;
 use reqwest::blocking::{Client, Response};
 use std::process::Command;
+use std::time::Duration;
 
 pub static REQWEST_CLIENT: Lazy<Client> = Lazy::new(|| {
     Client::builder()
         .http1_only()
+        .timeout(Duration::from_secs(2))
         .build()
         .expect("Failed to build reqwest client")
 });
@@ -51,6 +53,8 @@ fn curl_scrape(url: &str) -> Result<String, IsError> {
     let output = Command::new("curl")
         .args([
             "-A",
+            "--max-time",
+            "2",
             "Mozilla/5.0 (compatible; MSIE 7.01; Windows NT 5.0)",
             url,
         ])

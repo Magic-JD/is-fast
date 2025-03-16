@@ -1,3 +1,4 @@
+use crate::cli::command::CacheMode;
 use crate::config::load::Config;
 use crate::errors::error::IsError;
 use bincode;
@@ -7,7 +8,6 @@ use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use parking_lot::MutexGuard;
 use rusqlite::{params, Connection};
-use serde::Deserialize;
 use std::fs;
 use std::io::Cursor;
 use std::path::PathBuf;
@@ -17,14 +17,6 @@ use zstd::{decode_all, encode_all};
 
 static HTML_CACHE: Lazy<Cache> = Lazy::new(Cache::new);
 static VERSION: u16 = 0;
-
-#[derive(Debug, Deserialize, Clone)]
-pub enum CacheMode {
-    Read,
-    Write,
-    ReadWrite,
-    Disabled,
-}
 
 #[derive(Debug, Clone)]
 pub struct CacheConfig {
@@ -83,7 +75,7 @@ impl Cache {
 
     pub fn insert(&self, key: &str, value: &str) -> Result<(), IsError> {
         match self.config.cache_mode {
-            CacheMode::Read | CacheMode::Disabled => return Ok(()),
+            CacheMode::Read | CacheMode::Never => return Ok(()),
             _ => {}
         }
         let timestamp = Self::current_time()? + self.config.ttl;
@@ -124,7 +116,7 @@ impl Cache {
 
     pub fn get(&self, key: &str) -> Result<Option<String>, IsError> {
         match self.config.cache_mode {
-            CacheMode::Write | CacheMode::Disabled => return Ok(None),
+            CacheMode::Write | CacheMode::Never => return Ok(None),
             _ => {}
         }
 

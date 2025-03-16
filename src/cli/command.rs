@@ -7,6 +7,15 @@ pub enum ColorMode {
     Never,
 }
 
+#[derive(Debug, ValueEnum, Clone)]
+pub enum CacheMode {
+    Read,
+    Write,
+    ReadWrite,
+    Never,
+    Flash,
+}
+
 /// is-fast - Internet Search Fast from the Terminal
 ///
 /// is-fast is a command-line tool that allows you to quickly search the internet
@@ -86,10 +95,16 @@ pub struct Cli {
     #[arg(long, help = "Wipe all data")]
     pub(crate) clear_all: bool,
 
-    #[arg(long, help = "Apply caching for the given search")]
+    #[arg(
+        long,
+        help = "Apply caching for the given search, shorthand for --cache-mode=readwrite"
+    )]
     pub(crate) cache: bool,
 
-    #[arg(long, help = "Disable caching for the given search")]
+    #[arg(
+        long,
+        help = "Disable caching for the given search, shorthand for --cache-mode=never"
+    )]
     pub(crate) no_cache: bool,
 
     #[arg(long, help = "Disable history for the given search")]
@@ -97,7 +112,14 @@ pub struct Cli {
 
     #[arg(
         long,
-        help = "Enable caching with an extremely short ttl, and maximal cache size, useful for scripting"
+        value_enum,
+        help = "Set cache mode (never, read, write, readwrite, flash)"
+    )]
+    pub cache_mode: Option<CacheMode>,
+
+    #[arg(
+        long,
+        help = "Enable caching with an extremely short ttl, and maximal cache size, useful for scripting, shorthand for --cache-mode=flash"
     )]
     pub(crate) flash_cache: bool,
 

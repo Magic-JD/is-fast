@@ -19,7 +19,7 @@ use crate::app::enum_values::App;
 use crate::app::enum_values::AppFunctions;
 use crate::app::enum_values::HistoryViewer;
 use crate::app::enum_values::PageViewer;
-use crate::cli::command::Cli;
+use crate::cli::command::{CacheMode, Cli};
 use crate::config::load::Config;
 use crate::database::connect::clear_history;
 use crate::search_engine::cache;
@@ -34,22 +34,22 @@ enum DisplayConfig {
     Title(String),
 }
 
-#[derive(Clone, Debug)]
-enum CacheCommand {
-    Cache,
-    Disable,
-    Flash,
-}
-
 fn main() {
     env_logger::init();
     let args = Cli::parse();
     let pretty_print = parse_pretty_print(&args.pretty_print.join(","));
-    let cache_command = match (args.cache, args.no_cache, args.flash_cache) {
-        (true, false, false) => Some(CacheCommand::Cache),
-        (false, true, false) => Some(CacheCommand::Disable),
-        (false, false, true) => Some(CacheCommand::Flash),
-        (_, _, _) => None,
+    let cache_command = match (
+        args.cache_mode.clone(),
+        args.cache,
+        args.no_cache,
+        args.flash_cache,
+    ) {
+        (Some(cache_mode), false, false, false) => Some(cache_mode),
+        (None, true, false, false) => Some(CacheMode::ReadWrite),
+        (None, false, true, false) => Some(CacheMode::Never),
+        (None, false, false, true) => Some(CacheMode::Flash),
+        (None, false, false, false) => None, // None applied, do not apply any difference.
+        (_, _, _, _) => Some(CacheMode::Never), // Failsafe disable cache for inconsistent modes
     };
     Config::init(
         args.color.clone(),
