@@ -38,7 +38,7 @@ pub fn add_history(title: &str, link: &str) -> Result<(), IsError> {
     let url = remove_http(link);
     let conn = CONNECTION.lock().map_err(|e| Access(e.to_string()))?;
     if url_exists(&url, &conn) {
-        update_row(&url, &conn)
+        update_row(title, &url, &conn)
     } else {
         insert_row(title, &url, &conn)
     }
@@ -53,10 +53,10 @@ fn insert_row(title: &str, url: &str, conn: &MutexGuard<Connection>) -> Result<(
     Ok(())
 }
 
-fn update_row(url: &str, conn: &MutexGuard<Connection>) -> Result<(), IsError> {
+fn update_row(title: &str, url: &str, conn: &MutexGuard<Connection>) -> Result<(), IsError> {
     conn.execute(
-        "UPDATE history SET time = datetime('now') WHERE url = ?",
-        [url],
+        "UPDATE history SET time = datetime('now'), title = ? WHERE url = ?",
+        [title, url],
     )
     .map_err(DatabaseSql)?;
     Ok(())
