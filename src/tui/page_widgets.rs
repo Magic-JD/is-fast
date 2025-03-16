@@ -1,4 +1,4 @@
-use crate::database::connect::add_history;
+use crate::database::history_database::add_history;
 use crate::search_engine::link::PageSource;
 use crate::transform::cache::{get_content, preload};
 use crate::tui::general_widgets::TUI_BORDER_COLOR;
@@ -24,7 +24,7 @@ pub fn new_page(index: usize, links: &[PageSource]) -> (String, Paragraph<'stati
             let url = link.html_source.get_url();
             if link.tracked {
                 add_history(&title, url).unwrap_or_else(|_| {
-                    log::error!("Failed to add history for page {title} ({url})")
+                    log::error!("Failed to add history for page {title} ({url})");
                 });
             }
             let display_title = format!(" {title} ({url}) ");

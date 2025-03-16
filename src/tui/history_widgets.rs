@@ -1,5 +1,5 @@
 use crate::app::history::SearchOn;
-use crate::database::connect::HistoryData;
+use crate::database::history_database::HistoryData;
 use crate::tui::general_widgets::TUI_BORDER_COLOR;
 use chrono::{NaiveDateTime, Utc};
 use nucleo_matcher::{Config, Matcher, Utf32Str};
@@ -159,7 +159,7 @@ fn searched_on_to_string(search_on: &SearchOn) -> String {
 
 #[cfg(test)]
 mod tests {
-    use crate::database::connect::HistoryData;
+    use crate::database::history_database::HistoryData;
     use crate::tui::history_widgets::*;
     use chrono::NaiveDateTime;
 

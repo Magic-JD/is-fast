@@ -1,8 +1,9 @@
 use crate::cli::command::ColorMode;
 use crate::config::load::Config;
 use crate::errors::error::IsError;
-use crate::errors::error::IsError::Io;
+use crate::errors::error::IsError::{Io, Scrape};
 use crate::search_engine::link::HtmlSource;
+use crate::search_engine::scrape;
 use crate::search_engine::scrape::scrape;
 use crate::transform::filter::filter;
 use crate::transform::format::to_display;
@@ -51,26 +52,61 @@ impl PageExtractor {
             HtmlSource::LinkSource(link) => scrape(&link.url),
             HtmlSource::FileSource(file) => fs::read_to_string(&file.file_path).map_err(Io),
         };
-        let html_string = html_result
-            .map(|html| PageExtractor::sanitize(&html))
-            .unwrap_or_default();
-        let html = Html::parse_document(&html_string);
         let selector = Selector::parse("title").expect("invalid title selector");
-        let title = html
-            .select(&selector)
-            .next()
-            .map(|t| t.text().collect::<String>())
-            .unwrap_or_default();
-        let text = filter(
-            &html,
+        let html = html_result
+            .map(|html| PageExtractor::sanitize(&html))
+            .map(|sanitized| Html::parse_document(&sanitized));
+
+        html.and_then(|html| {
+            let title = Self::extract_title(&selector, &html);
+            let text = self.extract_text(html_source, &html)?;
+            Ok((title, text))
+        })
+        .unwrap_or_else(|err| {
+            if let HtmlSource::LinkSource(link) = html_source {
+                scrape::cache_purge(&link.url);
+            };
+            (
+                String::from("Failed to retrieve"),
+                Text::from(err.to_string()),
+            )
+        })
+    }
+
+    fn extract_text(
+        &self,
+        html_source: &HtmlSource,
+        html: &Html,
+    ) -> Result<Text<'static>, IsError> {
+        filter(
+            html,
             &self
                 .selector
                 .clone()
                 .unwrap_or_else(|| Config::get_selectors(html_source.get_url())),
         )
-        .map(|elements| self.process_elements(elements))
-        .unwrap_or_else(|_| Text::from("Failed to convert to text"));
-        (title, text)
+            .map(|elements| self.process_elements(elements))
+            .and_then(|text| {
+                if text
+                    .lines
+                    .iter()
+                    .any(|line| !line.to_string().trim().is_empty())
+                {
+                    Ok(text)
+                } else {
+                    Err(Scrape(String::from("Result returned, but not text found. Either the expected html was not retrieved, or the selectors are incorrectly configured.")))
+                }
+            })
+    }
+
+    fn extract_title(selector: &Selector, html: &Html) -> String {
+        html.select(selector).next().map_or_else(
+            || {
+                log::error!("No title found for page ");
+                "Unknown Title".to_string()
+            },
+            |t| t.text().collect::<String>(),
+        )
     }
 
     fn process_elements(&self, elements: Vec<ElementRef>) -> Text<'static> {

@@ -3,7 +3,7 @@ use crate::app::event_loop::{page_event_loop, PageAction};
 use crate::app::text::TextApp;
 use crate::app::tui::TuiApp;
 use crate::config::load::{Config, Scroll};
-use crate::database::connect::add_history;
+use crate::database::history_database::add_history;
 use crate::search_engine::link::HtmlSource::LinkSource;
 use crate::search_engine::link::PageSource;
 use crate::transform::pretty_print::conditional_formatting;

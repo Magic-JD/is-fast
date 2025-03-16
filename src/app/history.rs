@@ -3,7 +3,7 @@ use crate::app::event_loop::{history_event_loop, HistoryAction};
 use crate::app::text::TextApp;
 use crate::app::tui::TuiApp;
 use crate::config::load::Config;
-use crate::database::connect::{get_history, HistoryData};
+use crate::database::history_database::{get_history, HistoryData};
 use crate::pipe::history::pipe_history;
 use crate::search_engine::link::HtmlSource::LinkSource;
 use crate::search_engine::link::{HtmlSource, Link, PageSource};

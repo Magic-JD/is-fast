@@ -9,6 +9,7 @@ mod cli;
 mod config;
 mod database;
 mod errors;
+mod logging;
 mod pipe;
 mod search_engine;
 mod transform;
@@ -21,7 +22,8 @@ use crate::app::enum_values::HistoryViewer;
 use crate::app::enum_values::PageViewer;
 use crate::cli::command::{CacheMode, Cli};
 use crate::config::load::Config;
-use crate::database::connect::clear_history;
+use crate::database::history_database::clear_history;
+use crate::logging::log::init_logger;
 use crate::search_engine::cache;
 use actions::generate_config;
 use atty::{is, Stream};
@@ -35,7 +37,7 @@ enum DisplayConfig {
 }
 
 fn main() {
-    env_logger::init();
+    init_logger();
     let args = Cli::parse();
     let pretty_print = parse_pretty_print(&args.pretty_print.join(","));
     let cache_command = match (

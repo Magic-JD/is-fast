@@ -124,6 +124,7 @@ impl Cache {
 
         if let Some((html, timestamp)) = values {
             if timestamp <= Self::current_time()? {
+                log::debug!("Expired cache item {key}");
                 self.remove(key)?;
                 return Ok(None);
             }
@@ -149,9 +150,13 @@ impl Cache {
     }
 
     pub fn remove(&self, key: &str) -> Result<(), IsError> {
+        if let CacheMode::Never | CacheMode::Read = self.config.cache_mode {
+            return Ok(());
+        }
         let connection = self.get_connection();
         connection.execute("DELETE FROM cache WHERE url = ?", params![key])?;
         drop(connection);
+        log::debug!("Removing: {} from cache", key);
         Ok(())
     }
 
@@ -172,16 +177,28 @@ impl Cache {
 }
 
 pub fn cached_pages_write(url: &str, html: &str) {
+    log::debug!("Caching {}", url);
     HTML_CACHE
         .insert(url, html)
         .unwrap_or_else(|e| log::error!("Error when writing page to cache: {:?}", e));
 }
 
 pub fn cached_pages_read(url: &str) -> Option<String> {
-    HTML_CACHE.get(url).unwrap_or_else(|e| {
+    let cache_result = HTML_CACHE.get(url).unwrap_or_else(|e| {
         log::error!("Error when reading page from cache: {:?}", e);
         None
-    })
+    });
+    match cache_result {
+        Some(_) => log::debug!("Cache hit for {url}"),
+        None => log::debug!("Cache miss for {url}"),
+    };
+    cache_result
+}
+
+pub fn cached_pages_purge(url: &str) {
+    HTML_CACHE.remove(url).unwrap_or_else(|e| {
+        log::error!("Error when removing page from cache: {:?}", e);
+    });
 }
 
 pub fn clear() {

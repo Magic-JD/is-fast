@@ -1,7 +1,7 @@
 use crate::app::history::SearchOn;
 use crate::app::history::SearchOn::{Title, Url};
 use crate::config::load::Config;
-use crate::database::connect::{remove_history, HistoryData};
+use crate::database::history_database::{remove_history, HistoryData};
 use crate::tui::display::Widget;
 use crate::tui::display::Widget::{Block, Paragraph, Table, Text};
 use crate::tui::general_widgets::default_block;
@@ -223,7 +223,7 @@ fn search_on_history<'a>(history: &'a HistoryData, search_on: &'a SearchOn) -> &
 #[cfg(test)]
 mod tests {
     use crate::app::history::SearchOn;
-    use crate::database::connect::HistoryData;
+    use crate::database::history_database::HistoryData;
     use crate::tui::history_content::order_by_match;
     use chrono::NaiveDateTime;
 

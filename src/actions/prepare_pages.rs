@@ -1,6 +1,6 @@
 use crate::cli::command::Cli;
 use crate::config::load::Config;
-use crate::database::connect::get_latest_history;
+use crate::database::history_database::get_latest_history;
 use crate::errors::error::IsError;
 use crate::search_engine::link::HtmlSource::{FileSource, LinkSource};
 use crate::search_engine::link::{File, Link, PageSource};
