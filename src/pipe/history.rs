@@ -1,4 +1,4 @@
-use crate::database::connect::HistoryData;
+use crate::database::history_database::HistoryData;
 use crate::errors::error::IsError;
 use crate::errors::error::IsError::Csv;
 use csv::Writer;

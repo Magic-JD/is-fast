@@ -1218,7 +1218,7 @@ dependencies = [
 
 [[package]]
 name = "is-fast"
-version = "0.11.0"
+version = "0.11.1"
 dependencies = [
  "atty",
  "bincode 2.0.1",

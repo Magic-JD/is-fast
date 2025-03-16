@@ -90,6 +90,7 @@ fg = "Gray"
 # request @https://github.com/Magic-JD/is-fast.
 [selectors]
 "*en.wikipedia.org*" = "div.mw-content-ltr > *:not(table, figure, div.hatnote)"
+"*simple.wikipedia.org*" = "div.mw-content-ltr > *:not(table, figure, div.hatnote)"
 "*www.baeldung.com*" = ".post-content"
 "*www.w3schools.com*" = "#main"
 "*linuxhandbook.com*" = "article"
@@ -102,6 +103,7 @@ fg = "Gray"
 "*geeksforgeeks.org*" = ".text"
 "*programiz.com*" = ".editor-contents"
 "*merriam-webster.com*" = "div.vg"
+"*developer.mozilla.org*" = "main.main-content"
 
 [format]
 # All elements from this list are ignored.

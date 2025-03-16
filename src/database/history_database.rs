@@ -1,6 +1,5 @@
 use crate::errors::error::IsError;
 use crate::errors::error::IsError::{Access, DatabaseSql};
-use crate::search_engine::link::Link;
 use chrono::NaiveDateTime;
 use dirs::data_dir;
 use once_cell::sync::Lazy;
@@ -35,20 +34,20 @@ fn get_database_path() -> PathBuf {
     path
 }
 
-pub fn add_history(link: &Link) -> Result<(), IsError> {
+pub fn add_history(title: &str, link: &str) -> Result<(), IsError> {
     let url = remove_http(link);
     let conn = CONNECTION.lock().map_err(|e| Access(e.to_string()))?;
     if url_exists(&url, &conn) {
         update_row(&url, &conn)
     } else {
-        insert_row(link, &url, &conn)
+        insert_row(title, &url, &conn)
     }
 }
 
-fn insert_row(link: &Link, url: &str, conn: &MutexGuard<Connection>) -> Result<(), IsError> {
+fn insert_row(title: &str, url: &str, conn: &MutexGuard<Connection>) -> Result<(), IsError> {
     conn.execute(
         "INSERT INTO history (title, url, time) VALUES (?, ?, datetime('now'))",
-        [&link.title, url],
+        [title, url],
     )
     .map_err(DatabaseSql)?;
     Ok(())
@@ -110,11 +109,10 @@ pub fn remove_history(url: &str) -> Result<(), IsError> {
     Ok(())
 }
 
-fn remove_http(link: &Link) -> String {
-    link.url
-        .strip_prefix("https://")
-        .or_else(|| link.url.strip_prefix("http://"))
-        .unwrap_or(&link.url)
+fn remove_http(url: &str) -> String {
+    url.strip_prefix("https://")
+        .or_else(|| url.strip_prefix("http://"))
+        .unwrap_or(url)
         .to_string()
 }
 

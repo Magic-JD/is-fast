@@ -3,7 +3,8 @@ use crate::app::event_loop::{page_event_loop, PageAction};
 use crate::app::text::TextApp;
 use crate::app::tui::TuiApp;
 use crate::config::load::{Config, Scroll};
-use crate::database::connect::add_history;
+use crate::database::history_database::add_history;
+use crate::search_engine::link::HtmlSource::LinkSource;
 use crate::search_engine::link::PageSource;
 use crate::transform::pretty_print::conditional_formatting;
 use crate::tui::page_content::PageContent;
@@ -75,10 +76,12 @@ impl PageViewer for TextApp {
     fn show_pages(&mut self, pages: &[PageSource]) {
         match pages {
             [page, ..] => {
-                if page.tracked {
-                    add_history(&page.link).unwrap_or_else(|err| eprintln!("{err}"));
+                let (title, content) = page.extract.get_text(&page.html_source);
+                if let LinkSource(link) = &page.html_source {
+                    if page.tracked {
+                        add_history(&title, &link.url).unwrap_or_else(|err| eprintln!("{err}"));
+                    }
                 }
-                let content = page.extract.get_text(&page.link);
                 println!(
                     "{}",
                     conditional_formatting(content, Config::get_pretty_print())

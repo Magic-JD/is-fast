@@ -11,15 +11,17 @@ static SEARCH_ENGINE: Lazy<&SearchEngine> = Lazy::new(Config::get_search_engine)
 pub fn find_links(search_term: &str) -> Result<Vec<Link>, IsError> {
     let mut last_error = None;
     std::iter::repeat_with(|| SEARCH_ENGINE.search(search_term))
-        .take(4)
+        .take(2) // Max time = 8s (2*2 s for reqwest, 2*2s for curl)
         .find_map(|result| match result {
             Ok(links) if !links.is_empty() => Some(links),
             Err(e) => {
+                log::debug!("failed to search links: {:?}", e);
                 last_error = Some(e.to_string());
                 sleep(Duration::from_secs(1)); // Wait before retrying
                 None
             }
             _ => {
+                log::debug!("failed to search links: no links found");
                 sleep(Duration::from_secs(1)); // Wait before retrying
                 None
             } // Empty links, try again

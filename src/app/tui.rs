@@ -20,7 +20,7 @@ impl TuiApp {
     pub fn open_link(&mut self, index: usize, pages: &[PageSource]) -> Result<(), IsError> {
         let url = pages
             .get(index)
-            .map(|page| format_url(&page.link.url))
+            .and_then(|page| format_url(page.html_source.get_url()))
             .ok_or(General(String::from("Page doesn't have a url")))?;
         if let Some(tool) = Config::get_open_command() {
             // If there is a user defined tool to open, use that
