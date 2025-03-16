@@ -11,6 +11,7 @@ static BLOCK_ELEMENTS: Lazy<&HashSet<String>> = Lazy::new(Config::get_block_elem
 static TAG_STYLES: Lazy<&HashMap<String, Style>> = Lazy::new(Config::get_styles);
 
 pub fn to_display(element: ElementRef) -> Vec<Line<'static>> {
+    log::trace!("Converting element to display lines: {:?}", element);
     let mut lines = to_lines(element, element.value().name() == "pre")
         .into_iter()
         .map(standardize_empty)

@@ -17,11 +17,13 @@ pub fn get_content(
         HtmlSource::LinkSource(link) => &link.url,
         HtmlSource::FileSource(file) => &file.file_path,
     };
-    CACHE
+    let response = CACHE
         .entry(identifier.clone())
         .or_default()
         .get_or_init(|| extractor.get_paragraph(html_source))
-        .clone()
+        .clone();
+    log::debug!("Retrieved response for {identifier}");
+    response
 }
 
 pub fn preload(html_source: &HtmlSource, extractor: &PageExtractor) {

@@ -288,7 +288,7 @@ pub fn generate_globs(config: &mut RawConfig) -> (GlobSet, Vec<Glob>) {
     });
     let matcher = builder
         .build()
-        .inspect_err(|err| eprintln!("{err} : cannot build glob matcher."))
+        .inspect_err(|err| log::error!("{err} : cannot build glob matcher."))
         .unwrap_or_default(); // Should be safe as only valid globs added
     (matcher, globs)
 }

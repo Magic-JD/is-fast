@@ -84,6 +84,7 @@ impl Display {
     }
 
     pub fn render(&mut self, drawables: Vec<Widget>) {
+        log::debug!("Preparing to render");
         self.unwrap_terminal()
             .draw(|frame| {
                 for widget in drawables {
@@ -91,6 +92,7 @@ impl Display {
                 }
             })
             .unwrap_or_else(|err| self.shutdown_with_error(&err.to_string()));
+        log::debug!("Render completed");
     }
 }
 pub enum Widget<'a> {

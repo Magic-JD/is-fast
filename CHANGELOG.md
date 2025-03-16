@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.4]
+### Changed
+- Increased the level of details in the logs.
+
+### Fixed
+- Allow the title to be updated in the history.
+
 ## [0.11.3]
 ### Fixed
 - Increased the timeout due to the previous timeout being too short.

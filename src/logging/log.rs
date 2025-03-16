@@ -1,8 +1,9 @@
+use chrono::Local;
 use env_logger::Builder;
-use std::env;
 use std::fs::{create_dir_all, OpenOptions};
 use std::io::Write;
 use std::sync::{Arc, Mutex};
+use std::{env, thread};
 
 pub fn init_logger() {
     let rust_log_level = env::var("RUST_LOG");
@@ -28,8 +29,19 @@ fn log_to_file(level: &str) {
         Builder::new()
             .parse_filters(level)
             .format(move |_, record| {
+                let timestamp = Local::now().format("%y-%m-%d %H:%M:%S%.6f").to_string();
+                let thread_id = thread::current().id();
                 if let Ok(mut file) = log_file_clone.lock() {
-                    writeln!(file, "[{}] {}", record.level(), record.args()).ok();
+                    writeln!(
+                        file,
+                        "[{}] [{}] [{}] [{:?}] {}",
+                        timestamp,
+                        record.level(),
+                        record.target(),
+                        thread_id,
+                        record.args()
+                    )
+                    .ok();
                 }
                 Ok(())
             })

@@ -79,9 +79,10 @@ impl PageViewer for TextApp {
                 let (title, content) = page.extract.get_text(&page.html_source);
                 if let LinkSource(link) = &page.html_source {
                     if page.tracked {
-                        add_history(&title, &link.url).unwrap_or_else(|err| eprintln!("{err}"));
+                        add_history(&title, &link.url).unwrap_or_else(|err| log::error!("{err}"));
                     }
                 }
+                log::debug!("Outputting page {title} to terminal");
                 println!(
                     "{}",
                     conditional_formatting(content, Config::get_pretty_print())

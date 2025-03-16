@@ -53,9 +53,11 @@ impl PageExtractor {
             HtmlSource::FileSource(file) => fs::read_to_string(&file.file_path).map_err(Io),
         };
         let selector = Selector::parse("title").expect("invalid title selector");
+        log::debug!("Preparing to parse HTML");
         let html = html_result
             .map(|html| PageExtractor::sanitize(&html))
             .map(|sanitized| Html::parse_document(&sanitized));
+        log::debug!("HTML parsed");
 
         html.and_then(|html| {
             let title = Self::extract_title(&selector, &html);
@@ -100,16 +102,19 @@ impl PageExtractor {
     }
 
     fn extract_title(selector: &Selector, html: &Html) -> String {
-        html.select(selector).next().map_or_else(
+        let title = html.select(selector).next().map_or_else(
             || {
                 log::error!("No title found for page ");
                 "Unknown Title".to_string()
             },
             |t| t.text().collect::<String>(),
-        )
+        );
+        log::debug!("Title extracted: {}", title);
+        title
     }
 
     fn process_elements(&self, elements: Vec<ElementRef>) -> Text<'static> {
+        log::trace!("Processing all elements");
         let mut lines: Vec<Vec<Line>> = elements
             .into_iter()
             .map(to_display)

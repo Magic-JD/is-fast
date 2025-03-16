@@ -46,6 +46,7 @@ impl AppFunctions for TextApp {
     }
 
     fn shutdown_with_error(&mut self, error: &str) -> ! {
+        // Log to user OK here because we are shutting down and they should know why
         eprintln!("{error}");
         std::process::exit(1);
     }
