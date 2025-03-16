@@ -6,6 +6,7 @@
 
 ### Fixed
 - Allow the title to be updated in the history.
+- Output shown and exit with error code when no results are found.
 
 ## [0.11.3]
 ### Fixed
