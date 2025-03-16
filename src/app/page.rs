@@ -79,7 +79,6 @@ impl PageViewer for TextApp {
                 let (title, content) = page.extract.get_text(&page.html_source);
                 if let LinkSource(link) = &page.html_source {
                     if page.tracked {
-                        // Get page data
                         add_history(&title, &link.url).unwrap_or_else(|err| eprintln!("{err}"));
                     }
                 }

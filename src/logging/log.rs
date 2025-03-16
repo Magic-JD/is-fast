@@ -34,11 +34,12 @@ fn log_to_file(level: &str) {
                 Ok(())
             })
             .init();
-        println!(
-            "Logging activated. Logs located at {}",
+        eprintln!(
+            // Log to error so it's not piped.
+            "Logging activated (Level {level}). Logs located at {}",
             log_file_path.display()
         );
     } else {
-        println!("Couldn't find config directory");
+        eprintln!("Couldn't find config directory");
     }
 }

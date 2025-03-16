@@ -83,6 +83,12 @@ cargo install --git https://github.com/Magic-JD/is-fast.git
 - [ 🔄 Using `--piped`, `|` or `>` to Output to Standard Output](#-using---piped--or--to-output-to-standard-output)
 - [📜 Viewing History in `is-fast`](#-viewing-history-in-is-fast)
     - [`--history`](#--history)
+    - [`--no-history`](#--no-history)
+- [⚡ Caching in `is-fast`](#-caching-in-is-fast)
+  - [`--cache`](#--cache)
+  - [`--no-cache`](#--no-cache)
+  - [`--flash-cache`](#--flash-cache)
+  - [`--cache-mode`](#--cache-mode)
 - [🔑 Customizing your results](#-customizing-your-results)
   - [`--selector`](#--selector-s)
   - [`--nth-element`](#--nth-element)
@@ -621,7 +627,7 @@ is-fast --no-history "how to deal with an obnoxious boss"
 
 As the vast majority of the time is-fast spends is waiting for the results of the webscraping to be returned, when a cache hit occurs the result is basically instant. This is very useful if you are reading a little, closing the program, making some changes, then coming back to the same result.
 
-### `--cache` 
+### `--cache`
 
 This will cache the result even if caching is normally disabled.
 
@@ -671,6 +677,17 @@ isf_find() {
 }
 ```
 
+### `--cache-mode`
+
+Allows you to explicitly set the cache mode. Available options are `readwrite`, `read`, `write`, `never`, and `flash`.
+
+The write mode is useful if you have a bad cached value stored, as it will override the bad value with the newer one.
+
+#### Example Usage:
+
+```sh
+is-fast --cache-mode write --direct "www.previously_bad_result.com"
+```
 ---
 
 # 🔑 Customizing your results

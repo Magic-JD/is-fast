@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.11.1]
+### Added
+- Logging to file when the `RUST_LOG` env var is enabled.
+    - The log file will only be created if that environment variable is enabled.
+    - Logs will be placed in the is-fast config directory.
+    - When enabled, there will be an output to stderr to show the log location.
+- Explicit flag for cache level (readwrite, read, write, none, flash).
+- Better error messages when the page fails to load.
+
+### Changed
+- Page title is now extracted from HTML, meaning that there is no need to retrieve from the search results.
+
+### Fixed
+- History tracking now works with everything except the `--file` flag.
+- Parallel loading of the next page is much more efficient.
+- Errors or non-content now lead to that url being purged from the cache, preventing a bad cache causing lasting issues.
+
 ## [0.11.0]
 ### Added
 - Additional configuration for printed output using the --pretty-print command.
