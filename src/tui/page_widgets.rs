@@ -23,8 +23,8 @@ pub fn new_page(index: usize, links: &[PageSource]) -> (String, Paragraph<'stati
             let (title, paragraph) = get_content(&link.html_source, &link.extract);
             let url = link.html_source.get_url();
             if link.tracked {
-                add_history(&title, url).unwrap_or_else(|_| {
-                    log::error!("Failed to add history for page {title} ({url})");
+                add_history(&title, url).unwrap_or_else(|err| {
+                    log::error!("Failed to add history for page {title} ({url}) {err}");
                 });
             }
             let display_title = format!(" {title} ({url}) ");

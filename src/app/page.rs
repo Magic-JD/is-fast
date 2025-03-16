@@ -4,7 +4,6 @@ use crate::app::text::TextApp;
 use crate::app::tui::TuiApp;
 use crate::config::load::{Config, Scroll};
 use crate::database::history_database::add_history;
-use crate::search_engine::link::HtmlSource::LinkSource;
 use crate::search_engine::link::PageSource;
 use crate::transform::pretty_print::conditional_formatting;
 use crate::tui::page_content::PageContent;
@@ -14,9 +13,7 @@ impl PageViewer for TuiApp {
         let height = self.display.height() - 2; // Subtract for the border
         let mut scroll: u16 = 0;
         if pages.is_empty() {
-            self.display.shutdown();
-            eprintln!("No results found");
-            return;
+            self.display.shutdown_with_error("No results found.");
         }
         let mut index = 0;
         let mut page_content = PageContent::new(pages, self.display.area());
@@ -77,10 +74,11 @@ impl PageViewer for TextApp {
         match pages {
             [page, ..] => {
                 let (title, content) = page.extract.get_text(&page.html_source);
-                if let LinkSource(link) = &page.html_source {
-                    if page.tracked {
-                        add_history(&title, &link.url).unwrap_or_else(|err| log::error!("{err}"));
-                    }
+                if page.tracked {
+                    let url = page.html_source.get_url();
+                    add_history(&title, url).unwrap_or_else(|err| {
+                        log::error!("Failed to add history for page {title} ({url}) {err}");
+                    });
                 }
                 log::debug!("Outputting page {title} to terminal");
                 println!(

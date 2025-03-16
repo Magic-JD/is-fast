@@ -79,6 +79,7 @@ pub fn get_history() -> Result<Vec<HistoryData>, IsError> {
         .query_map([], convert_to_history_data)?
         .collect::<Result<_, _>>()
         .map_err(DatabaseSql)?;
+    log::debug!("Retrieved {} history items", history.len());
     Ok(history)
 }
 
@@ -90,8 +91,10 @@ pub fn get_latest_history() -> Result<Option<HistoryData>, IsError> {
     let mut rows = stmt.query_map([], convert_to_history_data)?;
 
     if let Some(result) = rows.next().transpose().map_err(DatabaseSql)? {
+        log::debug!("Retrieved latest history item - {}", result.title);
         Ok(Some(result))
     } else {
+        log::debug!("No latest history item found");
         Ok(None) // No history available
     }
 }
