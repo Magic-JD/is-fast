@@ -9,7 +9,7 @@ use std::time::Duration;
 pub static REQWEST_CLIENT: Lazy<Client> = Lazy::new(|| {
     Client::builder()
         .http1_only()
-        .timeout(Duration::from_secs(2))
+        .timeout(Duration::from_secs(4))
         .build()
         .expect("Failed to build reqwest client")
 });
@@ -81,7 +81,7 @@ fn curl_scrape(url: &str) -> Result<String, IsError> {
     let output = Command::new("curl")
         .args([
             "--max-time",
-            "2",
+            "4",
             "-A",
             "Mozilla/5.0 (compatible; MSIE 7.01; Windows NT 5.0)",
             url,

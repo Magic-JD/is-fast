@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.11.3]
+### Fixed
+- Increased the timeout due to the previous timeout being too short.
+
 ## [0.11.2]
 ### Added
 - Logging to file when the `RUST_LOG` env var is enabled.
