@@ -20,9 +20,9 @@ use crate::app::enum_values::App;
 use crate::app::enum_values::AppFunctions;
 use crate::app::enum_values::HistoryViewer;
 use crate::app::enum_values::PageViewer;
-use crate::cli::command::{CacheMode, Cli};
+use crate::cli::command::{CacheArgs, CacheMode, Cli};
 use crate::config::load::Config;
-use crate::database::history_database::clear_history;
+use crate::database::history_database;
 use crate::logging::log::init_logger;
 use crate::search_engine::cache;
 use actions::generate_config;
@@ -39,12 +39,50 @@ enum DisplayConfig {
 fn main() {
     init_logger();
     let args = Cli::parse();
-    let pretty_print = parse_pretty_print(&args.pretty_print.join(","));
-    let cache_command = match (
-        args.cache_mode.clone(),
-        args.cache,
-        args.no_cache,
-        args.flash_cache,
+    let pretty_print = parse_pretty_print(&args.output.pretty_print.join(","));
+    let cache_command = determine_cache_mode(&args.cache);
+    Config::init(
+        args.output.color.clone(),
+        cache_command.as_ref(),
+        args.history.no_history,
+        pretty_print,
+        args.selection.selector.clone(),
+        args.selection.nth_element.clone(),
+    );
+    // Generate config doesn't need a display, process and return.
+    if args.task.generate_config {
+        generate_config::run();
+        return;
+    }
+    if process_clear_command(
+        args.task.clear_cache,
+        args.task.clear_history,
+        args.task.clear_all,
+    ) {
+        return;
+    }
+    let is_piped = args.output.piped || !is(Stream::Stdout);
+    let mut app = App::from_type(is_piped);
+    app.loading();
+    if args.history.history {
+        if let Some(page) = app.show_history() {
+            app.show_pages(&[page]);
+        }
+    } else {
+        let page_result = prepare_pages(args.open).unwrap_or_else(|err| {
+            app.shutdown_with_error(&err.to_string());
+        });
+        app.show_pages(&page_result);
+    }
+    app.shutdown();
+}
+
+fn determine_cache_mode(cache: &CacheArgs) -> Option<CacheMode> {
+    match (
+        cache.cache_mode.clone(),
+        cache.cache,
+        cache.no_cache,
+        cache.flash_cache,
     ) {
         (Some(cache_mode), false, false, false) => Some(cache_mode),
         (None, true, false, false) => Some(CacheMode::ReadWrite),
@@ -52,45 +90,7 @@ fn main() {
         (None, false, false, true) => Some(CacheMode::Flash),
         (None, false, false, false) => None, // None applied, do not apply any difference.
         (_, _, _, _) => Some(CacheMode::Never), // Failsafe disable cache for inconsistent modes
-    };
-    Config::init(
-        args.color.clone(),
-        &cache_command,
-        args.no_history,
-        pretty_print,
-        args.selector.clone(),
-        args.nth_element.clone(),
-    );
-    // Generate config doesn't need a display, process and return.
-    if args.generate_config {
-        generate_config::run();
-        return;
     }
-    if process_clear_command(&args) {
-        return;
-    }
-    let is_piped = args.piped || !is(Stream::Stdout);
-    let mut app = App::from_type(is_piped);
-    app.loading();
-    if args.history {
-        if let Some(page) = app.show_history() {
-            app.show_pages(&[page]);
-        }
-    } else {
-        let page_result = prepare_pages(
-            args.last,
-            args.file,
-            args.url,
-            args.direct,
-            args.query.map(|words| words.join(" ")),
-            args.site,
-        )
-        .unwrap_or_else(|err| {
-            app.shutdown_with_error(&err.to_string());
-        });
-        app.show_pages(&page_result);
-    }
-    app.shutdown();
 }
 
 fn parse_pretty_print(line: &str) -> Vec<DisplayConfig> {
@@ -115,23 +115,24 @@ fn parse_pretty_print(line: &str) -> Vec<DisplayConfig> {
         .collect()
 }
 
-fn process_clear_command(args: &Cli) -> bool {
-    if args.clear_cache || args.clear_history || args.clear_all {
-        if args.clear_cache || args.clear_all {
+fn process_clear_command(clear_cache: bool, clear_history: bool, clear_all: bool) -> bool {
+    if clear_cache || clear_history || clear_all {
+        if clear_cache || clear_all {
             log::debug!(
                 "Clearing cache - Clear cache {}, Clear all {}",
-                args.clear_cache,
-                args.clear_all
+                clear_cache,
+                clear_all
             );
             cache::clear();
         }
-        if args.clear_history || args.clear_all {
+        if clear_history || clear_all {
             log::debug!(
                 "Clearing history - Clear history {}, Clear all {}",
-                args.clear_history,
-                args.clear_all
+                clear_history,
+                clear_all
             );
-            clear_history().unwrap_or_else(|e| log::error!("Failed to clear history: {}", e));
+            history_database::clear_history()
+                .unwrap_or_else(|e| log::error!("Failed to clear history: {}", e));
         }
         return true;
     }

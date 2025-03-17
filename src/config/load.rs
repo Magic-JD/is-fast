@@ -1,7 +1,7 @@
 use crate::cli::command::{CacheMode, ColorMode};
 use crate::config::raw::{
     convert_styles, generate_globs, get_user_specified_config, override_defaults, parse_color,
-    RawConfig,
+    CacheSection, RawConfig,
 };
 use crate::search_engine::cache::CacheConfig;
 use crate::search_engine::search_type::SearchEngine;
@@ -39,18 +39,17 @@ pub struct Config {
     search_type: AtomKind,
     search_engine: SearchEngine,
     open_tool: Option<String>,
-    site: Option<String>,
     scroll: Scroll,
     history_enabled: bool,
     cache: CacheConfig,
     pretty_print: Vec<DisplayConfig>,
-    extraction_config: ExtractionConfig,
+    extraction: ExtractionConfig,
 }
 
 impl Config {
     pub fn init(
         args_color_mode: Option<ColorMode>,
-        cache_command: &Option<CacheMode>,
+        cache_command: Option<&CacheMode>,
         no_history: bool,
         pretty_print: Vec<DisplayConfig>,
         selector_override: Option<String>,
@@ -64,16 +63,19 @@ impl Config {
             selector_override,
             nth_element,
         );
-        CONFIG.try_insert(this).expect("Failed to insert config");
+        CONFIG.try_insert(this).expect(
+            "Fai#[derive(Clone)]
+led to insert config",
+        );
     }
 
     fn default() -> Config {
-        Self::new(None, &None, false, vec![], None, vec![])
+        Self::new(None, None, false, vec![], None, vec![])
     }
 
     fn new(
         args_color_mode: Option<ColorMode>,
-        cache_mode: &Option<CacheMode>,
+        cache_mode: Option<&CacheMode>,
         no_history: bool,
         pretty_print: Vec<DisplayConfig>,
         selector_override: Option<String>,
@@ -169,10 +171,6 @@ impl Config {
                     .unwrap_or_default(),
             ),
             open_tool: config.misc.and_then(|misc| misc.open_tool).clone(),
-            site: config
-                .search
-                .as_ref()
-                .and_then(|search| search.site.clone()),
             scroll: convert_to_scroll(
                 &config
                     .display
@@ -192,38 +190,43 @@ impl Config {
             cache: if let Some(CacheMode::Flash) = cache_mode {
                 CacheConfig::new(CacheMode::ReadWrite, usize::MAX, 5 * MS_IN_SECOND, 0)
             } else {
-                config
-                    .cache
-                    .as_ref()
-                    .map(|cache_section| {
-                        CacheConfig::new(
-                            cache_mode
-                                .clone()
-                                .or_else(|| {
-                                    cache_section
-                                        .cache_mode
-                                        .clone()
-                                        .as_deref()
-                                        .map(convert_to_cache_mode)
-                                })
-                                .unwrap_or(CacheMode::Never),
-                            cache_section.max_size.unwrap_or(100),
-                            cache_section.ttl.unwrap_or(300) * MS_IN_SECOND,
-                            10,
-                        )
-                    })
-                    .unwrap_or_else(|| {
-                        CacheConfig::new(
-                            cache_mode.clone().unwrap_or(CacheMode::Never),
-                            100,
-                            300 * MS_IN_SECOND,
-                            10,
-                        )
-                    })
+                Self::extract_cache_from_raw(cache_mode, config.cache.as_ref())
             },
             pretty_print,
-            extraction_config: ExtractionConfig::new(color_mode, Self::get_selectors, nth_element),
+            extraction: ExtractionConfig::new(color_mode, Self::get_selectors, nth_element),
         }
+    }
+
+    fn extract_cache_from_raw(
+        cache_mode: Option<&CacheMode>,
+        config: Option<&CacheSection>,
+    ) -> CacheConfig {
+        config.map_or_else(
+            || {
+                CacheConfig::new(
+                    cache_mode.cloned().unwrap_or(CacheMode::Never),
+                    100,
+                    300 * MS_IN_SECOND,
+                    10,
+                )
+            },
+            |cache_section| {
+                CacheConfig::new(
+                    cache_mode
+                        .cloned()
+                        .or_else(|| {
+                            cache_section
+                                .cache_mode
+                                .as_deref()
+                                .map(convert_to_cache_mode)
+                        })
+                        .unwrap_or(CacheMode::Never),
+                    cache_section.max_size.unwrap_or(100),
+                    cache_section.ttl.unwrap_or(300) * MS_IN_SECOND,
+                    10,
+                )
+            },
+        )
     }
 
     pub fn get_styles() -> &'static HashMap<String, Style> {
@@ -243,8 +246,7 @@ impl Config {
                     .find_map(|idx| Self::get_config().globs.get(*idx))
                     .and_then(|glob| Self::get_config().selectors.get(&glob.to_string()))
             })
-            .map(|selector| selector.as_str())
-            .unwrap_or_else(|| "body")
+            .map_or_else(|| "body", String::as_str)
     }
 
     fn get_config() -> &'static Config {
@@ -298,12 +300,8 @@ impl Config {
         &Self::get_config().search_engine
     }
 
-    pub fn get_open_command() -> &'static Option<String> {
-        &Self::get_config().open_tool
-    }
-
-    pub fn get_site() -> &'static Option<String> {
-        &Self::get_config().site
+    pub fn get_open_command() -> Option<&'static String> {
+        Self::get_config().open_tool.as_ref()
     }
 
     pub fn get_scroll() -> &'static Scroll {
@@ -319,7 +317,7 @@ impl Config {
     }
 
     pub fn get_extractor_config() -> ExtractionConfig {
-        Self::get_config().extraction_config.clone()
+        Self::get_config().extraction.clone()
     }
 
     pub fn get_pretty_print() -> &'static [DisplayConfig] {

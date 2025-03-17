@@ -67,7 +67,7 @@ pub struct SearchSection {
     pub(crate) site: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct CacheSection {
     #[serde(default)]
     pub(crate) cache_mode: Option<String>,
@@ -77,7 +77,7 @@ pub struct CacheSection {
     pub(crate) ttl: Option<i64>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct MiscSection {
     #[serde(default)]
     pub(crate) open_tool: Option<String>,
