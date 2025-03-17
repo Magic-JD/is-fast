@@ -58,6 +58,8 @@ fn main() {
         &cache_command,
         args.no_history,
         pretty_print,
+        args.selector.clone(),
+        args.nth_element.clone(),
     );
     // Generate config doesn't need a display, process and return.
     if args.generate_config {
@@ -75,7 +77,15 @@ fn main() {
             app.show_pages(&[page]);
         }
     } else {
-        let page_result = prepare_pages(args).unwrap_or_else(|err| {
+        let page_result = prepare_pages(
+            args.last,
+            args.file,
+            args.url,
+            args.direct,
+            args.query.map(|words| words.join(" ")),
+            args.site,
+        )
+        .unwrap_or_else(|err| {
             app.shutdown_with_error(&err.to_string());
         });
         app.show_pages(&page_result);

@@ -16,25 +16,56 @@ use ratatui::widgets::Paragraph;
 use scraper::{ElementRef, Html, Selector};
 use std::fs;
 
+#[derive(Debug, Clone)]
+pub struct ExtractionConfig {
+    color_mode: ColorMode,
+    selector_function: fn(&str) -> &str,
+    nth_element: Vec<usize>,
+}
+
+impl ExtractionConfig {
+    pub fn color_mode(&self) -> &ColorMode {
+        &self.color_mode
+    }
+
+    pub fn selector<'a>(&self, url: &'a str) -> &'a str {
+        (self.selector_function)(url)
+    }
+
+    pub fn nth_element(&self) -> &Vec<usize> {
+        &self.nth_element
+    }
+}
+
+impl ExtractionConfig {
+    pub fn new(color_mode: ColorMode, selector: fn(&str) -> &str, nth_element: Vec<usize>) -> Self {
+        Self {
+            color_mode,
+            selector_function: selector,
+            nth_element,
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct PageExtractor {
-    pub color_mode: ColorMode,
-    pub selector: Option<String>,
-    pub nth_element: Vec<usize>,
+    config: ExtractionConfig,
 }
 
 impl PageExtractor {
-    pub fn new(color_mode: ColorMode, selector: Option<String>, nth_element: Vec<usize>) -> Self {
+    pub fn new() -> Self {
         Self {
-            color_mode,
-            selector,
-            nth_element,
+            config: Config::get_extractor_config(),
         }
+    }
+
+    pub fn config(&self) -> &ExtractionConfig {
+        &self.config
     }
 
     pub fn get_paragraph(&self, link: &HtmlSource) -> (String, Paragraph<'static>) {
         let (title, text) = self.get_tui_text(link);
-        let paragraph = match self.color_mode {
+        let paragraph = match self.config().color_mode() {
             ColorMode::Never => Paragraph::new(
                 text.lines
                     .iter()
@@ -82,10 +113,7 @@ impl PageExtractor {
     ) -> Result<Text<'static>, IsError> {
         filter(
             html,
-            &self
-                .selector
-                .clone()
-                .unwrap_or_else(|| Config::get_selectors(html_source.get_url())),
+            self.config().selector(html_source.get_url()),
         )
             .map(|elements| self.process_elements(elements))
             .and_then(|text| {
@@ -120,12 +148,13 @@ impl PageExtractor {
             .map(to_display)
             .filter(|lines| !lines.is_empty())
             .collect();
-        if !self.nth_element.is_empty() {
+        let nth_element = self.config().nth_element();
+        if !nth_element.is_empty() {
             lines = lines
                 .into_iter()
                 .enumerate()
                 .filter_map(|(index, text_block)| {
-                    if self.nth_element.contains(&(index + 1)) {
+                    if nth_element.contains(&(index + 1)) {
                         Some(text_block)
                     } else {
                         None
@@ -141,7 +170,7 @@ impl PageExtractor {
         let plaintext = text
             .lines
             .into_iter()
-            .map(|line| match self.color_mode {
+            .map(|line| match self.config().color_mode() {
                 ColorMode::Always => Self::convert_rat_to_ansi(line),
                 _ => line.to_string(),
             })
@@ -212,12 +241,19 @@ mod tests {
     use ratatui::text::Span;
     use std::path::Path;
 
+    impl PageExtractor {
+        pub fn test_init(config: ExtractionConfig) -> Self {
+            Self { config }
+        }
+    }
+
     #[test]
     fn test_ansi_text_as_expected() {
         let path_sample = String::from("tests/data/sample.html");
         let file = File::new(path_sample, String::new());
 
-        let (filename, ansi_text) = PageExtractor::new(ColorMode::Always, None, vec![])
+        let config = ExtractionConfig::new(ColorMode::Always, |_| "body", vec![]);
+        let (filename, ansi_text) = PageExtractor::test_init(config)
             .get_text(&FileSource(file))
             .to_owned();
 
@@ -235,11 +271,52 @@ mod tests {
         let path_sample = String::from("tests/data/sample.html");
         let file = File::new(path_sample, String::new());
 
-        let (filename, plain_text) = PageExtractor::new(ColorMode::Never, None, vec![])
+        let config = ExtractionConfig::new(ColorMode::Tui, |_| "body", vec![]);
+        let (filename, plain_text) = PageExtractor::test_init(config)
             .get_text(&FileSource(file))
             .to_owned();
 
         let path_output = Path::new("tests/data/expected_text.txt");
+        let expected_content = fs::read_to_string(path_output)
+            .expect("Failed to read expected text file")
+            .to_owned();
+
+        let expected_filename = String::from("for and range - Rust By Example");
+        assert_eq!(filename, expected_filename);
+        assert_eq!(plain_text, expected_content);
+    }
+
+    #[test]
+    fn test_restrictive_selectors() {
+        let path_sample = String::from("tests/data/sample.html");
+        let file = File::new(path_sample, String::new());
+
+        let config = ExtractionConfig::new(ColorMode::Tui, |_| "p", vec![]);
+        let (filename, plain_text) = PageExtractor::test_init(config)
+            .get_text(&FileSource(file))
+            .to_owned();
+
+        let path_output = Path::new("tests/data/expected_selected.txt");
+        let expected_content = fs::read_to_string(path_output)
+            .expect("Failed to read expected text file")
+            .to_owned();
+
+        let expected_filename = String::from("for and range - Rust By Example");
+        assert_eq!(filename, expected_filename);
+        assert_eq!(plain_text, expected_content);
+    }
+
+    #[test]
+    fn test_restrictive_selectors_nth() {
+        let path_sample = String::from("tests/data/sample.html");
+        let file = File::new(path_sample, String::new());
+
+        let config = ExtractionConfig::new(ColorMode::Tui, |_| "p", vec![1, 3]);
+        let (filename, plain_text) = PageExtractor::test_init(config)
+            .get_text(&FileSource(file))
+            .to_owned();
+
+        let path_output = Path::new("tests/data/expected_nth.txt");
         let expected_content = fs::read_to_string(path_output)
             .expect("Failed to read expected text file")
             .to_owned();
@@ -260,10 +337,11 @@ mod tests {
             .expect("Failed to read expected text file")
             .to_owned();
 
-        let result = PageExtractor::new(ColorMode::Always, None, vec![]).get_tui_text(&source);
+        let config = ExtractionConfig::new(ColorMode::Tui, |_| "body", vec![]);
+        let (_, text) = PageExtractor::test_init(config).get_tui_text(&source);
 
         let expected_lines: Vec<_> = expected_content.lines().collect();
-        let binding = result.1.to_string();
+        let binding = text.to_string();
         let result_lines: Vec<_> = binding.lines().collect();
 
         let min_len = expected_lines.len().min(result_lines.len());
@@ -280,8 +358,7 @@ mod tests {
             }
         }
 
-        let length = result
-            .1
+        let length = text
             .lines
             .iter()
             .flat_map(|line| line.spans.clone())

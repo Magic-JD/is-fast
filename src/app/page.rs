@@ -4,12 +4,13 @@ use crate::app::text::TextApp;
 use crate::app::tui::TuiApp;
 use crate::config::load::{Config, Scroll};
 use crate::database::history_database::add_history;
-use crate::search_engine::link::PageSource;
+use crate::search_engine::link::HtmlSource;
+use crate::transform::page::PageExtractor;
 use crate::transform::pretty_print::conditional_formatting;
 use crate::tui::page_content::PageContent;
 
 impl PageViewer for TuiApp {
-    fn show_pages(&mut self, pages: &[PageSource]) {
+    fn show_pages(&mut self, pages: &[HtmlSource]) {
         let height = self.display.height() - 2; // Subtract for the border
         let mut scroll: u16 = 0;
         if pages.is_empty() {
@@ -70,15 +71,18 @@ impl PageViewer for TuiApp {
 }
 
 impl PageViewer for TextApp {
-    fn show_pages(&mut self, pages: &[PageSource]) {
+    fn show_pages(&mut self, pages: &[HtmlSource]) {
+        let page_extracter: PageExtractor = PageExtractor::new();
         match pages {
             [page, ..] => {
-                let (title, content) = page.extract.get_text(&page.html_source);
-                if page.tracked {
-                    let url = page.html_source.get_url();
-                    add_history(&title, url).unwrap_or_else(|err| {
-                        log::error!("Failed to add history for page {title} ({url}) {err}");
-                    });
+                let (title, content) = page_extracter.get_text(page);
+                if let HtmlSource::LinkSource(link) = page {
+                    if *Config::get_history_enabled() {
+                        let url = &link.url;
+                        add_history(&title, url).unwrap_or_else(|err| {
+                            log::error!("Failed to add history for page {title} ({url}) {err}");
+                        });
+                    }
                 }
                 log::debug!("Outputting page {title} to terminal");
                 println!(

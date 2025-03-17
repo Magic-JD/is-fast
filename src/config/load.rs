@@ -6,6 +6,7 @@ use crate::config::raw::{
 use crate::search_engine::cache::CacheConfig;
 use crate::search_engine::search_type::SearchEngine;
 use crate::search_engine::search_type::SearchEngine::{DuckDuckGo, Google, Kagi};
+use crate::transform::page::ExtractionConfig;
 use crate::DisplayConfig;
 use globset::{Glob, GlobSet};
 use nucleo_matcher::pattern::AtomKind;
@@ -22,6 +23,7 @@ const MS_IN_SECOND: i64 = 1000;
 pub struct Config {
     styles: HashMap<String, Style>,
     selectors: HashMap<String, String>,
+    selector_override: Option<String>,
     matcher: GlobSet,
     globs: Vec<Glob>,
     ignored_tags: HashSet<String>,
@@ -39,10 +41,10 @@ pub struct Config {
     open_tool: Option<String>,
     site: Option<String>,
     scroll: Scroll,
-    color_mode: ColorMode,
     history_enabled: bool,
     cache: CacheConfig,
     pretty_print: Vec<DisplayConfig>,
+    extraction_config: ExtractionConfig,
 }
 
 impl Config {
@@ -51,13 +53,22 @@ impl Config {
         cache_command: &Option<CacheMode>,
         no_history: bool,
         pretty_print: Vec<DisplayConfig>,
+        selector_override: Option<String>,
+        nth_element: Vec<usize>,
     ) {
-        let this = Self::new(args_color_mode, cache_command, no_history, pretty_print);
+        let this = Self::new(
+            args_color_mode,
+            cache_command,
+            no_history,
+            pretty_print,
+            selector_override,
+            nth_element,
+        );
         CONFIG.try_insert(this).expect("Failed to insert config");
     }
 
     fn default() -> Config {
-        Self::new(None, &None, false, vec![])
+        Self::new(None, &None, false, vec![], None, vec![])
     }
 
     fn new(
@@ -65,15 +76,27 @@ impl Config {
         cache_mode: &Option<CacheMode>,
         no_history: bool,
         pretty_print: Vec<DisplayConfig>,
+        selector_override: Option<String>,
+        nth_element: Vec<usize>,
     ) -> Self {
         let mut config: RawConfig = toml::from_str(DEFAULT_CONFIG_LOCATION)
             .map_err(|e| println!("{e}"))
             .unwrap_or(RawConfig::default());
         _ = get_user_specified_config().map(|u_config| override_defaults(&mut config, u_config));
         let (matcher, globs) = generate_globs(&mut config);
+        let color_mode = args_color_mode.unwrap_or_else(|| {
+            convert_to_color_mode(
+                &config
+                    .display
+                    .as_ref()
+                    .and_then(|display| display.color_mode.clone())
+                    .unwrap_or_default(),
+            )
+        });
         Self {
             styles: convert_styles(config.styles),
             selectors: config.selectors,
+            selector_override,
             globs,
             matcher,
             ignored_tags: config
@@ -157,15 +180,6 @@ impl Config {
                     .and_then(|display| display.scroll.clone())
                     .unwrap_or_default(),
             ),
-            color_mode: args_color_mode.unwrap_or_else(|| {
-                convert_to_color_mode(
-                    &config
-                        .display
-                        .as_ref()
-                        .and_then(|display| display.color_mode.clone())
-                        .unwrap_or_default(),
-                )
-            }),
             history_enabled: if no_history {
                 false
             } else {
@@ -208,6 +222,7 @@ impl Config {
                     })
             },
             pretty_print,
+            extraction_config: ExtractionConfig::new(color_mode, Self::get_selectors, nth_element),
         }
     }
 
@@ -215,14 +230,21 @@ impl Config {
         &Self::get_config().styles
     }
 
-    pub fn get_selectors(url: &str) -> String {
-        Self::get_config()
-            .matcher
-            .matches(url)
-            .iter()
-            .find_map(|idx| Self::get_config().globs.get(*idx))
-            .and_then(|glob| Self::get_config().selectors.get(&glob.to_string()).cloned())
-            .unwrap_or_else(|| String::from("body"))
+    fn get_selectors(url: &str) -> &str {
+        let config = Self::get_config();
+        config
+            .selector_override
+            .as_ref()
+            .or_else(|| {
+                config
+                    .matcher
+                    .matches(url)
+                    .iter()
+                    .find_map(|idx| Self::get_config().globs.get(*idx))
+                    .and_then(|glob| Self::get_config().selectors.get(&glob.to_string()))
+            })
+            .map(|selector| selector.as_str())
+            .unwrap_or_else(|| "body")
     }
 
     fn get_config() -> &'static Config {
@@ -288,16 +310,16 @@ impl Config {
         &Self::get_config().scroll
     }
 
-    pub fn get_color_mode() -> &'static ColorMode {
-        &Self::get_config().color_mode
-    }
-
     pub fn get_history_enabled() -> &'static bool {
         &Self::get_config().history_enabled
     }
 
     pub fn get_cache_config() -> CacheConfig {
         Self::get_config().cache.clone()
+    }
+
+    pub fn get_extractor_config() -> ExtractionConfig {
+        Self::get_config().extraction_config.clone()
     }
 
     pub fn get_pretty_print() -> &'static [DisplayConfig] {

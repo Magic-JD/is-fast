@@ -1,0 +1,20 @@
+
+The for in construct can be used to iterate through an Iterator. One of the easiest ways to create an iterator is to use the range notation a..b. This yields values from a (inclusive) to b (exclusive) in steps of one.
+
+
+Let's write FizzBuzz using for instead of while.
+
+
+Alternatively, a..=b can be used for a range that is inclusive on both ends. The above can be written as:
+
+
+The for in construct is able to interact with an Iterator in several ways. As discussed in the section on the Iterator trait, by default the for loop will apply the into_iter function to the collection. However, this is not the only means of converting collections into iterators.
+
+
+into_iter, iter and iter_mut all handle the conversion of a collection into an iterator in different ways, by providing different views on the data within.
+
+
+In the above snippets note the type of match branch, that is the key difference in the types of iteration. The difference in type then of course implies differing actions that are able to be performed.
+
+
+Iterator

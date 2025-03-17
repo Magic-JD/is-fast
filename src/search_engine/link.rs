@@ -1,5 +1,3 @@
-use crate::transform::page::PageExtractor;
-
 #[derive(Clone)]
 pub enum HtmlSource {
     LinkSource(Link),
@@ -37,10 +35,4 @@ impl File {
             associated_url,
         }
     }
-}
-
-pub struct PageSource {
-    pub html_source: HtmlSource,
-    pub extract: PageExtractor,
-    pub tracked: bool,
 }
