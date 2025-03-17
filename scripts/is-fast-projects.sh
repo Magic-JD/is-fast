@@ -52,3 +52,15 @@ isf_define() {
         --pretty-print="margin:20,title:${(C)1}" \
         --piped
 }
+
+# Check the current number of stars in the repo.
+isf_stars() {
+    is-fast \
+        --direct "https://github.com/Magic-JD/is-fast" \
+        --selector "span#repo-stars-counter-star" \
+        --pretty-print="title:Current Stars,margin:5" \
+        --color=always \
+        --piped \
+        --no-cache
+}
+

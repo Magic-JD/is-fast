@@ -6,7 +6,6 @@ use crate::config::raw::{
 use crate::search_engine::cache::CacheConfig;
 use crate::search_engine::search_type::SearchEngine;
 use crate::search_engine::search_type::SearchEngine::{DuckDuckGo, Google, Kagi};
-use crate::transform::page::ExtractionConfig;
 use crate::DisplayConfig;
 use globset::{Glob, GlobSet};
 use nucleo_matcher::pattern::AtomKind;
@@ -19,23 +18,131 @@ static CONFIG: OnceCell<Config> = OnceCell::new();
 pub const DEFAULT_CONFIG_LOCATION: &str = include_str!("config.toml");
 const MS_IN_SECOND: i64 = 1000;
 
-#[derive(Debug)]
-pub struct Config {
-    styles: HashMap<String, Style>,
+#[derive(Debug, Clone)]
+pub struct HistoryWidgetConfig {
+    url: Style,
+    title: Style,
+    time: Style,
+    text: Style,
+}
+
+impl HistoryWidgetConfig {
+    pub fn new(url: Style, title: Style, time: Style, text: Style) -> Self {
+        Self {
+            url,
+            title,
+            time,
+            text,
+        }
+    }
+
+    pub fn get_url_style(&self) -> &Style {
+        &self.url
+    }
+
+    pub fn get_title_style(&self) -> &Style {
+        &self.title
+    }
+
+    pub fn get_time_style(&self) -> &Style {
+        &self.time
+    }
+
+    pub fn get_text_style(&self) -> &Style {
+        &self.text
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct FormatConfig {
+    ignored_tags: HashSet<String>,
+    block_elements: HashSet<String>,
+    tag_styles: HashMap<String, Style>,
+}
+
+impl FormatConfig {
+    pub fn new(
+        ignored_tags: HashSet<String>,
+        block_elements: HashSet<String>,
+        tag_styles: HashMap<String, Style>,
+    ) -> Self {
+        Self {
+            ignored_tags,
+            block_elements,
+            tag_styles,
+        }
+    }
+
+    pub fn is_tag_ignored(&self, tag: &str) -> bool {
+        self.ignored_tags.contains(tag)
+    }
+
+    pub fn is_block_element(&self, tag: &str) -> bool {
+        self.block_elements.contains(tag)
+    }
+
+    pub fn style_for_tag(&self, tag: &str) -> Option<&Style> {
+        self.tag_styles.get(tag)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ExtractionConfig {
+    color_mode: ColorMode,
+    nth_element: Vec<usize>,
     selectors: HashMap<String, String>,
     selector_override: Option<String>,
     matcher: GlobSet,
     globs: Vec<Glob>,
-    ignored_tags: HashSet<String>,
-    block_elements: HashSet<String>,
+}
+
+impl ExtractionConfig {
+    pub fn new(
+        color_mode: ColorMode,
+        nth_element: Vec<usize>,
+        selectors: HashMap<String, String>,
+        selector_override: Option<String>,
+        matcher: GlobSet,
+        globs: Vec<Glob>,
+    ) -> Self {
+        Self {
+            color_mode,
+            nth_element,
+            selectors,
+            selector_override,
+            matcher,
+            globs,
+        }
+    }
+
+    pub fn color_mode(&self) -> &ColorMode {
+        &self.color_mode
+    }
+
+    pub fn get_selectors(&self, url: &str) -> &str {
+        self.selector_override
+            .as_ref()
+            .or_else(|| {
+                self.matcher
+                    .matches(url)
+                    .iter()
+                    .find_map(|idx| self.globs.get(*idx))
+                    .and_then(|glob| self.selectors.get(&glob.to_string()))
+            })
+            .map_or_else(|| "body", String::as_str)
+    }
+
+    pub fn nth_element(&self) -> &Vec<usize> {
+        &self.nth_element
+    }
+}
+
+#[derive(Debug)]
+pub struct Config {
     syntax_default_language: String,
     syntax_highlighting_theme: String,
     page_margin: u16,
     border_color: Style,
-    title_color: Style,
-    url_color: Style,
-    time_color: Style,
-    text_color: Style,
     search_type: AtomKind,
     search_engine: SearchEngine,
     open_tool: Option<String>,
@@ -44,6 +151,8 @@ pub struct Config {
     cache: CacheConfig,
     pretty_print: Vec<DisplayConfig>,
     extraction: ExtractionConfig,
+    format: FormatConfig,
+    history_widget: HistoryWidgetConfig,
 }
 
 impl Config {
@@ -63,10 +172,7 @@ impl Config {
             selector_override,
             nth_element,
         );
-        CONFIG.try_insert(this).expect(
-            "Fai#[derive(Clone)]
-led to insert config",
-        );
+        CONFIG.try_insert(this).expect("Failed to insert config");
     }
 
     fn default() -> Config {
@@ -85,32 +191,16 @@ led to insert config",
             .map_err(|e| println!("{e}"))
             .unwrap_or(RawConfig::default());
         _ = get_user_specified_config().map(|u_config| override_defaults(&mut config, u_config));
-        let (matcher, globs) = generate_globs(&mut config);
-        let color_mode = args_color_mode.unwrap_or_else(|| {
-            convert_to_color_mode(
-                &config
-                    .display
-                    .as_ref()
-                    .and_then(|display| display.color_mode.clone())
-                    .unwrap_or_default(),
-            )
-        });
-        Self {
-            styles: convert_styles(config.styles),
-            selectors: config.selectors,
+        let format = Self::create_format_config(&config);
+        let extraction = Self::create_extraction_config(
+            args_color_mode,
             selector_override,
-            globs,
-            matcher,
-            ignored_tags: config
-                .format
-                .as_ref()
-                .map(|format| format.ignored_tags.iter().cloned().collect())
-                .unwrap_or_default(),
-            block_elements: config
-                .format
-                .as_ref()
-                .map(|format| format.block_elements.iter().cloned().collect())
-                .unwrap_or_default(),
+            nth_element,
+            &config,
+        );
+        let cache = Self::create_cache_config(cache_mode, &config);
+        let history_widget = Self::create_history_widget_config(&config);
+        Self {
             syntax_default_language: config
                 .syntax
                 .as_ref()
@@ -130,30 +220,6 @@ led to insert config",
                 .display
                 .as_ref()
                 .and_then(|display| display.border_color.clone())
-                .map(|color| Style::new().fg(parse_color(&color)))
-                .unwrap_or_default(),
-            title_color: config
-                .history
-                .as_ref()
-                .and_then(|history| history.title_color.clone())
-                .map(|color| Style::new().fg(parse_color(&color)))
-                .unwrap_or_default(),
-            url_color: config
-                .history
-                .as_ref()
-                .and_then(|history| history.url_color.clone())
-                .map(|color| Style::new().fg(parse_color(&color)))
-                .unwrap_or_default(),
-            time_color: config
-                .history
-                .as_ref()
-                .and_then(|history| history.time_color.clone())
-                .map(|color| Style::new().fg(parse_color(&color)))
-                .unwrap_or_default(),
-            text_color: config
-                .history
-                .as_ref()
-                .and_then(|history| history.text_color.clone())
                 .map(|color| Style::new().fg(parse_color(&color)))
                 .unwrap_or_default(),
             search_type: to_atom_kind(
@@ -187,13 +253,89 @@ led to insert config",
                     .and_then(|history| history.enabled)
                     .unwrap_or(true)
             },
-            cache: if let Some(CacheMode::Flash) = cache_mode {
-                CacheConfig::new(CacheMode::ReadWrite, usize::MAX, 5 * MS_IN_SECOND, 0)
-            } else {
-                Self::extract_cache_from_raw(cache_mode, config.cache.as_ref())
-            },
+            cache,
             pretty_print,
-            extraction: ExtractionConfig::new(color_mode, Self::get_selectors, nth_element),
+            extraction,
+            format,
+            history_widget,
+        }
+    }
+
+    fn create_history_widget_config(config: &RawConfig) -> HistoryWidgetConfig {
+        let title_style = config
+            .history
+            .as_ref()
+            .and_then(|history| history.title_color.clone())
+            .map(|color| Style::new().fg(parse_color(&color)))
+            .unwrap_or_default();
+        let url_style = config
+            .history
+            .as_ref()
+            .and_then(|history| history.url_color.clone())
+            .map(|color| Style::new().fg(parse_color(&color)))
+            .unwrap_or_default();
+        let time_style = config
+            .history
+            .as_ref()
+            .and_then(|history| history.time_color.clone())
+            .map(|color| Style::new().fg(parse_color(&color)))
+            .unwrap_or_default();
+        let text_style = config
+            .history
+            .as_ref()
+            .and_then(|history| history.text_color.clone())
+            .map(|color| Style::new().fg(parse_color(&color)))
+            .unwrap_or_default();
+        HistoryWidgetConfig::new(url_style, title_style, time_style, text_style)
+    }
+
+    fn create_extraction_config(
+        args_color_mode: Option<ColorMode>,
+        selector_override: Option<String>,
+        nth_element: Vec<usize>,
+        config: &RawConfig,
+    ) -> ExtractionConfig {
+        let (matcher, globs) = generate_globs(config);
+        let selectors = config.selectors.clone();
+        let color_mode = args_color_mode.unwrap_or_else(|| {
+            convert_to_color_mode(
+                &config
+                    .display
+                    .as_ref()
+                    .and_then(|display| display.color_mode.clone())
+                    .unwrap_or_default(),
+            )
+        });
+        ExtractionConfig::new(
+            color_mode,
+            nth_element,
+            selectors,
+            selector_override,
+            matcher,
+            globs,
+        )
+    }
+
+    fn create_format_config(config: &RawConfig) -> FormatConfig {
+        let ignored_tags = config
+            .format
+            .as_ref()
+            .map(|format| format.ignored_tags.iter().cloned().collect())
+            .unwrap_or_default();
+        let block_elements = config
+            .format
+            .as_ref()
+            .map(|format| format.block_elements.iter().cloned().collect())
+            .unwrap_or_default();
+        let tag_styles = convert_styles(&config.styles);
+        FormatConfig::new(ignored_tags, block_elements, tag_styles)
+    }
+
+    fn create_cache_config(cache_mode: Option<&CacheMode>, config: &RawConfig) -> CacheConfig {
+        if let Some(CacheMode::Flash) = cache_mode {
+            CacheConfig::new(CacheMode::ReadWrite, usize::MAX, 5 * MS_IN_SECOND, 0)
+        } else {
+            Self::extract_cache_from_raw(cache_mode, config.cache.as_ref())
         }
     }
 
@@ -229,36 +371,12 @@ led to insert config",
         )
     }
 
-    pub fn get_styles() -> &'static HashMap<String, Style> {
-        &Self::get_config().styles
-    }
-
-    fn get_selectors(url: &str) -> &str {
-        let config = Self::get_config();
-        config
-            .selector_override
-            .as_ref()
-            .or_else(|| {
-                config
-                    .matcher
-                    .matches(url)
-                    .iter()
-                    .find_map(|idx| Self::get_config().globs.get(*idx))
-                    .and_then(|glob| Self::get_config().selectors.get(&glob.to_string()))
-            })
-            .map_or_else(|| "body", String::as_str)
-    }
-
     fn get_config() -> &'static Config {
         CONFIG.get_or_init(Config::default)
     }
 
-    pub fn get_ignored_tags() -> &'static HashSet<String> {
-        &Self::get_config().ignored_tags
-    }
-
-    pub fn get_block_elements() -> &'static HashSet<String> {
-        &Self::get_config().block_elements
+    pub fn get_format_config() -> FormatConfig {
+        Self::get_config().format.clone()
     }
 
     pub fn get_default_language() -> &'static String {
@@ -277,20 +395,8 @@ led to insert config",
         &Self::get_config().border_color
     }
 
-    pub fn get_title_color() -> &'static Style {
-        &Self::get_config().title_color
-    }
-
-    pub fn get_url_color() -> &'static Style {
-        &Self::get_config().url_color
-    }
-
-    pub fn get_time_color() -> &'static Style {
-        &Self::get_config().time_color
-    }
-
-    pub fn get_text_color() -> &'static Style {
-        &Self::get_config().text_color
+    pub fn get_history_widget_config() -> HistoryWidgetConfig {
+        Self::get_config().history_widget.clone()
     }
 
     pub fn get_search_type() -> &'static AtomKind {

@@ -277,7 +277,7 @@ fn config_from_filepath(buff: PathBuf) -> Option<RawConfig> {
         .and_then(|str| toml::from_str(str).ok())
 }
 
-pub fn generate_globs(config: &mut RawConfig) -> (GlobSet, Vec<Glob>) {
+pub fn generate_globs(config: &RawConfig) -> (GlobSet, Vec<Glob>) {
     let mut builder = GlobSetBuilder::new();
     let mut globs = Vec::new();
     config.selectors.iter().for_each(|(pattern, _)| {
@@ -292,16 +292,16 @@ pub fn generate_globs(config: &mut RawConfig) -> (GlobSet, Vec<Glob>) {
         .unwrap_or_default(); // Should be safe as only valid globs added
     (matcher, globs)
 }
-pub fn convert_styles(styles: HashMap<String, TagStyleConfig>) -> HashMap<String, Style> {
+pub fn convert_styles(styles: &HashMap<String, TagStyleConfig>) -> HashMap<String, Style> {
     styles
-        .into_iter()
+        .iter()
         .map(|(tag, cfg)| {
             let mut style = Style::default();
-            if let Some(fg) = cfg.fg {
-                style = style.fg(parse_color(&fg));
+            if let Some(fg) = &cfg.fg {
+                style = style.fg(parse_color(fg));
             }
-            if let Some(bg) = cfg.bg {
-                style = style.bg(parse_color(&bg));
+            if let Some(bg) = &cfg.bg {
+                style = style.bg(parse_color(bg));
             }
             let modifiers = [
                 (cfg.bold, Modifier::BOLD),
@@ -317,7 +317,7 @@ pub fn convert_styles(styles: HashMap<String, TagStyleConfig>) -> HashMap<String
                 }
             }
 
-            (tag, style)
+            (tag.to_string(), style)
         })
         .collect()
 }
@@ -419,7 +419,7 @@ mod tests {
             },
         );
 
-        let converted = convert_styles(styles);
+        let converted = convert_styles(&styles);
         let error_style = converted.get("error").unwrap();
 
         assert_eq!(error_style.fg, Some(Color::Red));
@@ -435,7 +435,7 @@ mod tests {
 
     #[test]
     fn test_generate_globs() {
-        let mut raw_config = RawConfig {
+        let raw_config = RawConfig {
             selectors: {
                 let mut map = HashMap::new();
                 map.insert("example.com/*".to_string(), "body".to_string());
@@ -452,7 +452,7 @@ mod tests {
             misc: None,
         };
 
-        let (matcher, globs) = generate_globs(&mut raw_config);
+        let (matcher, globs) = generate_globs(&raw_config);
 
         assert_eq!(globs.len(), 2);
         assert!(matcher.is_match("example.com/index.html"));

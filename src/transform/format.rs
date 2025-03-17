@@ -1,128 +1,136 @@
-use crate::config::load::Config;
+use crate::config::load::{Config, FormatConfig};
 use crate::transform::syntax_highlight::highlight_code;
-use once_cell::sync::Lazy;
 use ratatui::style::{Style, Styled};
 use ratatui::text::{Line, Span};
 use scraper::{ElementRef, Node};
-use std::collections::{HashMap, HashSet};
 
-static IGNORED_TAGS: Lazy<&HashSet<String>> = Lazy::new(Config::get_ignored_tags);
-static BLOCK_ELEMENTS: Lazy<&HashSet<String>> = Lazy::new(Config::get_block_elements);
-static TAG_STYLES: Lazy<&HashMap<String, Style>> = Lazy::new(Config::get_styles);
-
-pub fn to_display(element: ElementRef) -> Vec<Line<'static>> {
-    log::trace!("Converting element to display lines: {:?}", element);
-    let mut lines = to_lines(element, element.value().name() == "pre")
-        .into_iter()
-        .map(standardize_empty)
-        .collect::<Vec<Line>>();
-    lines.dedup();
-    lines
+pub struct Formatter {
+    config: FormatConfig,
 }
 
-fn to_lines(element: ElementRef, pre_formatted: bool) -> Vec<Line<'static>> {
-    if is_hidden(&element) {
-        return vec![];
-    }
-
-    let tag_name = element.value().name();
-
-    if IGNORED_TAGS.contains(tag_name) {
-        return vec![];
-    }
-
-    if tag_name == "br" {
-        return vec![
-            // Must return 2 lines - the first will be merged back into the previous line,
-            // and the second will be the start of the next line.
-            // Must be treated differently to block elements as it requires no empty line.
-            Line::default(),
-            Line::from(Span::from("")),
-        ];
-    }
-
-    if tag_name == "code" {
-        // Handle code differently due to performance issues.
-        let language_type = extract_language_type(element);
-        let code_text = extract_code(element);
-        return highlight_code(&code_text, &language_type);
-    }
-
-    let style = TAG_STYLES.get(tag_name);
-
-    let mut lines = Vec::new();
-
-    if tag_name == "img" {
-        // Show there is an image without rendering the image.
-        lines.push(create_optionally_styled_line("IMAGE", style));
-    } else {
-        lines = extract_lines(element, pre_formatted || tag_name == "pre", style);
-    }
-
-    if tag_name == "li" {
-        if let Some(line) = lines.first_mut() {
-            line.spans.insert(
-                0,
-                Span::styled("• ", style.copied().unwrap_or_else(Style::default)),
-            );
+impl Formatter {
+    pub fn new() -> Formatter {
+        Formatter {
+            config: Config::get_format_config(),
         }
     }
 
-    if lines.is_empty() {
-        return vec![];
+    pub fn to_display(&self, element: ElementRef) -> Vec<Line<'static>> {
+        log::trace!("Converting element to display lines: {:?}", element);
+        let mut lines = self
+            .to_lines(element, element.value().name() == "pre")
+            .into_iter()
+            .map(standardize_empty)
+            .collect::<Vec<Line>>();
+        lines.dedup();
+        lines
     }
 
-    if BLOCK_ELEMENTS.contains(tag_name) {
-        // Relies on the above line to verify lines isn't empty
-        if let Some(styled) = style {
-            lines = lines
-                .into_iter()
-                .map(|line| line.set_style(*styled))
-                .collect();
+    fn to_lines(&self, element: ElementRef, pre_formatted: bool) -> Vec<Line<'static>> {
+        if is_hidden(&element) {
+            return vec![];
         }
-        lines.insert(0, Line::default());
-        lines.push(Line::default());
+
+        let tag_name = element.value().name();
+
+        if self.config.is_tag_ignored(tag_name) {
+            return vec![];
+        }
+
+        if tag_name == "br" {
+            return vec![
+                // Must return 2 lines - the first will be merged back into the previous line,
+                // and the second will be the start of the next line.
+                // Must be treated differently to block elements as it requires no empty line.
+                Line::default(),
+                Line::from(Span::from("")),
+            ];
+        }
+
+        if tag_name == "code" {
+            // Handle code differently due to performance issues.
+            let language_type = extract_language_type(element);
+            let code_text = extract_code(element);
+            return highlight_code(&code_text, &language_type);
+        }
+
+        let style = self.config.style_for_tag(tag_name);
+
+        let mut lines = Vec::new();
+
+        if tag_name == "img" {
+            // Show there is an image without rendering the image.
+            lines.push(create_optionally_styled_line("IMAGE", style));
+        } else {
+            lines = self.extract_lines(element, pre_formatted || tag_name == "pre", style);
+        }
+
+        if tag_name == "li" {
+            if let Some(line) = lines.first_mut() {
+                line.spans.insert(
+                    0,
+                    Span::styled("• ", style.copied().unwrap_or_else(Style::default)),
+                );
+            }
+        }
+
+        if lines.is_empty() {
+            return vec![];
+        }
+
+        if self.config.is_block_element(tag_name) {
+            // Relies on the above line to verify lines isn't empty
+            if let Some(styled) = style {
+                lines = lines
+                    .into_iter()
+                    .map(|line| line.set_style(*styled))
+                    .collect();
+            }
+            lines.insert(0, Line::default());
+            lines.push(Line::default());
+        }
+
+        lines
     }
 
-    lines
-}
-
-fn extract_lines(
-    element: ElementRef,
-    pre_formatted: bool,
-    style: Option<&Style>,
-) -> Vec<Line<'static>> {
-    let mut lines = Vec::new();
-    element.children().for_each(|node| match node.value() {
-        Node::Text(text) => {
-            if pre_formatted {
-                let current_lines = text
-                    .split('\n')
-                    .map(|line| create_optionally_styled_line(line, style))
-                    .collect::<Vec<Line>>();
-                merge_with_previous_line(&mut lines, current_lines);
-            } else if !text.trim().is_empty() {
-                let current_lines = vec![create_optionally_styled_line(
-                    &text.replace('\n', " "),
-                    style,
-                )];
-                merge_with_previous_line(&mut lines, current_lines);
+    fn extract_lines(
+        &self,
+        element: ElementRef,
+        pre_formatted: bool,
+        style: Option<&Style>,
+    ) -> Vec<Line<'static>> {
+        let mut lines = Vec::new();
+        element.children().for_each(|node| match node.value() {
+            Node::Text(text) => {
+                if pre_formatted {
+                    let current_lines = text
+                        .split('\n')
+                        .map(|line| create_optionally_styled_line(line, style))
+                        .collect::<Vec<Line>>();
+                    merge_with_previous_line(&mut lines, current_lines);
+                } else if !text.trim().is_empty() {
+                    let current_lines = vec![create_optionally_styled_line(
+                        &text.replace('\n', " "),
+                        style,
+                    )];
+                    merge_with_previous_line(&mut lines, current_lines);
+                }
             }
-        }
-        Node::Element(_) => ElementRef::wrap(node).iter().for_each(|element| {
-            let element_lines = to_lines(*element, pre_formatted);
-            if element_lines.is_empty() {
-                return;
-            }
-            if BLOCK_ELEMENTS.contains(element.value().name()) {
-                lines.extend(element_lines);
-                return;
-            }
-            merge_with_previous_line(&mut lines, element_lines);
-        }),
-        _ => {}
-    });
-    lines
+            Node::Element(_) => ElementRef::wrap(node).iter().for_each(|element| {
+                let element_lines = self.to_lines(*element, pre_formatted);
+                if element_lines.is_empty() {
+                    return;
+                }
+                if self.config.is_block_element(element.value().name()) {
+                    lines.extend(element_lines);
+                    return;
+                }
+                merge_with_previous_line(&mut lines, element_lines);
+            }),
+            _ => {}
+        });
+        lines
+    }
 }
 
 fn extract_code(element: ElementRef) -> String {
@@ -228,11 +236,12 @@ mod tests {
             </html>
         "#;
 
+        let formatter = Formatter::new();
         let binding = Html::parse_document(html);
         let result = Text::from(
             binding
                 .select(&Selector::parse("body").unwrap())
-                .flat_map(to_display)
+                .flat_map(|element| formatter.to_display(element))
                 .collect::<Vec<Line>>(),
         );
 
@@ -265,11 +274,12 @@ mod tests {
             </html>
         "#;
 
+        let formatter = Formatter::new();
         let binding = Html::parse_document(html);
         let result = Text::from(
             binding
                 .select(&Selector::parse("body").unwrap())
-                .flat_map(to_display)
+                .flat_map(|element| formatter.to_display(element))
                 .collect::<Vec<Line>>(),
         );
 
@@ -312,10 +322,11 @@ mod tests {
     fn test_to_display_no_content() {
         let html = "<html><body><div style='display: none;'>Hidden</div></body></html>";
 
+        let formatter = Formatter::new();
         let binding = Html::parse_document(html);
         let list = binding
             .select(&Selector::parse("body").unwrap())
-            .flat_map(to_display)
+            .flat_map(|element| formatter.to_display(element))
             .collect::<Vec<Line>>();
         assert!(list.is_empty());
     }
@@ -330,11 +341,12 @@ This is line one.
             </pre>
         "#;
 
+        let formatter = Formatter::new();
         let binding = Html::parse_document(html);
         let result = Text::from(
             binding
                 .select(&Selector::parse("body").unwrap())
-                .flat_map(to_display)
+                .flat_map(|element| formatter.to_display(element))
                 .collect::<Vec<Line>>(),
         );
 

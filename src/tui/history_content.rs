@@ -5,7 +5,7 @@ use crate::database::history_database::{remove_history, HistoryData};
 use crate::tui::display::Widget;
 use crate::tui::display::Widget::{Block, Paragraph, Table, Text};
 use crate::tui::general_widgets::default_block;
-use crate::tui::history_widgets::{create_table, draw_history_count, draw_search_text};
+use crate::tui::history_widgets::HistoryWidgetGenerator;
 use nucleo_matcher::pattern::{AtomKind, CaseMatching, Normalization, Pattern};
 use nucleo_matcher::{Matcher, Utf32Str};
 use once_cell::sync::Lazy;
@@ -32,6 +32,9 @@ pub struct HistoryContent<'a> {
     needs_update: bool,
 }
 
+static HISTORY_WIDGET_GENERATOR: Lazy<HistoryWidgetGenerator> =
+    Lazy::new(HistoryWidgetGenerator::new);
+
 impl HistoryContent<'_> {
     pub fn new(
         mut current_history: Vec<HistoryData>,
@@ -43,9 +46,10 @@ impl HistoryContent<'_> {
         let block = default_block(" History ", HISTORY_INSTRUCTIONS);
         let full_history = current_history.clone();
         let current_history = order_by_match(&mut current_history, &search_term, &search_on);
-        let table = create_table(&current_history, &search_term, &search_on);
-        let search = draw_search_text(&search_term.clone(), &search_on);
-        let row_count = draw_history_count(current_history.len() as u16);
+        let table =
+            HISTORY_WIDGET_GENERATOR.create_table(&current_history, &search_term, &search_on);
+        let search = HISTORY_WIDGET_GENERATOR.draw_search_text(&search_term.clone(), &search_on);
+        let row_count = HISTORY_WIDGET_GENERATOR.draw_history_count(current_history.len() as u16);
         let widgets = (block, table, search, row_count);
         let areas = HistoryContent::history_areas(total_area, current_history.len() as u16);
         table_state.select_last();
@@ -68,10 +72,15 @@ impl HistoryContent<'_> {
             self.areas = Self::history_areas(available_space, self.current_history.len() as u16);
         }
         if self.needs_update {
-            self.widgets.1 =
-                create_table(&self.current_history, &self.search_term, &self.search_on);
-            self.widgets.2 = draw_search_text(&self.search_term, &self.search_on);
-            self.widgets.3 = draw_history_count(self.current_history.len() as u16);
+            self.widgets.1 = HISTORY_WIDGET_GENERATOR.create_table(
+                &self.current_history,
+                &self.search_term,
+                &self.search_on,
+            );
+            self.widgets.2 =
+                HISTORY_WIDGET_GENERATOR.draw_search_text(&self.search_term, &self.search_on);
+            self.widgets.3 =
+                HISTORY_WIDGET_GENERATOR.draw_history_count(self.current_history.len() as u16);
             self.needs_update = false;
         }
         let (block, table, search, row_count) = &self.widgets;
