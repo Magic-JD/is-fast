@@ -19,9 +19,9 @@ pub struct Link {
 }
 impl Link {
     pub fn new(url: &str) -> Self {
-        // Ensure that spaces are removed from scripted requests
-        let url = url.replace(' ', "+");
-        Self { url }
+        Self {
+            url: url.to_string(),
+        }
     }
 }
 

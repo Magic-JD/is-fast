@@ -76,6 +76,7 @@ isf_quick() {
         --ignore="a" \
         --no-block \
         --nth-element 1 \
-        --pretty-print="margin:20,title" \
-        --color=always
+        --pretty-print="margin:20" \
+        --color=always \
+        --no-cache
 }

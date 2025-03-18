@@ -19,7 +19,7 @@ pub fn prepare_pages(query: OpenArgs) -> Result<Vec<HtmlSource>, IsError> {
         )));
     }
     for url in query.direct {
-        sources.push(LinkSource(Link::new(&url.replace(' ', "+"))));
+        sources.push(LinkSource(Link::new(&url)));
     }
     if let Some(search_term) = query.query.map(|q| q.join(" ")) {
         let site = query.site.map(|s| format!("site:{s}")).unwrap_or_default();
