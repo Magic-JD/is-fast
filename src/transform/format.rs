@@ -33,7 +33,7 @@ impl Formatter {
 
         let tag_name = element.value().name();
 
-        if self.config.is_tag_ignored(tag_name) {
+        if self.config.is_element_ignored(&element) {
             return vec![];
         }
 
@@ -78,7 +78,7 @@ impl Formatter {
             return vec![];
         }
 
-        if self.config.is_block_element(tag_name) {
+        if self.config.is_block_element(&element) {
             // Relies on the above line to verify lines isn't empty
             if let Some(styled) = style {
                 lines = lines
@@ -121,7 +121,7 @@ impl Formatter {
                 if element_lines.is_empty() {
                     return;
                 }
-                if self.config.is_block_element(element.value().name()) {
+                if self.config.is_block_element(element) {
                     lines.extend(element_lines);
                     return;
                 }

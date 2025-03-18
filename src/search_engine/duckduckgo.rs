@@ -24,7 +24,7 @@ impl DuckDuckGoSearch {
             .map(|element_ref| Html::parse_document(&element_ref.html()))
             .map(|element_html| {
                 let url = Self::extract_value(&selector_url, &element_html)?;
-                Ok(Link::new(url))
+                Ok(Link::new(&url))
             })
             .collect::<Result<Vec<Link>, IsError>>()
             .and_then(|links| {

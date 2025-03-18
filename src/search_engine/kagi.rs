@@ -38,7 +38,7 @@ impl KagiSearch {
             .data
             .iter()
             .filter(|item| item.t == 0)
-            .map(|item| Link::new(item.url.clone()))
+            .map(|item| Link::new(&item.url))
             .collect()
     }
 

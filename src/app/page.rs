@@ -87,7 +87,7 @@ impl PageViewer for TextApp {
                 log::debug!("Outputting page {title} to terminal");
                 println!(
                     "{}",
-                    conditional_formatting(content, Config::get_pretty_print())
+                    conditional_formatting(&title, content, Config::get_pretty_print())
                 );
             }
             [] => eprintln!("No links found, no error detected."),

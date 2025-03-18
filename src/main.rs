@@ -23,6 +23,7 @@ use crate::app::enum_values::PageViewer;
 use crate::cli::command::{CacheArgs, CacheMode, Cli};
 use crate::config::load::Config;
 use crate::database::history_database;
+use crate::errors::error::IsError::General;
 use crate::logging::log::init_logger;
 use crate::search_engine::cache;
 use actions::generate_config;
@@ -33,7 +34,7 @@ use clap::Parser;
 enum DisplayConfig {
     Margin(u16),
     Wrap,
-    Title(String),
+    Title(Option<String>),
 }
 
 fn main() {
@@ -41,13 +42,18 @@ fn main() {
     let args = Cli::parse();
     let pretty_print = parse_pretty_print(&args.output.pretty_print.join(","));
     let cache_command = determine_cache_mode(&args.cache);
+    let ignored = determine_ignored(args.selection.ignore);
+    let nth_element = determine_nth_element(args.selection.nth_element);
     Config::init(
         args.output.color.clone(),
         cache_command.as_ref(),
         args.history.no_history,
         pretty_print,
         args.selection.selector.clone(),
-        args.selection.nth_element.clone(),
+        ignored,
+        args.selection.no_block,
+        // Handle multiple elements passed in.
+        nth_element,
     );
     // Generate config doesn't need a display, process and return.
     if args.task.generate_config {
@@ -75,6 +81,30 @@ fn main() {
         app.show_pages(&page_result);
     }
     app.shutdown();
+}
+
+fn determine_nth_element(nth_element: Vec<String>) -> Vec<usize> {
+    nth_element
+        .into_iter()
+        .flat_map(|s| s.split(',').map(String::from).collect::<Vec<String>>())
+        .filter_map(|n| n.parse::<usize>().map_err(|_| {
+            log::error!("Invalid index to pass for --nth-element. {}", n);
+            General("Error parsing args".to_string())
+        }).and_then(|index| {
+            if index == 0 {
+                log::error!("Invalid index to pass --nth-element - 0. Nth element uses 1 based indexing");
+                return Err(General("Invalid index to pass --nth-element - 0.".to_string()))
+            }
+            Ok(index)
+        }).ok())
+        .collect()
+}
+
+fn determine_ignored(ignored: Vec<String>) -> Vec<String> {
+    ignored
+        .into_iter()
+        .flat_map(|s| s.split(',').map(String::from).collect::<Vec<String>>())
+        .collect()
 }
 
 fn determine_cache_mode(cache: &CacheArgs) -> Option<CacheMode> {
@@ -105,7 +135,9 @@ fn parse_pretty_print(line: &str) -> Vec<DisplayConfig> {
                 (Some("margin"), Some(value)) => {
                     value.parse::<u16>().ok().map(DisplayConfig::Margin)
                 }
-                (Some("title"), Some(value)) => Some(DisplayConfig::Title(value.to_string())),
+                (Some("title"), some_or_none) => {
+                    Some(DisplayConfig::Title(some_or_none.map(ToString::to_string)))
+                }
                 _ => {
                     log::error!("Invalid display configuration: {}", s);
                     None

@@ -9,7 +9,7 @@ pub fn prepare_pages(query: OpenArgs) -> Result<Vec<HtmlSource>, IsError> {
     let mut sources: Vec<HtmlSource> = vec![];
     if query.last {
         if let Some(history) = get_latest_history()? {
-            sources.push(LinkSource(Link::new(history.url)));
+            sources.push(LinkSource(Link::new(&history.url)));
         }
     }
     if let Some(file_location) = query.file {
@@ -19,7 +19,7 @@ pub fn prepare_pages(query: OpenArgs) -> Result<Vec<HtmlSource>, IsError> {
         )));
     }
     for url in query.direct {
-        sources.push(LinkSource(Link::new(url)));
+        sources.push(LinkSource(Link::new(&url.replace(' ', "+"))));
     }
     if let Some(search_term) = query.query.map(|q| q.join(" ")) {
         let site = query.site.map(|s| format!("site:{s}")).unwrap_or_default();

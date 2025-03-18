@@ -11,7 +11,9 @@ use globset::{Glob, GlobSet};
 use nucleo_matcher::pattern::AtomKind;
 use once_cell::sync::OnceCell;
 use ratatui::style::Style;
+use scraper::ElementRef;
 use std::collections::{HashMap, HashSet};
+use std::default::Default;
 use toml;
 
 static CONFIG: OnceCell<Config> = OnceCell::new();
@@ -53,10 +55,17 @@ impl HistoryWidgetConfig {
     }
 }
 
+#[derive(Debug, Clone, Default)]
+struct TagIdentifier {
+    unconditional: bool,
+    classes: HashSet<String>,
+    ids: HashSet<String>,
+}
+
 #[derive(Debug, Clone)]
 pub struct FormatConfig {
-    ignored_tags: HashSet<String>,
-    block_elements: HashSet<String>,
+    ignored_tags: HashMap<String, TagIdentifier>,
+    block_elements: HashMap<String, TagIdentifier>,
     tag_styles: HashMap<String, Style>,
 }
 
@@ -66,19 +75,81 @@ impl FormatConfig {
         block_elements: HashSet<String>,
         tag_styles: HashMap<String, Style>,
     ) -> Self {
+        let ignored_tags_map = Self::build_map_from_selectors(ignored_tags);
+        let block_elements_map = Self::build_map_from_selectors(block_elements);
         Self {
-            ignored_tags,
-            block_elements,
+            ignored_tags: ignored_tags_map,
+            block_elements: block_elements_map,
             tag_styles,
         }
     }
 
-    pub fn is_tag_ignored(&self, tag: &str) -> bool {
-        self.ignored_tags.contains(tag)
+    fn build_map_from_selectors(ignored_tags: HashSet<String>) -> HashMap<String, TagIdentifier> {
+        let mut ignored_tags_map: HashMap<String, TagIdentifier> = HashMap::new();
+        for tag in ignored_tags {
+            let mut class_split = tag.split('.');
+            let tag = class_split.next().unwrap_or_else(|| {
+                log::error!("Invalid css selector - must be of the format TAG#ID.CLASS, {tag}");
+                ""
+            });
+            let classes = class_split.collect::<Vec<&str>>();
+            let mut id_split = tag.split('#');
+            let tag = id_split.next().unwrap_or_else(|| {
+                log::error!("Invalid css selector - must be of the format TAG#ID.CLASS, {tag}");
+                ""
+            });
+            let id = id_split.next();
+            let tag_identifier = ignored_tags_map.entry(tag.to_string()).or_default();
+            if classes.is_empty() && id.is_none() {
+                tag_identifier.unconditional = true;
+            }
+            tag_identifier
+                .classes
+                .extend(classes.into_iter().map(String::from));
+            if let Some(id) = id {
+                tag_identifier.ids.insert(id.to_string());
+            }
+        }
+        ignored_tags_map
     }
 
-    pub fn is_block_element(&self, tag: &str) -> bool {
-        self.block_elements.contains(tag)
+    pub fn is_element_ignored(&self, element: &ElementRef) -> bool {
+        let tag_identifier = self.ignored_tags.get(element.value().name());
+        let general_identifier = self.ignored_tags.get("");
+        Self::matches_tag(element, tag_identifier) || Self::matches_tag(element, general_identifier)
+    }
+
+    fn matches_tag(element: &ElementRef, tag_identifier: Option<&TagIdentifier>) -> bool {
+        match tag_identifier {
+            Some(tag_identifier) => {
+                tag_identifier.unconditional
+                    || Self::element_contains_class(element, tag_identifier)
+                    || Self::element_contains_id(element, tag_identifier)
+            }
+            None => false,
+        }
+    }
+
+    fn element_contains_id(element: &ElementRef, tag_identifier: &TagIdentifier) -> bool {
+        element
+            .value()
+            .id()
+            .is_some_and(|id| tag_identifier.ids.contains(id))
+    }
+
+    fn element_contains_class(element: &ElementRef, tag_identifier: &TagIdentifier) -> bool {
+        element
+            .value()
+            .attr("class")
+            .into_iter()
+            .flat_map(|class_attr| class_attr.split_whitespace())
+            .any(|class| tag_identifier.classes.contains(class))
+    }
+
+    pub fn is_block_element(&self, element: &ElementRef) -> bool {
+        let tag_identifier = self.block_elements.get(element.value().name());
+        let general_identifier = self.block_elements.get("");
+        Self::matches_tag(element, tag_identifier) || Self::matches_tag(element, general_identifier)
     }
 
     pub fn style_for_tag(&self, tag: &str) -> Option<&Style> {
@@ -156,12 +227,18 @@ pub struct Config {
 }
 
 impl Config {
+    // This is where the key configuration is combined, and I would rather have these values being passed
+    // in individually rather than just passing in the arg or combining them into an arbitrary object to appease
+    // clippy. If this grows any larger I will revisit and rework.
+    #[allow(clippy::too_many_arguments)]
     pub fn init(
         args_color_mode: Option<ColorMode>,
         cache_command: Option<&CacheMode>,
         no_history: bool,
         pretty_print: Vec<DisplayConfig>,
         selector_override: Option<String>,
+        ignored_additional: Vec<String>,
+        no_block: bool,
         nth_element: Vec<usize>,
     ) {
         let this = Self::new(
@@ -170,28 +247,36 @@ impl Config {
             no_history,
             pretty_print,
             selector_override,
+            ignored_additional,
+            no_block,
             nth_element,
         );
         CONFIG.try_insert(this).expect("Failed to insert config");
     }
 
     fn default() -> Config {
-        Self::new(None, None, false, vec![], None, vec![])
+        Self::new(None, None, false, vec![], None, vec![], false, vec![])
     }
 
+    // This is where the key configuration is combined, and I would rather have these values being passed
+    // in individually rather than just passing in the arg or combining them into an arbitrary object to appease
+    // clippy. If this grows any larger I will revisit and rework.
+    #[allow(clippy::too_many_arguments)]
     fn new(
         args_color_mode: Option<ColorMode>,
         cache_mode: Option<&CacheMode>,
         no_history: bool,
         pretty_print: Vec<DisplayConfig>,
         selector_override: Option<String>,
+        ignored_additional: Vec<String>,
+        no_block: bool,
         nth_element: Vec<usize>,
     ) -> Self {
         let mut config: RawConfig = toml::from_str(DEFAULT_CONFIG_LOCATION)
             .map_err(|e| println!("{e}"))
             .unwrap_or(RawConfig::default());
         _ = get_user_specified_config().map(|u_config| override_defaults(&mut config, u_config));
-        let format = Self::create_format_config(&config);
+        let format = Self::create_format_config(&config, ignored_additional, no_block);
         let extraction = Self::create_extraction_config(
             args_color_mode,
             selector_override,
@@ -316,17 +401,26 @@ impl Config {
         )
     }
 
-    fn create_format_config(config: &RawConfig) -> FormatConfig {
-        let ignored_tags = config
+    fn create_format_config(
+        config: &RawConfig,
+        ignored_additional: Vec<String>,
+        no_block: bool,
+    ) -> FormatConfig {
+        let mut ignored_tags: HashSet<String> = config
             .format
             .as_ref()
             .map(|format| format.ignored_tags.iter().cloned().collect())
             .unwrap_or_default();
-        let block_elements = config
-            .format
-            .as_ref()
-            .map(|format| format.block_elements.iter().cloned().collect())
-            .unwrap_or_default();
+        ignored_tags.extend(ignored_additional);
+        let block_elements = if no_block {
+            HashSet::new()
+        } else {
+            config
+                .format
+                .as_ref()
+                .map(|format| format.block_elements.iter().cloned().collect())
+                .unwrap_or_default()
+        };
         let tag_styles = convert_styles(&config.styles);
         FormatConfig::new(ignored_tags, block_elements, tag_styles)
     }

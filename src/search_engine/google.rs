@@ -52,7 +52,7 @@ impl GoogleSearch {
         search_result
             .items
             .iter()
-            .map(|item| Link::new(item.link.clone()))
+            .map(|item| Link::new(&item.link))
             .collect()
     }
 }

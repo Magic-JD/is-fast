@@ -64,3 +64,18 @@ isf_stars() {
         --no-cache
 }
 
+# Checks the google page to get the information for the info box, works for most conversions (with thanks to d3-X-t3r for this suggestion)
+# E.g. isf_quick 200f to c
+# isf_quick 30 GBP to USD
+# isf_quick Weather Berlin
+isf_quick() {
+    is-fast \
+        --direct "https://www.google.com/search?q=${*}" \
+        --piped \
+        --selector="div.ezO2md" \
+        --ignore="a" \
+        --no-block \
+        --nth-element 1 \
+        --pretty-print="margin:20,title" \
+        --color=always
+}
