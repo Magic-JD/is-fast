@@ -7,7 +7,7 @@ pub enum ColorMode {
     Never,
 }
 
-#[derive(Debug, Clone, ValueEnum)]
+#[derive(Debug, PartialEq, Clone, ValueEnum)]
 pub enum CacheMode {
     Read,
     Write,
@@ -51,11 +51,20 @@ pub struct SelectionArgs {
     )]
     pub selector: Option<String>,
 
+    #[arg(long = "ignore", help = "Ignore the given html element/s.")]
+    pub ignore: Vec<String>,
+
+    #[arg(
+        long = "no-block",
+        help = "Do not put block elements on separate lines."
+    )]
+    pub no_block: bool,
+
     #[arg(
         long = "nth-element",
         help = "Show only the nth element matching the selector"
     )]
-    pub nth_element: Vec<usize>,
+    pub nth_element: Vec<String>,
 }
 
 #[derive(Debug, Parser)]

@@ -105,11 +105,29 @@ fg = "Gray"
 "*merriam-webster.com*" = "div.vg"
 "*developer.mozilla.org*" = "main.main-content"
 "*realpython.com*" = "div.article-body > *:not(div.sidebar-module)"
+"*docs.oracle.com*/tutorial/*" = "div#PageContent"
+"*www.simplilearn.com*" = "article"
+"*wiki.python.org*" = "div#content"
+"*www.coursera.org/tutorials*" = "div.rc-Body"
+"*pythonexamples.org*" = "div#entry-content"
+"*hackr.io/blog*" = "article"
+"*www.tutorialspoint.com*" = "div#mainContent"
+"*techbeamers.com*" = "div.entry-content > *:not(div.ruby-table-contents)"
 
 [format]
 # All elements from this list are ignored.
+# Limited CSS Selectors are supported (.class and #id), in the format tag#id.class.additional-class.
+# E.G.
+# div#center        will ignore only divs that are marked center.
+# div.this.that     will ignore divs with the class this or the class that.
+# .this.that        will ignore any element with the class this OR the class that.
+# #that             will ignore any element with the id that.
+# div#center.this   will ignore any div with the id center OR the class this.
+# div.this#center   is INVALID and will not work.
+# .this#center      is INVALID and will not work.
 ignored_tags = ["script", "style", "noscript", "head", "title", "meta", "input", "button", "svg", "nav", "footer", "header", "aside"]
 # Adding an element to this list will ensure that every instance of that element sits on its own line.
+# Limited CSS selectors are supported as above.
 block_elements = ["p", "div", "table", "article", "img", "section", "pre", "blockquote", "ul", "ol", "dl", "dt", "dd", "li", "h1", "h2", "h3", "h4", "h5", "h6"]
 
 # Section relating to syntax highlighting.

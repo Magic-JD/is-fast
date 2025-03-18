@@ -73,6 +73,7 @@ cargo install --git https://github.com/Magic-JD/is-fast.git
     - [🎨 Display Settings](#-display-settings)
     - [🕰️ History Settings](#-history-settings)
     - [🔍 Search Configuration](#-search-configuration)
+    - [🗄️ Cache Settings](#-cache-settings)
     - [❓ Miscellaneous Configuration](#-miscellaneous-settings)
     - [📌 Summary](#-summary)
 - [🌐 Using `is-fast` to Open URLs Directly](#-using-is-fast-to-open-urls-directly)
@@ -95,6 +96,8 @@ cargo install --git https://github.com/Magic-JD/is-fast.git
   - [`--site`](#--site)
   - [`--color`](#--color)
   - [`--last`](#--last)
+  - [`--ignore`](#--ignore)
+  - [`--no-block`](#--no-block)
   - [`--pretty-print`](#--pretty-print)
 - [🧹 Clearing Data](#-clearing-data) 
 - [Example scripts](#example-scripts)
@@ -150,6 +153,16 @@ export IS_FAST_CONFIG_PATH="/full/path/to/config.toml"
 Block elements are HTML tags that should have **a new line before and after** them when processed. This helps preserve
 readability and logical structure in the parsed content.
 
+Block Elements support limited CSS selector features.
+
+div#center        will newline only divs that are marked center. 
+div.this.that     will newline divs with the class this or the class that.
+.this.that        will newline any element with the class this OR the class that.
+#that             will newline any element with the id that.
+div#center.this   will newline any div with the id center OR the class this.
+div.this#center   is INVALID and will not work.
+.this#center      is INVALID and will not work.
+
 ### Example Configuration
 
 ```toml
@@ -186,6 +199,8 @@ Each **block element** is **separated by a new line** for better readability.
 
 Ignored tags are HTML elements that **will be completely removed** from the processed content. These typically include *
 *scripts, metadata, and interactive elements** that are irrelevant to text processing.
+
+Ignored tags support the same limited CSS selector logic as block elements. See above for more information.
 
 ### Example Configuration
 
@@ -226,7 +241,8 @@ Selectors allow you to **extract only relevant content** from different websites
 sites for a better user experience. If no selector is provided for a specific site then `body` will be used. Glob
 matching is used to match the site, or even certain urls within the site to extract the most relevant text. NOTE: If
 there are multiple globs that could match, the most restrictive should be placed higher in the config! Selectors are
-chosen from the first match only.
+chosen from the first match only. Note that the CSS selectors defined here apply the full standard CSS selector logic,
+and are not limited to #id and .class only.
 
 ### Example Configuration
 
@@ -239,16 +255,15 @@ chosen from the first match only.
 
 ### Effect
 
-When processing content from Wikipedia, only `<p>` elements will be extracted. For github, if the url contains the
-endpoint blob it will return only elements with the CSS class .react-code-line-contents. Otherwise it will return the
+When processing content from Wikipedia, only `<p>` elements will be extracted. For GitHub, if the url contains the
+endpoint blob it will return only elements with the CSS class .react-code-line-contents. Otherwise, it will return the
 .markdown-body.
 
 ## 🎨 Text Styles
 
 ### Definition
 
-This section defines **how different HTML tags should be styled** in the output. Colors can be specified using standard color names (e.g., red, blue),
-hex values (e.g., #ff5733), or RGB notation (e.g., rgb(255, 87, 51)).
+This section defines **how different HTML tags should be styled** in the output. Colors can be specified using standard color names (e.g., red, blue), hex values (e.g., #ff5733), or RGB notation (e.g., rgb(255, 87, 51)). Note css style selectors cannot be applied here.
 
 ### Example Configuration
 
@@ -436,6 +451,43 @@ that domain. This can be overridden by the `--site` argument.
 site = "en.wikipedia.org"
 ```
 
+## 🗄️ Cache Settings
+
+Caching stores the raw HTML associated with a URL, allowing for faster retrieval of previously accessed results. This is particularly useful for scripts where you may need to select multiple elements from the same page by repeatedly calling the search function with different selectors. 
+### Configuration Options
+
+### `cache_mode`
+- **Description**: Determines the caching mode. Caching is disabled by default.
+- **Options**:
+  - `disabled`: No caching is performed.
+  - `read`: Only reads from the cache; does not write new entries.
+  - `write`: Only writes to the cache; does not read from it.
+  - `readwrite`: Both reads from and writes to the cache.
+
+  This can be overriden with the `--cache`, `--no-cache`, `--cache-mode` or `--flash-cache` flags.
+
+### `max_size`
+- **Description**: Specifies the maximum size of the cache. During testing, it was observed that approximately 2MB is used per 100 entries, though this may vary depending on the size of the pages being cached.
+- **Type**: Integer
+- **Default**: `100`
+
+### `ttl` (Time to Live)
+- **Description**: Defines how long the cached value should remain valid, in seconds. Note that the cached data is stored with the TTL being added to the cached time. This means that if you change this to a longer value and then change it back, the longer-lived data might persist. To remove such data, use the `--clear-cache` flag.
+- **Type**: Integer
+- **Default**: `300` (5 minutes)
+
+## Example Configuration
+
+```toml
+[cache]
+cache_mode = "readwrite"
+max_size = 100
+ttl = 300
+```
+
+Note that the `--flash-cache` flag overrides this config setting readwrite mode, infinite max size and a ttl of 5 seconds while it is applied.
+
+
 ## ❓ Miscellaneous Settings
 
 ### Open tool
@@ -460,7 +512,8 @@ open_tool = "w3m"
 | **Syntax Highlighting** | Defines how the syntax highlighting should be handled.              |
 | **Display Settings**    | Controls visual aspects like borders and margins.                   |
 | **History Settings**    | Configures history display colors and search behavior.              |
-| **Search Settings**     | Determines whether to use DuckDuckGo or Google.                     |
+| **Search Settings**     | Determines whether to use DuckDuckGo, Google or Kagi.               |
+| **Cache Settings**      | Determines the settings to apply to the cache.                      |
 | **Misc**                | Miscellaneous settings.                                             |
 ---
 
@@ -627,6 +680,8 @@ is-fast --no-history "how to deal with an obnoxious boss"
 
 As the vast majority of the time is-fast spends is waiting for the results of the webscraping to be returned, when a cache hit occurs the result is basically instant. This is very useful if you are reading a little, closing the program, making some changes, then coming back to the same result.
 
+Note, if the provided flag conflicts with the config, the flag will always take priority. If multiple flags are provided, then is-fast will fail safe to disabled.
+
 ### `--cache`
 
 This will cache the result even if caching is normally disabled.
@@ -702,10 +757,10 @@ is-fast --selector ".interesting" --direct "www.site.com"
 
 ### `--nth-element`
 
-Normally used in conjunction with `--selector` this allows you to only return the nth element that matches that selector.
+Normally used in conjunction with `--selector` this allows you to only return the nth element that matches that selector. Multiple options can be provided, either comma separated or flag separated.
 
 ```sh
-    is-fast --direct "www.example.com/site" --selector "div.sb" --nth-element 1 --nth-element 3 # There are multiple div.sb elements - we only want to see the first and third
+    is-fast --direct "www.example.com/site" --selector "div.sb" --nth-element 1,2 --nth-element 4 # There are multiple div.sb elements - we only want to see the first, second and fourth.
 ```
 
 ### `--site`
@@ -723,6 +778,22 @@ This allows the caller to specify the color mode. Default value is `tui`, which 
 ```sh
 is-fast --color=always "How to do a for loop in rust" | bat # Will output to bat with full colors
 ```
+### `--ignore`
+
+This allows the user to specify additional elements to ignore. These follow the same limited css selector logic as in the configuration file. This takes a list value, either from multiple flags or comma separated.
+
+```sh
+is-fast --last --ignore="div.sidebar,div#ignore" --ignore=".bad-vibes"
+```
+
+### `--no-block`
+
+When this flag is applied block elements are ignored. This is useful if you want to get a small amount of information but it ends up being
+unexpectedly on different lines.
+
+```sh
+is-fast --last --no-block
+```
 
 ### `--pretty-print`
 
@@ -738,7 +809,7 @@ Customize the format of the output to the terminal with the following commands. 
   is-fast --pretty-print="margin:10" "Some search term"
   ```
 
-- **`title:<value>`**: This will apply a title to the output. The value should be a string. Note that the title cannot contain the characters `,` or `:` due to parsing issues.
+- **`title:Option(<value>)`**: This will apply a title to the output. Note that the title cannot contain the characters `,` or `:` due to parsing issues. If the title value is not provided then the title of the page will be used instead.
   ```sh
   is-fast --pretty-print="title:My Custom Title" "Some search term"
   ```

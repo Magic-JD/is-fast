@@ -18,8 +18,10 @@ pub struct Link {
     pub url: String,
 }
 impl Link {
-    pub fn new(url: String) -> Self {
-        Self { url }
+    pub fn new(url: &str) -> Self {
+        Self {
+            url: url.to_string(),
+        }
     }
 }
 

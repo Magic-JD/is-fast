@@ -79,5 +79,5 @@ fn current_link(history: &[HistoryData], state: &TableState) -> Option<HtmlSourc
         .iter()
         .collect::<Vec<_>>()
         .get(idx)
-        .map(|history_data| LinkSource(Link::new(history_data.url.clone())))
+        .map(|history_data| LinkSource(Link::new(&history_data.url)))
 }

@@ -33,7 +33,7 @@ impl Formatter {
 
         let tag_name = element.value().name();
 
-        if self.config.is_tag_ignored(tag_name) {
+        if self.config.is_element_ignored(&element) {
             return vec![];
         }
 
@@ -78,7 +78,7 @@ impl Formatter {
             return vec![];
         }
 
-        if self.config.is_block_element(tag_name) {
+        if self.config.is_block_element(&element) {
             // Relies on the above line to verify lines isn't empty
             if let Some(styled) = style {
                 lines = lines
@@ -121,7 +121,7 @@ impl Formatter {
                 if element_lines.is_empty() {
                     return;
                 }
-                if self.config.is_block_element(element.value().name()) {
+                if self.config.is_block_element(element) {
                     lines.extend(element_lines);
                     return;
                 }
@@ -223,6 +223,13 @@ mod tests {
     use ratatui::style::{Color, Modifier};
     use ratatui::text::Text;
     use scraper::{Html, Selector};
+    use std::collections::{HashMap, HashSet};
+
+    impl Formatter {
+        fn test(config: FormatConfig) -> Self {
+            Self { config }
+        }
+    }
 
     #[test]
     fn test_to_display_simple_html() {
@@ -329,6 +336,131 @@ mod tests {
             .flat_map(|element| formatter.to_display(element))
             .collect::<Vec<Line>>();
         assert!(list.is_empty());
+    }
+
+    #[test]
+    fn test_to_display_with_breaks_and_deletions() {
+        let html = r#"
+        <html>
+            <body>
+                <div style="display: none;">Hidden</div>
+                <p>First paragraph.</p>
+                <span class="type1">Should be removed</span>
+                <p>Second paragraph.</p>
+                <span class="type2">Should have extra spacing</span>
+                <p>Third paragraph.</p>
+            </body>
+        </html>
+    "#;
+
+        let formatter = Formatter::test(FormatConfig::new(
+            HashSet::from(["span.type1".to_string()]),
+            HashSet::from(["span.type2".to_string()]),
+            HashMap::new(),
+        ));
+
+        let binding = Html::parse_document(html);
+        let list = binding
+            .select(&Selector::parse("body").unwrap())
+            .flat_map(|element| formatter.to_display(element))
+            .collect::<Vec<Line>>();
+
+        let expected_output = vec![
+            Line::from(vec![
+                Span::from("First paragraph."),
+                Span::from(" "),
+                Span::from("Second paragraph."),
+            ]),
+            Line::default(),
+            Line::from(Span::from("Should have extra spacing")),
+            Line::default(),
+            Line::from("Third paragraph."),
+        ];
+
+        assert_eq!(list, expected_output);
+    }
+
+    #[test]
+    fn test_to_display_with_breaks_and_deletions_class_only() {
+        let html = r#"
+        <html>
+            <body>
+                <div style="display: none;">Hidden</div>
+                <p>First paragraph.</p>
+                <span class="type1">Should be removed</span>
+                <p>Second paragraph.</p>
+                <span class="type2">Should have extra spacing</span>
+                <p class="type1">Third paragraph.</p>
+            </body>
+        </html>
+    "#;
+
+        let formatter = Formatter::test(FormatConfig::new(
+            HashSet::from([".type1".to_string()]),
+            HashSet::from([".type2".to_string()]),
+            HashMap::new(),
+        ));
+
+        let binding = Html::parse_document(html);
+        let list = binding
+            .select(&Selector::parse("body").unwrap())
+            .flat_map(|element| formatter.to_display(element))
+            .collect::<Vec<Line>>();
+
+        let expected_output = vec![
+            Line::from(vec![
+                Span::from("First paragraph."),
+                Span::from(" "),
+                Span::from("Second paragraph."),
+            ]),
+            Line::default(),
+            Line::from(Span::from("Should have extra spacing")),
+            Line::default(),
+        ];
+
+        assert_eq!(list, expected_output);
+    }
+
+    #[test]
+    fn test_to_display_id_based_formatting() {
+        let html = r#"
+        <html>
+            <body>
+                <div style="display: none;">Hidden</div>
+                <p>First paragraph.</p>
+                <div id="remove-me">This should be removed</div>
+                <p>Second paragraph.</p>
+                <div id="extra-space">This should have extra spacing</div>
+                <p>Third paragraph.</p>
+            </body>
+        </html>
+    "#;
+
+        let formatter = Formatter::test(FormatConfig::new(
+            HashSet::from(["#remove-me".to_string()]),
+            HashSet::from(["#extra-space".to_string()]),
+            HashMap::new(),
+        ));
+
+        let binding = Html::parse_document(html);
+        let list = binding
+            .select(&Selector::parse("body").unwrap())
+            .flat_map(|element| formatter.to_display(element))
+            .collect::<Vec<Line>>();
+
+        let expected_output = vec![
+            Line::from(vec![
+                Span::from("First paragraph."),
+                Span::from(" "),
+                Span::from("Second paragraph."),
+            ]),
+            Line::default(),
+            Line::from(Span::from("This should have extra spacing")),
+            Line::default(),
+            Line::from("Third paragraph."),
+        ];
+
+        assert_eq!(list, expected_output);
     }
 
     #[test]

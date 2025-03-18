@@ -5,6 +5,7 @@ use nu_ansi_term::Style;
 use textwrap::{fill, Options, WrapAlgorithm};
 
 pub fn conditional_formatting(
+    page_title: &str,
     mut content: String,
     display_configuration_list: &[DisplayConfig],
 ) -> String {
@@ -30,11 +31,16 @@ pub fn conditional_formatting(
         }
     }
 
-    if let Some(title_val) = title {
+    if let Some(title_val_option) = title {
+        let mut title = page_title;
+        if let Some(user_title) = title_val_option {
+            title = user_title;
+        }
+
         let title = if let ColorMode::Always = Config::get_extractor_config().color_mode() {
-            Style::new().bold().paint(title_val.trim()).to_string()
+            Style::new().bold().paint(title.trim()).to_string()
         } else {
-            title_val.trim().to_string()
+            title.trim().to_string()
         };
         content.insert_str(0, &format!("{title}\n\n"));
     }
@@ -91,7 +97,7 @@ mod tests {
         let expected_output = read_file_content("unformatted_result.txt");
 
         let display_config = vec![]; // No display config for this case
-        let result = conditional_formatting(input, &display_config);
+        let result = conditional_formatting("Title", input, &display_config);
         assert_eq!(result, expected_output);
     }
 
@@ -100,8 +106,18 @@ mod tests {
         let input = read_file_content("unformatted.txt");
         let expected_output = read_file_content("test_output_title.txt");
 
-        let display_config = vec![DisplayConfig::Title("Test Title".to_string())];
-        let result = conditional_formatting(input, &display_config);
+        let display_config = vec![DisplayConfig::Title(Some("Test Title".to_string()))];
+        let result = conditional_formatting("Title", input, &display_config);
+        assert_eq!(result, expected_output);
+    }
+
+    #[test]
+    fn test_conditional_formatting_case_title_inferred() {
+        let input = read_file_content("unformatted.txt");
+        let expected_output = read_file_content("test_output_title.txt");
+
+        let display_config = vec![DisplayConfig::Title(None)];
+        let result = conditional_formatting("Test Title", input, &display_config);
         assert_eq!(result, expected_output);
     }
 
@@ -111,7 +127,7 @@ mod tests {
         let expected_output = read_file_content("test_output_margin_wrap.txt");
 
         let display_config = vec![DisplayConfig::Margin(4), DisplayConfig::Wrap];
-        let result = conditional_formatting(input, &display_config);
+        let result = conditional_formatting("Title", input, &display_config);
         assert_eq!(result, expected_output);
     }
 
@@ -121,11 +137,11 @@ mod tests {
         let expected_output = read_file_content("test_output_title_margin_wrap.txt");
 
         let display_config = vec![
-            DisplayConfig::Title("Custom Title".to_string()),
+            DisplayConfig::Title(Some("Custom Title".to_string())),
             DisplayConfig::Margin(5),
             DisplayConfig::Wrap,
         ];
-        let result = conditional_formatting(input, &display_config);
+        let result = conditional_formatting("", input, &display_config);
         assert_eq!(result, expected_output);
     }
 }

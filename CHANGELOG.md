@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.12.0]
+### Added
+- New flag for adding additional ignore tags. `--ignore="div"`
+- New flag for not applying block elements (reducing non formatted or `<br>` code to a single line).
+- All tags for ignored and blocked elements support basic css selector features (.class or #id)
+- Title `--pretty-print` value will now default to the page title if no title is provided.
+- Support multiple elements with one flag for `--nth-element`
+- A number of new default page selectors.
+- New script for doing quick conversion checks.
+
+### Fixed
+- Google search page is now supported to view, as are a number of other pages that were previously blocked.
+- Spaces in direct urls are now converted to + for ease of scripting use.
+
+### Changed
+- Refactor of code across many files, splitting up logic especially in the Config struct/s.
+- Updated a number of dependencies in the cargo lock.
+
 ## [0.11.4]
 ### Changed
 - Increased the level of details in the logs.
