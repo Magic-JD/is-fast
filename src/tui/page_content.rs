@@ -1,5 +1,5 @@
 use crate::config::load::Config;
-use crate::search_engine::link::PageSource;
+use crate::search_engine::link::HtmlSource;
 use crate::tui::display::Widget;
 use crate::tui::display::Widget::{Block, Paragraph, Text};
 use crate::tui::general_widgets::default_block;
@@ -21,7 +21,7 @@ pub struct PageContent<'a> {
 }
 
 impl PageContent<'_> {
-    pub fn new(pages: &[PageSource], available_space: Rect) -> Self {
+    pub fn new(pages: &[HtmlSource], available_space: Rect) -> Self {
         let total_area = available_space;
         let areas = PageContent::page_area(available_space);
         let index = 0;
@@ -43,7 +43,7 @@ impl PageContent<'_> {
         &mut self,
         index: usize,
         scroll: u16,
-        pages: &[PageSource],
+        pages: &[HtmlSource],
         available_space: Rect,
     ) -> Vec<Widget> {
         if available_space != self.total_area {

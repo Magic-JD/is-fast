@@ -1,0 +1,5 @@
+
+The for in construct can be used to iterate through an Iterator. One of the easiest ways to create an iterator is to use the range notation a..b. This yields values from a (inclusive) to b (exclusive) in steps of one.
+
+
+Alternatively, a..=b can be used for a range that is inclusive on both ends. The above can be written as:

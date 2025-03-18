@@ -1,31 +1,33 @@
+use crate::config::load::Config;
 use crate::database::history_database::add_history;
-use crate::search_engine::link::PageSource;
+use crate::search_engine::link::HtmlSource;
+use crate::search_engine::link::HtmlSource::LinkSource;
 use crate::transform::cache::{get_content, preload};
 use crate::tui::general_widgets::TUI_BORDER_COLOR;
 use ratatui::layout::Alignment;
 use ratatui::prelude::{Color, Line, Style, Text};
 use ratatui::widgets::{Paragraph, Wrap};
 
-pub fn new_page(index: usize, links: &[PageSource]) -> (String, Paragraph<'static>) {
-    if let Some(extractable) = links.get(index + 1) {
-        let extractor = &extractable.extract;
-        let html_source = &extractable.html_source;
-        preload(html_source, extractor); // Initiate the call to get the page after this one
+pub fn new_page(index: usize, sources: &[HtmlSource]) -> (String, Paragraph<'static>) {
+    if let Some(html_source) = sources.get(index + 1) {
+        preload(html_source); // Initiate the call to get the page after this one
     }
-    links.get(index).map_or_else(
+    sources.get(index).map_or_else(
         || {
             (
                 String::from("None"),
                 Paragraph::new(Text::from(String::from("Index out of bounds"))),
             )
         },
-        |link| {
-            let (title, paragraph) = get_content(&link.html_source, &link.extract);
-            let url = link.html_source.get_url();
-            if link.tracked {
-                add_history(&title, url).unwrap_or_else(|err| {
-                    log::error!("Failed to add history for page {title} ({url}) {err}");
-                });
+        |source| {
+            let (title, paragraph) = get_content(source);
+            let url = source.get_url();
+            if *Config::get_history_enabled() {
+                if let LinkSource(_) = source {
+                    add_history(&title, url).unwrap_or_else(|err| {
+                        log::error!("Failed to add history for page {title} ({url}) {err}");
+                    });
+                }
             }
             let display_title = format!(" {title} ({url}) ");
             let formatted_paragraph = paragraph

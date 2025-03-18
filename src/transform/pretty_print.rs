@@ -31,7 +31,7 @@ pub fn conditional_formatting(
     }
 
     if let Some(title_val) = title {
-        let title = if let ColorMode::Always = Config::get_color_mode() {
+        let title = if let ColorMode::Always = Config::get_extractor_config().color_mode() {
             Style::new().bold().paint(title_val.trim()).to_string()
         } else {
             title_val.trim().to_string()

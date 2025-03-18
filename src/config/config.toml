@@ -104,6 +104,7 @@ fg = "Gray"
 "*programiz.com*" = ".editor-contents"
 "*merriam-webster.com*" = "div.vg"
 "*developer.mozilla.org*" = "main.main-content"
+"*realpython.com*" = "div.article-body > *:not(div.sidebar-module)"
 
 [format]
 # All elements from this list are ignored.

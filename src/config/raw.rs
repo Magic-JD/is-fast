@@ -67,7 +67,7 @@ pub struct SearchSection {
     pub(crate) site: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct CacheSection {
     #[serde(default)]
     pub(crate) cache_mode: Option<String>,
@@ -77,7 +77,7 @@ pub struct CacheSection {
     pub(crate) ttl: Option<i64>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct MiscSection {
     #[serde(default)]
     pub(crate) open_tool: Option<String>,
@@ -121,19 +121,48 @@ impl RawConfig {
     }
 }
 
-pub fn override_defaults(config: &mut RawConfig, u_config: RawConfig) {
+pub fn override_defaults(config: &mut RawConfig, mut u_config: RawConfig) {
     for (tag, user_style) in u_config.styles {
         config.styles.insert(tag, user_style);
     }
     for (site, selector) in u_config.selectors {
         config.selectors.insert(site, selector);
     }
-    let mut format = config.format.take().unwrap_or_else(|| FormatSection {
+
+    config.format = Some(override_format(
+        config.format.take(),
+        u_config.format.take(),
+    ));
+    config.syntax = Some(override_syntax(
+        config.syntax.take(),
+        u_config.syntax.take(),
+    ));
+    config.display = Some(override_display(
+        config.display.take(),
+        u_config.display.take(),
+    ));
+    config.history = Some(override_history(
+        config.history.take(),
+        u_config.history.take(),
+    ));
+    config.search = Some(override_search(
+        config.search.take(),
+        u_config.search.take(),
+    ));
+    config.cache = Some(override_cache(config.cache.take(), u_config.cache.take()));
+    config.misc = Some(override_misc(config.misc.take(), u_config.misc.take()));
+}
+
+fn override_format(
+    config: Option<FormatSection>,
+    u_config: Option<FormatSection>,
+) -> FormatSection {
+    let mut format = config.unwrap_or_else(|| FormatSection {
         ignored_tags: Vec::new(),
         block_elements: Vec::new(),
     });
 
-    if let Some(u_format) = u_config.format {
+    if let Some(u_format) = u_config {
         if !u_format.ignored_tags.is_empty() {
             format.ignored_tags = u_format.ignored_tags;
         }
@@ -141,11 +170,18 @@ pub fn override_defaults(config: &mut RawConfig, u_config: RawConfig) {
             format.block_elements = u_format.block_elements;
         }
     }
-    let mut syntax = config.syntax.take().unwrap_or(SyntaxHighlightingSection {
+    format
+}
+
+fn override_syntax(
+    config: Option<SyntaxHighlightingSection>,
+    u_config: Option<SyntaxHighlightingSection>,
+) -> SyntaxHighlightingSection {
+    let mut syntax = config.unwrap_or(SyntaxHighlightingSection {
         theme: None,
         default_language: None,
     });
-    if let Some(u_syntax) = u_config.syntax {
+    if let Some(u_syntax) = u_config {
         if let Some(theme) = u_syntax.theme {
             syntax.theme = Some(theme);
         }
@@ -153,14 +189,20 @@ pub fn override_defaults(config: &mut RawConfig, u_config: RawConfig) {
             syntax.default_language = Some(default_language);
         }
     }
+    syntax
+}
 
-    let mut display = config.display.take().unwrap_or(DisplaySection {
+fn override_display(
+    config: Option<DisplaySection>,
+    u_config: Option<DisplaySection>,
+) -> DisplaySection {
+    let mut display = config.unwrap_or(DisplaySection {
         border_color: None,
         page_margin: None,
         scroll: None,
         color_mode: None,
     });
-    if let Some(u_display) = u_config.display {
+    if let Some(u_display) = u_config {
         if let Some(border_color) = u_display.border_color {
             display.border_color = Some(border_color);
         }
@@ -176,8 +218,14 @@ pub fn override_defaults(config: &mut RawConfig, u_config: RawConfig) {
             display.color_mode = Some(color_mode);
         }
     }
+    display
+}
 
-    let mut history = config.history.take().unwrap_or(HistorySection {
+fn override_history(
+    config: Option<HistorySection>,
+    u_config: Option<HistorySection>,
+) -> HistorySection {
+    let mut history = config.unwrap_or(HistorySection {
         title_color: None,
         url_color: None,
         time_color: None,
@@ -186,7 +234,7 @@ pub fn override_defaults(config: &mut RawConfig, u_config: RawConfig) {
         enabled: None,
     });
 
-    if let Some(u_history) = u_config.history {
+    if let Some(u_history) = u_config {
         if let Some(title_color) = u_history.title_color {
             history.title_color = Some(title_color);
         }
@@ -206,13 +254,19 @@ pub fn override_defaults(config: &mut RawConfig, u_config: RawConfig) {
             history.enabled = Some(enabled);
         }
     }
+    history
+}
 
-    let mut search = config.search.take().unwrap_or(SearchSection {
+fn override_search(
+    config: Option<SearchSection>,
+    u_config: Option<SearchSection>,
+) -> SearchSection {
+    let mut search = config.unwrap_or(SearchSection {
         engine: None,
         site: None,
     });
 
-    if let Some(u_search) = u_config.search {
+    if let Some(u_search) = u_config {
         if let Some(engine) = u_search.engine {
             search.engine = Some(engine);
         }
@@ -220,13 +274,16 @@ pub fn override_defaults(config: &mut RawConfig, u_config: RawConfig) {
             search.site = Some(site);
         }
     }
+    search
+}
 
-    let mut cache = config.cache.take().unwrap_or(CacheSection {
+fn override_cache(config: Option<CacheSection>, u_config: Option<CacheSection>) -> CacheSection {
+    let mut cache = config.unwrap_or(CacheSection {
         cache_mode: None,
         max_size: None,
         ttl: None,
     });
-    if let Some(u_cache) = u_config.cache {
+    if let Some(u_cache) = u_config {
         if let Some(cache_mode) = u_cache.cache_mode {
             cache.cache_mode = Some(cache_mode);
         }
@@ -237,25 +294,18 @@ pub fn override_defaults(config: &mut RawConfig, u_config: RawConfig) {
             cache.ttl = Some(ttl);
         }
     }
+    cache
+}
 
-    let mut misc = config
-        .misc
-        .take()
-        .unwrap_or(MiscSection { open_tool: None });
+fn override_misc(misc: Option<MiscSection>, u_misc: Option<MiscSection>) -> MiscSection {
+    let mut misc = misc.unwrap_or(MiscSection { open_tool: None });
 
-    if let Some(u_misc) = u_config.misc {
+    if let Some(u_misc) = u_misc {
         if let Some(open_tool) = u_misc.open_tool {
             misc.open_tool = Some(open_tool);
         }
     }
-
-    config.search = Some(search);
-    config.history = Some(history);
-    config.format = Some(format);
-    config.syntax = Some(syntax);
-    config.display = Some(display);
-    config.cache = Some(cache);
-    config.misc = Some(misc);
+    misc
 }
 
 pub fn get_user_specified_config() -> Option<RawConfig> {
@@ -277,7 +327,7 @@ fn config_from_filepath(buff: PathBuf) -> Option<RawConfig> {
         .and_then(|str| toml::from_str(str).ok())
 }
 
-pub fn generate_globs(config: &mut RawConfig) -> (GlobSet, Vec<Glob>) {
+pub fn generate_globs(config: &RawConfig) -> (GlobSet, Vec<Glob>) {
     let mut builder = GlobSetBuilder::new();
     let mut globs = Vec::new();
     config.selectors.iter().for_each(|(pattern, _)| {
@@ -292,16 +342,16 @@ pub fn generate_globs(config: &mut RawConfig) -> (GlobSet, Vec<Glob>) {
         .unwrap_or_default(); // Should be safe as only valid globs added
     (matcher, globs)
 }
-pub fn convert_styles(styles: HashMap<String, TagStyleConfig>) -> HashMap<String, Style> {
+pub fn convert_styles(styles: &HashMap<String, TagStyleConfig>) -> HashMap<String, Style> {
     styles
-        .into_iter()
+        .iter()
         .map(|(tag, cfg)| {
             let mut style = Style::default();
-            if let Some(fg) = cfg.fg {
-                style = style.fg(parse_color(&fg));
+            if let Some(fg) = &cfg.fg {
+                style = style.fg(parse_color(fg));
             }
-            if let Some(bg) = cfg.bg {
-                style = style.bg(parse_color(&bg));
+            if let Some(bg) = &cfg.bg {
+                style = style.bg(parse_color(bg));
             }
             let modifiers = [
                 (cfg.bold, Modifier::BOLD),
@@ -317,7 +367,7 @@ pub fn convert_styles(styles: HashMap<String, TagStyleConfig>) -> HashMap<String
                 }
             }
 
-            (tag, style)
+            (tag.to_string(), style)
         })
         .collect()
 }
@@ -419,7 +469,7 @@ mod tests {
             },
         );
 
-        let converted = convert_styles(styles);
+        let converted = convert_styles(&styles);
         let error_style = converted.get("error").unwrap();
 
         assert_eq!(error_style.fg, Some(Color::Red));
@@ -435,7 +485,7 @@ mod tests {
 
     #[test]
     fn test_generate_globs() {
-        let mut raw_config = RawConfig {
+        let raw_config = RawConfig {
             selectors: {
                 let mut map = HashMap::new();
                 map.insert("example.com/*".to_string(), "body".to_string());
@@ -452,7 +502,7 @@ mod tests {
             misc: None,
         };
 
-        let (matcher, globs) = generate_globs(&mut raw_config);
+        let (matcher, globs) = generate_globs(&raw_config);
 
         assert_eq!(globs.len(), 2);
         assert!(matcher.is_match("example.com/index.html"));

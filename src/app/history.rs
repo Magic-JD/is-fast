@@ -2,12 +2,10 @@ use crate::app::enum_values::HistoryViewer;
 use crate::app::event_loop::{history_event_loop, HistoryAction};
 use crate::app::text::TextApp;
 use crate::app::tui::TuiApp;
-use crate::config::load::Config;
 use crate::database::history_database::{get_history, HistoryData};
 use crate::pipe::history::pipe_history;
 use crate::search_engine::link::HtmlSource::LinkSource;
-use crate::search_engine::link::{HtmlSource, Link, PageSource};
-use crate::transform::page::PageExtractor;
+use crate::search_engine::link::{HtmlSource, Link};
 use crate::tui::history_content::HistoryContent;
 use ratatui::widgets::TableState;
 
@@ -18,7 +16,7 @@ pub enum SearchOn {
 }
 
 impl HistoryViewer for TuiApp {
-    fn show_history(&mut self) -> Option<PageSource> {
+    fn show_history(&mut self) -> Option<HtmlSource> {
         let history =
             get_history().unwrap_or_else(|_| self.display.shutdown_with_error("No history found."));
         let table_state = TableState::default();
@@ -44,12 +42,7 @@ impl HistoryViewer for TuiApp {
                     return current_link(
                         &history_content.current_history,
                         &history_content.table_state,
-                    )
-                    .map(|html_source| PageSource {
-                        html_source,
-                        extract: PageExtractor::new(Config::get_color_mode().clone(), None, vec![]),
-                        tracked: true,
-                    });
+                    );
                 }
                 HistoryAction::Up => history_content.scroll_up(),
                 HistoryAction::Down => history_content.scroll_down(),
@@ -72,7 +65,7 @@ impl HistoryViewer for TuiApp {
 }
 
 impl HistoryViewer for TextApp {
-    fn show_history(&mut self) -> Option<PageSource> {
+    fn show_history(&mut self) -> Option<HtmlSource> {
         let history =
             get_history().unwrap_or_else(|_| Self::terminating_error("Cannot access history."));
         pipe_history(history).unwrap_or_else(|_| eprintln!("Pipe broken!"));

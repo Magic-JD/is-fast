@@ -1,7 +1,7 @@
 use crate::app::enum_values::App::{Text, Tui};
 use crate::app::text::TextApp;
 use crate::app::tui::TuiApp;
-use crate::search_engine::link::PageSource;
+use crate::search_engine::link::HtmlSource;
 use enum_dispatch::enum_dispatch;
 
 #[enum_dispatch]
@@ -22,11 +22,11 @@ impl App {
 
 #[enum_dispatch(App)]
 pub trait HistoryViewer {
-    fn show_history(&mut self) -> Option<PageSource>;
+    fn show_history(&mut self) -> Option<HtmlSource>;
 }
 #[enum_dispatch(App)]
 pub trait PageViewer {
-    fn show_pages(&mut self, pages: &[PageSource]);
+    fn show_pages(&mut self, pages: &[HtmlSource]);
 }
 
 #[enum_dispatch(App)]

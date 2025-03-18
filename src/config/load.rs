@@ -1,7 +1,7 @@
 use crate::cli::command::{CacheMode, ColorMode};
 use crate::config::raw::{
     convert_styles, generate_globs, get_user_specified_config, override_defaults, parse_color,
-    RawConfig,
+    CacheSection, RawConfig,
 };
 use crate::search_engine::cache::CacheConfig;
 use crate::search_engine::search_type::SearchEngine;
@@ -18,74 +18,189 @@ static CONFIG: OnceCell<Config> = OnceCell::new();
 pub const DEFAULT_CONFIG_LOCATION: &str = include_str!("config.toml");
 const MS_IN_SECOND: i64 = 1000;
 
-#[derive(Debug)]
-pub struct Config {
-    styles: HashMap<String, Style>,
-    selectors: HashMap<String, String>,
-    matcher: GlobSet,
-    globs: Vec<Glob>,
+#[derive(Debug, Clone)]
+pub struct HistoryWidgetConfig {
+    url: Style,
+    title: Style,
+    time: Style,
+    text: Style,
+}
+
+impl HistoryWidgetConfig {
+    pub fn new(url: Style, title: Style, time: Style, text: Style) -> Self {
+        Self {
+            url,
+            title,
+            time,
+            text,
+        }
+    }
+
+    pub fn get_url_style(&self) -> &Style {
+        &self.url
+    }
+
+    pub fn get_title_style(&self) -> &Style {
+        &self.title
+    }
+
+    pub fn get_time_style(&self) -> &Style {
+        &self.time
+    }
+
+    pub fn get_text_style(&self) -> &Style {
+        &self.text
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct FormatConfig {
     ignored_tags: HashSet<String>,
     block_elements: HashSet<String>,
+    tag_styles: HashMap<String, Style>,
+}
+
+impl FormatConfig {
+    pub fn new(
+        ignored_tags: HashSet<String>,
+        block_elements: HashSet<String>,
+        tag_styles: HashMap<String, Style>,
+    ) -> Self {
+        Self {
+            ignored_tags,
+            block_elements,
+            tag_styles,
+        }
+    }
+
+    pub fn is_tag_ignored(&self, tag: &str) -> bool {
+        self.ignored_tags.contains(tag)
+    }
+
+    pub fn is_block_element(&self, tag: &str) -> bool {
+        self.block_elements.contains(tag)
+    }
+
+    pub fn style_for_tag(&self, tag: &str) -> Option<&Style> {
+        self.tag_styles.get(tag)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ExtractionConfig {
+    color_mode: ColorMode,
+    nth_element: Vec<usize>,
+    selectors: HashMap<String, String>,
+    selector_override: Option<String>,
+    matcher: GlobSet,
+    globs: Vec<Glob>,
+}
+
+impl ExtractionConfig {
+    pub fn new(
+        color_mode: ColorMode,
+        nth_element: Vec<usize>,
+        selectors: HashMap<String, String>,
+        selector_override: Option<String>,
+        matcher: GlobSet,
+        globs: Vec<Glob>,
+    ) -> Self {
+        Self {
+            color_mode,
+            nth_element,
+            selectors,
+            selector_override,
+            matcher,
+            globs,
+        }
+    }
+
+    pub fn color_mode(&self) -> &ColorMode {
+        &self.color_mode
+    }
+
+    pub fn get_selectors(&self, url: &str) -> &str {
+        self.selector_override
+            .as_ref()
+            .or_else(|| {
+                self.matcher
+                    .matches(url)
+                    .iter()
+                    .find_map(|idx| self.globs.get(*idx))
+                    .and_then(|glob| self.selectors.get(&glob.to_string()))
+            })
+            .map_or_else(|| "body", String::as_str)
+    }
+
+    pub fn nth_element(&self) -> &Vec<usize> {
+        &self.nth_element
+    }
+}
+
+#[derive(Debug)]
+pub struct Config {
     syntax_default_language: String,
     syntax_highlighting_theme: String,
     page_margin: u16,
     border_color: Style,
-    title_color: Style,
-    url_color: Style,
-    time_color: Style,
-    text_color: Style,
     search_type: AtomKind,
     search_engine: SearchEngine,
     open_tool: Option<String>,
-    site: Option<String>,
     scroll: Scroll,
-    color_mode: ColorMode,
     history_enabled: bool,
     cache: CacheConfig,
     pretty_print: Vec<DisplayConfig>,
+    extraction: ExtractionConfig,
+    format: FormatConfig,
+    history_widget: HistoryWidgetConfig,
 }
 
 impl Config {
     pub fn init(
         args_color_mode: Option<ColorMode>,
-        cache_command: &Option<CacheMode>,
+        cache_command: Option<&CacheMode>,
         no_history: bool,
         pretty_print: Vec<DisplayConfig>,
+        selector_override: Option<String>,
+        nth_element: Vec<usize>,
     ) {
-        let this = Self::new(args_color_mode, cache_command, no_history, pretty_print);
+        let this = Self::new(
+            args_color_mode,
+            cache_command,
+            no_history,
+            pretty_print,
+            selector_override,
+            nth_element,
+        );
         CONFIG.try_insert(this).expect("Failed to insert config");
     }
 
     fn default() -> Config {
-        Self::new(None, &None, false, vec![])
+        Self::new(None, None, false, vec![], None, vec![])
     }
 
     fn new(
         args_color_mode: Option<ColorMode>,
-        cache_mode: &Option<CacheMode>,
+        cache_mode: Option<&CacheMode>,
         no_history: bool,
         pretty_print: Vec<DisplayConfig>,
+        selector_override: Option<String>,
+        nth_element: Vec<usize>,
     ) -> Self {
         let mut config: RawConfig = toml::from_str(DEFAULT_CONFIG_LOCATION)
             .map_err(|e| println!("{e}"))
             .unwrap_or(RawConfig::default());
         _ = get_user_specified_config().map(|u_config| override_defaults(&mut config, u_config));
-        let (matcher, globs) = generate_globs(&mut config);
+        let format = Self::create_format_config(&config);
+        let extraction = Self::create_extraction_config(
+            args_color_mode,
+            selector_override,
+            nth_element,
+            &config,
+        );
+        let cache = Self::create_cache_config(cache_mode, &config);
+        let history_widget = Self::create_history_widget_config(&config);
         Self {
-            styles: convert_styles(config.styles),
-            selectors: config.selectors,
-            globs,
-            matcher,
-            ignored_tags: config
-                .format
-                .as_ref()
-                .map(|format| format.ignored_tags.iter().cloned().collect())
-                .unwrap_or_default(),
-            block_elements: config
-                .format
-                .as_ref()
-                .map(|format| format.block_elements.iter().cloned().collect())
-                .unwrap_or_default(),
             syntax_default_language: config
                 .syntax
                 .as_ref()
@@ -107,30 +222,6 @@ impl Config {
                 .and_then(|display| display.border_color.clone())
                 .map(|color| Style::new().fg(parse_color(&color)))
                 .unwrap_or_default(),
-            title_color: config
-                .history
-                .as_ref()
-                .and_then(|history| history.title_color.clone())
-                .map(|color| Style::new().fg(parse_color(&color)))
-                .unwrap_or_default(),
-            url_color: config
-                .history
-                .as_ref()
-                .and_then(|history| history.url_color.clone())
-                .map(|color| Style::new().fg(parse_color(&color)))
-                .unwrap_or_default(),
-            time_color: config
-                .history
-                .as_ref()
-                .and_then(|history| history.time_color.clone())
-                .map(|color| Style::new().fg(parse_color(&color)))
-                .unwrap_or_default(),
-            text_color: config
-                .history
-                .as_ref()
-                .and_then(|history| history.text_color.clone())
-                .map(|color| Style::new().fg(parse_color(&color)))
-                .unwrap_or_default(),
             search_type: to_atom_kind(
                 &config
                     .history
@@ -146,10 +237,6 @@ impl Config {
                     .unwrap_or_default(),
             ),
             open_tool: config.misc.and_then(|misc| misc.open_tool).clone(),
-            site: config
-                .search
-                .as_ref()
-                .and_then(|search| search.site.clone()),
             scroll: convert_to_scroll(
                 &config
                     .display
@@ -157,15 +244,6 @@ impl Config {
                     .and_then(|display| display.scroll.clone())
                     .unwrap_or_default(),
             ),
-            color_mode: args_color_mode.unwrap_or_else(|| {
-                convert_to_color_mode(
-                    &config
-                        .display
-                        .as_ref()
-                        .and_then(|display| display.color_mode.clone())
-                        .unwrap_or_default(),
-                )
-            }),
             history_enabled: if no_history {
                 false
             } else {
@@ -175,66 +253,130 @@ impl Config {
                     .and_then(|history| history.enabled)
                     .unwrap_or(true)
             },
-            cache: if let Some(CacheMode::Flash) = cache_mode {
-                CacheConfig::new(CacheMode::ReadWrite, usize::MAX, 5 * MS_IN_SECOND, 0)
-            } else {
-                config
-                    .cache
-                    .as_ref()
-                    .map(|cache_section| {
-                        CacheConfig::new(
-                            cache_mode
-                                .clone()
-                                .or_else(|| {
-                                    cache_section
-                                        .cache_mode
-                                        .clone()
-                                        .as_deref()
-                                        .map(convert_to_cache_mode)
-                                })
-                                .unwrap_or(CacheMode::Never),
-                            cache_section.max_size.unwrap_or(100),
-                            cache_section.ttl.unwrap_or(300) * MS_IN_SECOND,
-                            10,
-                        )
-                    })
-                    .unwrap_or_else(|| {
-                        CacheConfig::new(
-                            cache_mode.clone().unwrap_or(CacheMode::Never),
-                            100,
-                            300 * MS_IN_SECOND,
-                            10,
-                        )
-                    })
-            },
+            cache,
             pretty_print,
+            extraction,
+            format,
+            history_widget,
         }
     }
 
-    pub fn get_styles() -> &'static HashMap<String, Style> {
-        &Self::get_config().styles
+    fn create_history_widget_config(config: &RawConfig) -> HistoryWidgetConfig {
+        let title_style = config
+            .history
+            .as_ref()
+            .and_then(|history| history.title_color.clone())
+            .map(|color| Style::new().fg(parse_color(&color)))
+            .unwrap_or_default();
+        let url_style = config
+            .history
+            .as_ref()
+            .and_then(|history| history.url_color.clone())
+            .map(|color| Style::new().fg(parse_color(&color)))
+            .unwrap_or_default();
+        let time_style = config
+            .history
+            .as_ref()
+            .and_then(|history| history.time_color.clone())
+            .map(|color| Style::new().fg(parse_color(&color)))
+            .unwrap_or_default();
+        let text_style = config
+            .history
+            .as_ref()
+            .and_then(|history| history.text_color.clone())
+            .map(|color| Style::new().fg(parse_color(&color)))
+            .unwrap_or_default();
+        HistoryWidgetConfig::new(url_style, title_style, time_style, text_style)
     }
 
-    pub fn get_selectors(url: &str) -> String {
-        Self::get_config()
-            .matcher
-            .matches(url)
-            .iter()
-            .find_map(|idx| Self::get_config().globs.get(*idx))
-            .and_then(|glob| Self::get_config().selectors.get(&glob.to_string()).cloned())
-            .unwrap_or_else(|| String::from("body"))
+    fn create_extraction_config(
+        args_color_mode: Option<ColorMode>,
+        selector_override: Option<String>,
+        nth_element: Vec<usize>,
+        config: &RawConfig,
+    ) -> ExtractionConfig {
+        let (matcher, globs) = generate_globs(config);
+        let selectors = config.selectors.clone();
+        let color_mode = args_color_mode.unwrap_or_else(|| {
+            convert_to_color_mode(
+                &config
+                    .display
+                    .as_ref()
+                    .and_then(|display| display.color_mode.clone())
+                    .unwrap_or_default(),
+            )
+        });
+        ExtractionConfig::new(
+            color_mode,
+            nth_element,
+            selectors,
+            selector_override,
+            matcher,
+            globs,
+        )
+    }
+
+    fn create_format_config(config: &RawConfig) -> FormatConfig {
+        let ignored_tags = config
+            .format
+            .as_ref()
+            .map(|format| format.ignored_tags.iter().cloned().collect())
+            .unwrap_or_default();
+        let block_elements = config
+            .format
+            .as_ref()
+            .map(|format| format.block_elements.iter().cloned().collect())
+            .unwrap_or_default();
+        let tag_styles = convert_styles(&config.styles);
+        FormatConfig::new(ignored_tags, block_elements, tag_styles)
+    }
+
+    fn create_cache_config(cache_mode: Option<&CacheMode>, config: &RawConfig) -> CacheConfig {
+        if let Some(CacheMode::Flash) = cache_mode {
+            CacheConfig::new(CacheMode::ReadWrite, usize::MAX, 5 * MS_IN_SECOND, 0)
+        } else {
+            Self::extract_cache_from_raw(cache_mode, config.cache.as_ref())
+        }
+    }
+
+    fn extract_cache_from_raw(
+        cache_mode: Option<&CacheMode>,
+        config: Option<&CacheSection>,
+    ) -> CacheConfig {
+        config.map_or_else(
+            || {
+                CacheConfig::new(
+                    cache_mode.cloned().unwrap_or(CacheMode::Never),
+                    100,
+                    300 * MS_IN_SECOND,
+                    10,
+                )
+            },
+            |cache_section| {
+                CacheConfig::new(
+                    cache_mode
+                        .cloned()
+                        .or_else(|| {
+                            cache_section
+                                .cache_mode
+                                .as_deref()
+                                .map(convert_to_cache_mode)
+                        })
+                        .unwrap_or(CacheMode::Never),
+                    cache_section.max_size.unwrap_or(100),
+                    cache_section.ttl.unwrap_or(300) * MS_IN_SECOND,
+                    10,
+                )
+            },
+        )
     }
 
     fn get_config() -> &'static Config {
         CONFIG.get_or_init(Config::default)
     }
 
-    pub fn get_ignored_tags() -> &'static HashSet<String> {
-        &Self::get_config().ignored_tags
-    }
-
-    pub fn get_block_elements() -> &'static HashSet<String> {
-        &Self::get_config().block_elements
+    pub fn get_format_config() -> FormatConfig {
+        Self::get_config().format.clone()
     }
 
     pub fn get_default_language() -> &'static String {
@@ -253,20 +395,8 @@ impl Config {
         &Self::get_config().border_color
     }
 
-    pub fn get_title_color() -> &'static Style {
-        &Self::get_config().title_color
-    }
-
-    pub fn get_url_color() -> &'static Style {
-        &Self::get_config().url_color
-    }
-
-    pub fn get_time_color() -> &'static Style {
-        &Self::get_config().time_color
-    }
-
-    pub fn get_text_color() -> &'static Style {
-        &Self::get_config().text_color
+    pub fn get_history_widget_config() -> HistoryWidgetConfig {
+        Self::get_config().history_widget.clone()
     }
 
     pub fn get_search_type() -> &'static AtomKind {
@@ -276,20 +406,12 @@ impl Config {
         &Self::get_config().search_engine
     }
 
-    pub fn get_open_command() -> &'static Option<String> {
-        &Self::get_config().open_tool
-    }
-
-    pub fn get_site() -> &'static Option<String> {
-        &Self::get_config().site
+    pub fn get_open_command() -> Option<&'static String> {
+        Self::get_config().open_tool.as_ref()
     }
 
     pub fn get_scroll() -> &'static Scroll {
         &Self::get_config().scroll
-    }
-
-    pub fn get_color_mode() -> &'static ColorMode {
-        &Self::get_config().color_mode
     }
 
     pub fn get_history_enabled() -> &'static bool {
@@ -298,6 +420,10 @@ impl Config {
 
     pub fn get_cache_config() -> CacheConfig {
         Self::get_config().cache.clone()
+    }
+
+    pub fn get_extractor_config() -> ExtractionConfig {
+        Self::get_config().extraction.clone()
     }
 
     pub fn get_pretty_print() -> &'static [DisplayConfig] {
