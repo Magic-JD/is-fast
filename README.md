@@ -804,6 +804,7 @@ Please see the [scripts](scripts) folder for some fun little functions that show
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="http://pwnwriter.me"><img src="https://avatars.githubusercontent.com/u/90331517?v=4?s=100" width="100px;" alt="Nabeen Tiwaree"/><br /><sub><b>Nabeen Tiwaree</b></sub></a><br /><a href="#platform-pwnwriter" title="Packaging/porting to new platform">📦</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/rehanzo"><img src="https://avatars.githubusercontent.com/u/60243794?v=4?s=100" width="100px;" alt="Rehan"/><br /><sub><b>Rehan</b></sub></a><br /><a href="#plugin-rehanzo" title="Plugin/utility libraries">🔌</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/d3-X-t3r"><img src="https://avatars.githubusercontent.com/u/1624052?v=4?s=100" width="100px;" alt="d3Xt3r"/><br /><sub><b>d3Xt3r</b></sub></a><br /><a href="#ideas-d3-X-t3r" title="Ideas, Planning, & Feedback">🤔</a></td>
     </tr>
   </tbody>
 </table>
