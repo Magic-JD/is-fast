@@ -20,17 +20,19 @@ use crate::app::enum_values::App;
 use crate::app::enum_values::AppFunctions;
 use crate::app::enum_values::HistoryViewer;
 use crate::app::enum_values::PageViewer;
-use crate::cli::command::{CacheArgs, CacheMode, Cli};
+use crate::cli::command::Cli;
+use crate::cli::parser::{
+    determine_cache_mode, determine_ignored, determine_nth_element, parse_pretty_print,
+};
 use crate::config::load::Config;
 use crate::database::history_database;
-use crate::errors::error::IsError::General;
 use crate::logging::log::init_logger;
 use crate::search_engine::cache;
 use actions::generate_config;
 use atty::{is, Stream};
 use clap::Parser;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 enum DisplayConfig {
     Margin(u16),
     Wrap,
@@ -52,7 +54,6 @@ fn main() {
         args.selection.selector.clone(),
         ignored,
         args.selection.no_block,
-        // Handle multiple elements passed in.
         nth_element,
     );
     // Generate config doesn't need a display, process and return.
@@ -81,70 +82,6 @@ fn main() {
         app.show_pages(&page_result);
     }
     app.shutdown();
-}
-
-fn determine_nth_element(nth_element: Vec<String>) -> Vec<usize> {
-    nth_element
-        .into_iter()
-        .flat_map(|s| s.split(',').map(String::from).collect::<Vec<String>>())
-        .filter_map(|n| n.parse::<usize>().map_err(|_| {
-            log::error!("Invalid index to pass for --nth-element. {}", n);
-            General("Error parsing args".to_string())
-        }).and_then(|index| {
-            if index == 0 {
-                log::error!("Invalid index to pass --nth-element - 0. Nth element uses 1 based indexing");
-                return Err(General("Invalid index to pass --nth-element - 0.".to_string()))
-            }
-            Ok(index)
-        }).ok())
-        .collect()
-}
-
-fn determine_ignored(ignored: Vec<String>) -> Vec<String> {
-    ignored
-        .into_iter()
-        .flat_map(|s| s.split(',').map(String::from).collect::<Vec<String>>())
-        .collect()
-}
-
-fn determine_cache_mode(cache: &CacheArgs) -> Option<CacheMode> {
-    match (
-        cache.cache_mode.clone(),
-        cache.cache,
-        cache.no_cache,
-        cache.flash_cache,
-    ) {
-        (Some(cache_mode), false, false, false) => Some(cache_mode),
-        (None, true, false, false) => Some(CacheMode::ReadWrite),
-        (None, false, true, false) => Some(CacheMode::Never),
-        (None, false, false, true) => Some(CacheMode::Flash),
-        (None, false, false, false) => None, // None applied, do not apply any difference.
-        (_, _, _, _) => Some(CacheMode::Never), // Failsafe disable cache for inconsistent modes
-    }
-}
-
-fn parse_pretty_print(line: &str) -> Vec<DisplayConfig> {
-    if line.is_empty() {
-        return vec![];
-    }
-    line.split(',')
-        .filter_map(|s| {
-            let mut parts = s.split(':');
-            match (parts.next(), parts.next()) {
-                (Some("wrap"), None) => Some(DisplayConfig::Wrap),
-                (Some("margin"), Some(value)) => {
-                    value.parse::<u16>().ok().map(DisplayConfig::Margin)
-                }
-                (Some("title"), some_or_none) => {
-                    Some(DisplayConfig::Title(some_or_none.map(ToString::to_string)))
-                }
-                _ => {
-                    log::error!("Invalid display configuration: {}", s);
-                    None
-                }
-            }
-        })
-        .collect()
 }
 
 fn process_clear_command(clear_cache: bool, clear_history: bool, clear_all: bool) -> bool {

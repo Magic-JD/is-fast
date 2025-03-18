@@ -7,7 +7,7 @@ pub enum ColorMode {
     Never,
 }
 
-#[derive(Debug, Clone, ValueEnum)]
+#[derive(Debug, PartialEq, Clone, ValueEnum)]
 pub enum CacheMode {
     Read,
     Write,
