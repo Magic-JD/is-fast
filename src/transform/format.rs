@@ -92,7 +92,7 @@ impl Formatter {
         if self.config.is_block_element(&element) {
             // Indent if needed.
             if indent_local > 0 {
-                let indent_block = " ".repeat(indent_local as usize * 2);
+                let indent_block = "  ";
                 for line in &mut lines {
                     if let Some(span) = line.spans.first_mut() {
                         span.content = format!("{indent_block}{}", span.content).into();
