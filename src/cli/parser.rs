@@ -5,7 +5,7 @@ use crate::DisplayConfig;
 pub fn determine_nth_element(nth_element: Vec<String>) -> Vec<usize> {
     nth_element
         .into_iter()
-        .flat_map(|s| s.split(',').map(|s| s.trim()).map(String::from).collect::<Vec<String>>())
+        .flat_map(|s| s.split(',').map(str::trim).map(String::from).collect::<Vec<String>>())
         .filter_map(|n| n.parse::<usize>().map_err(|_| {
             log::error!("Invalid index to pass for --nth-element. {}", n);
             General("Error parsing args".to_string())

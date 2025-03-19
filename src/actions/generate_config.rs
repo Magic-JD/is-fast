@@ -1,32 +1,18 @@
+use crate::config::files::config_path;
 use crate::config::load::DEFAULT_CONFIG_LOCATION;
 use std::fs;
 
 pub fn run() {
     println!("Generating config file...");
-    let config_directory = dirs::config_dir();
-    match config_directory {
-        Some(config_dir) => {
-            let is_fast_dir = config_dir.join("is-fast");
-            let config_path = is_fast_dir.join("config.toml");
-
-            fs::create_dir_all(&is_fast_dir)
-                .map_err(|e| format!("Error creating config directory: {e}"))
-                .and_then(|()| {
-                    if config_path.exists() {
-                        Err(format!("Config file already exists at {config_path:?}"))
-                    } else {
-                        fs::write(&config_path, DEFAULT_CONFIG_LOCATION)
-                            .map_err(|e| format!("Error writing config file: {e}"))
-                    }
-                })
-                .map_or_else(
-                    |e| eprintln!("{e}"),
-                    |()| println!("Config file generated at {config_path:?}"),
-                );
-        }
-        None => {
-            println!("Could not determine config directory");
-        }
+    let config_path = config_path();
+    if config_path.exists() {
+        eprintln!("Config file already exists at {config_path:?}");
+    } else if let Err(message) = fs::write(&config_path, DEFAULT_CONFIG_LOCATION)
+        .map_err(|e| format!("Error writing config file: {e}"))
+    {
+        eprintln!("{message}");
+    } else {
+        println!("Config file generated at {config_path:?}");
     }
 }
 

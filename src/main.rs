@@ -9,7 +9,6 @@ mod cli;
 mod config;
 mod database;
 mod errors;
-mod logging;
 mod pipe;
 mod search_engine;
 mod transform;
@@ -26,10 +25,10 @@ use crate::cli::parser::{
 };
 use crate::config::load::Config;
 use crate::database::history_database;
-use crate::logging::log::init_logger;
 use crate::search_engine::cache;
 use actions::generate_config;
 use clap::Parser;
+use config::log::init_logger;
 use crossterm::tty::IsTty;
 
 #[derive(Clone, Debug, PartialEq)]

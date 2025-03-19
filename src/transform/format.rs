@@ -41,7 +41,7 @@ impl Formatter {
         let mut indent_local = indent_level;
 
         if tag_name == "li" {
-            indent_local += 1
+            indent_local += 1;
         }
 
         if self.config.is_element_ignored(&element) {
@@ -93,7 +93,7 @@ impl Formatter {
             // Indent if needed.
             if indent_local > 0 {
                 let indent_block = " ".repeat(indent_local as usize * 2);
-                for line in lines.iter_mut() {
+                for line in &mut lines {
                     if let Some(span) = line.spans.first_mut() {
                         span.content = format!("{indent_block}{}", span.content).into();
                     }
@@ -255,7 +255,7 @@ fn handle_list_item(
 
 fn determine_marker(element: &ElementRef) -> String {
     if let Some(value) = element.value().attr("value") {
-        return format!("{}. ", value);
+        return format!("{value}. ");
     }
     element
         .parent_element()
@@ -269,8 +269,7 @@ fn determine_marker(element: &ElementRef) -> String {
                     .unwrap_or(1)
             })
         })
-        .map(|idx| format!("{idx}. "))
-        .unwrap_or_else(|| "• ".into())
+        .map_or_else(|| "• ".into(), |idx| format!("{idx}. "))
 }
 
 fn find_child_index(parent: ElementRef, child: &ElementRef) -> Option<usize> {

@@ -1,9 +1,10 @@
+use crate::config::files::config_path;
 use globset::{Glob, GlobSet, GlobSetBuilder};
 use ratatui::prelude::{Color, Modifier, Style};
 use serde::Deserialize;
 use std::collections::HashMap;
+use std::fs;
 use std::path::PathBuf;
-use std::{env, fs};
 
 #[derive(Debug, Deserialize)]
 pub struct TagStyleConfig {
@@ -309,15 +310,7 @@ fn override_misc(misc: Option<MiscSection>, u_misc: Option<MiscSection>) -> Misc
 }
 
 pub fn get_user_specified_config() -> Option<RawConfig> {
-    env::var("IS_FAST_CONFIG_PATH")
-        .ok()
-        .map(PathBuf::from)
-        .and_then(config_from_filepath)
-        .or_else(|| {
-            dirs::config_dir()
-                .map(|p| p.join("is-fast/config.toml"))
-                .map_or_else(|| None, config_from_filepath)
-        })
+    config_from_filepath(config_path())
 }
 
 fn config_from_filepath(buff: PathBuf) -> Option<RawConfig> {

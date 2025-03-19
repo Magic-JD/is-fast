@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.12.3]
+### Added
+- Ability to configure the log, database and config location through environment variables.
+
 ## [0.12.2]
 ### Fixed
 - Buggy list icons when part of an ordered list.

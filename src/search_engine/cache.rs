@@ -1,14 +1,12 @@
 use crate::cli::command::CacheMode;
+use crate::config::files::database_path;
 use crate::config::load::Config;
 use crate::errors::error::IsError;
-use dirs::data_dir;
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use parking_lot::MutexGuard;
 use rusqlite::{params, Connection};
-use std::fs;
 use std::io::Cursor;
-use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use zstd::{decode_all, encode_all};
@@ -42,7 +40,7 @@ struct Cache {
 
 impl Cache {
     pub fn new() -> Self {
-        let conn = Connection::open(get_cache_path()).expect("Failed to open database");
+        let conn = Connection::open(database_path()).expect("Failed to open database");
         let config = Config::get_cache_config();
         let cache = Cache {
             connection: Arc::new(Mutex::new(conn)),
@@ -199,14 +197,6 @@ pub fn clear() {
         .unwrap_or_else(|e| log::error!("Error when clearing cache: {:?}", e));
 }
 
-fn get_cache_path() -> PathBuf {
-    let mut path = data_dir().expect("Failed to determine data directory");
-    path.push("is-fast");
-    fs::create_dir_all(&path).expect("Failed to create data directory");
-    path.push("is-fast.db");
-    path
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -223,7 +213,7 @@ mod tests {
         let path = temp_dir.path();
         env::set_var("XDG_DATA_HOME", path);
         let _ = Cache::new(); // Just to init db in temp dir
-        let path = get_cache_path();
+        let path = database_path();
         let cache = Connection::open(path).expect("Failed to open cache");
         let cache = Cache {
             connection: Arc::new(Mutex::new(cache)),
@@ -258,7 +248,7 @@ mod tests {
         env::set_var("XDG_DATA_HOME", path);
 
         let _ = Cache::new(); // Just to init db in temp dir
-        let path = get_cache_path();
+        let path = database_path();
         let cache = Connection::open(path).expect("Failed to open cache");
         let cache = Cache {
             connection: Arc::new(Mutex::new(cache)),

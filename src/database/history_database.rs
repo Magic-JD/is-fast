@@ -1,17 +1,15 @@
+use crate::config::files::database_path;
 use crate::errors::error::IsError;
 use crate::errors::error::IsError::{Access, DatabaseSql};
 use chrono::NaiveDateTime;
-use dirs::data_dir;
 use once_cell::sync::Lazy;
 use rusqlite::types::Type;
 use rusqlite::Error::FromSqlConversionFailure;
 use rusqlite::{Connection, Error, Row};
-use std::fs;
-use std::path::PathBuf;
 use std::sync::{Mutex, MutexGuard};
 
 static CONNECTION: Lazy<Mutex<Connection>> = Lazy::new(|| {
-    let conn = Connection::open(get_database_path()).expect("Failed to open database");
+    let conn = Connection::open(database_path()).expect("Failed to open database");
     conn.execute_batch(
         "BEGIN TRANSACTION;
      CREATE TABLE IF NOT EXISTS history (
@@ -25,14 +23,6 @@ static CONNECTION: Lazy<Mutex<Connection>> = Lazy::new(|| {
     .expect("Failed to initialize database");
     Mutex::new(conn)
 });
-
-fn get_database_path() -> PathBuf {
-    let mut path = data_dir().expect("Failed to determine data directory");
-    path.push("is-fast");
-    fs::create_dir_all(&path).expect("Failed to create database directory");
-    path.push("is-fast.db");
-    path
-}
 
 pub fn add_history(title: &str, link: &str) -> Result<(), IsError> {
     let url = remove_http(link);

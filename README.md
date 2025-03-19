@@ -76,6 +76,9 @@ cargo install --git https://github.com/Magic-JD/is-fast.git
     - [🗄️ Cache Settings](#-cache-settings)
     - [❓ Miscellaneous Configuration](#-miscellaneous-settings)
     - [📌 Summary](#-summary)
+- [🌍 Environment Variables](#-environment-variables)
+  - [Directory Configuration](#directory-configuration)
+  - [Search Api Configuration](#search-api-configuration)
 - [🌐 Using `is-fast` to Open URLs Directly](#-using-is-fast-to-open-urls-directly)
     - [`--direct` / `-d`](#--direct---d)
 - [📃 Using `is-fast` with Local HTML Files](#-using-is-fast-with-local-html-files)
@@ -516,6 +519,28 @@ open_tool = "w3m"
 | **Cache Settings**      | Determines the settings to apply to the cache.                      |
 | **Misc**                | Miscellaneous settings.                                             |
 ---
+
+# 🌍 Environment Variables
+
+Certain functionality in `is-fast` can be customized via environment variables. Below are the key environment variables you can configure:
+
+## Directory Configuration
+| Variable Name          | Description                                              |
+|------------------------|----------------------------------------------------------|
+| `IS_FAST_CONFIG_DIR`   | Full path where the configuration file should be stored. |
+| `IS_FAST_DATABASE_DIR` | Full path where the database file should be stored.      |
+| `IS_FAST_LOG_DIR`      | Full path where log files should be stored.              |
+
+**Note:** These paths must be absolute and cannot be relative to the home directory.
+
+## Search API Configuration
+If you plan to use external search engines, you must configure the respective API keys. [See the search engine configuration section above for more details](#engine).
+
+| Environment Variable              | Description                                         |
+|-----------------------------------|-----------------------------------------------------|
+| `IS_FAST_GOOGLE_API_KEY`          | API key for Google Custom Search.                   |
+| `IS_FAST_GOOGLE_SEARCH_ENGINE_ID` | Search Engine ID for Google Custom Search.          |
+| `IS_FAST_KAGI_API_KEY`            | API key for Kagi search (currently in closed Beta). |
 
 # 🌐 Using `is-fast` to Open URLs Directly
 
