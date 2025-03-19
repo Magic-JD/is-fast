@@ -1,6 +1,6 @@
 [package]
 name = "is-fast"
-version = "0.12.0"
+version = "0.12.1"
 edition = "2021"
 repository = "https://github.com/Magic-JD/is-fast"
 homepage = "https://github.com/Magic-JD/is-fast"
@@ -32,17 +32,16 @@ rusqlite = { version = "0.34.0", features = ["bundled"] }
 chrono = "0.4.40"
 nucleo-matcher = "0.3.1"
 serde_json = "1.0.139"
-atty = "0.2.14"
 csv = "1.3.1"
 enum_dispatch = "0.3.13"
 nu-ansi-term = "0.50.1"
-bincode = "2.0.1"
 log = "0.4.26"
 env_logger = "0.11.7"
 zstd = "0.13.3"
 parking_lot = "0.12.3"
 textwrap = "0.16.2"
-terminal_size = "0.4.2"
+encoding_rs = "0.8.35"
+encoding_rs_io = "0.1.7"
 
 [build-dependencies]
 clap = { version = "4.5.31", features = ["derive", "cargo", "env"] }

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.12.1]
+### Fixed
+- Unicode is now correctly rendered for all sites.
+- Preloading no longer starts a new thread if one is not needed.
+
+### Changed
+- Removed a number of dependencies, where two dependencies were used that performed the same function.
+
 ## [0.12.0]
 ### Added
 - New flag for adding additional ignore tags. `--ignore="div"`

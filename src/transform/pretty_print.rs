@@ -65,8 +65,9 @@ pub fn conditional_formatting(
 
 #[cfg(not(test))]
 fn terminal_width() -> u16 {
-    use terminal_size::{terminal_size, Width};
-    if let Some((Width(w), _)) = terminal_size() {
+    use crossterm::terminal::size;
+
+    if let Ok((w, _)) = size() {
         w
     } else {
         log::error!("Failed to get terminal size - defaulting to sane value");

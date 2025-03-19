@@ -29,8 +29,8 @@ use crate::database::history_database;
 use crate::logging::log::init_logger;
 use crate::search_engine::cache;
 use actions::generate_config;
-use atty::{is, Stream};
 use clap::Parser;
+use crossterm::tty::IsTty;
 
 #[derive(Clone, Debug, PartialEq)]
 enum DisplayConfig {
@@ -68,7 +68,7 @@ fn main() {
     ) {
         return;
     }
-    let is_piped = args.output.piped || !is(Stream::Stdout);
+    let is_piped = args.output.piped || !std::io::stdout().is_tty();
     let mut app = App::from_type(is_piped);
     app.loading();
     if args.history.history {

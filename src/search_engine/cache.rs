@@ -1,8 +1,6 @@
 use crate::cli::command::CacheMode;
 use crate::config::load::Config;
 use crate::errors::error::IsError;
-use bincode;
-use bincode::{Decode, Encode};
 use dirs::data_dir;
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
@@ -40,12 +38,6 @@ impl CacheConfig {
 struct Cache {
     connection: Arc<Mutex<Connection>>,
     config: CacheConfig,
-}
-
-#[derive(Encode, Decode, Debug)]
-struct HtmlCached {
-    html: String,
-    timestamp: i64,
 }
 
 impl Cache {
