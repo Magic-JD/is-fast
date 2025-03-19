@@ -114,7 +114,8 @@ impl FormatConfig {
     }
 
     pub fn is_element_ignored(&self, element: &ElementRef) -> bool {
-        let tag_identifier = self.ignored_tags.get(element.value().name());
+        let tag = element.value().name();
+        let tag_identifier = self.ignored_tags.get(tag);
         let general_identifier = self.ignored_tags.get("");
         Self::matches_tag(element, tag_identifier) || Self::matches_tag(element, general_identifier)
     }

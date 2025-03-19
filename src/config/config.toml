@@ -124,7 +124,7 @@ fg = "Gray"
 # div#center.this   will ignore any div with the id center OR the class this.
 # div.this#center   is INVALID and will not work.
 # .this#center      is INVALID and will not work.
-ignored_tags = ["script", "style", "noscript", "head", "title", "meta", "input", "button", "svg", "nav", "footer", "header", "aside"]
+ignored_tags = ["script", "style", "noscript", "head", "title", "meta", "input", "button", "svg", "nav", "footer", "header", "aside", "gfg-tab"]
 # Adding an element to this list will ensure that every instance of that element sits on its own line.
 # Limited CSS selectors are supported as above.
 block_elements = ["p", "div", "table", "article", "img", "section", "pre", "blockquote", "ul", "ol", "dl", "dt", "dd", "li", "h1", "h2", "h3", "h4", "h5", "h6"]

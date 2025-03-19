@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.12.2]
+### Fixed
+- Buggy list icons when part of an ordered list.
+
+### Added
+- Numbers for ordered lists.
+- Indentation for nested lists.
+
 ## [0.12.1]
 ### Fixed
 - Unicode is now correctly rendered for all sites.

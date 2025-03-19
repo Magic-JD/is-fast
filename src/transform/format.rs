@@ -2,7 +2,7 @@ use crate::config::load::{Config, FormatConfig};
 use crate::transform::syntax_highlight::highlight_code;
 use ratatui::style::{Style, Styled};
 use ratatui::text::{Line, Span};
-use scraper::{ElementRef, Node};
+use scraper::{Element, ElementRef, Node};
 
 pub struct Formatter {
     config: FormatConfig,
@@ -18,7 +18,7 @@ impl Formatter {
     pub fn to_display(&self, element: ElementRef) -> Vec<Line<'static>> {
         log::trace!("Converting element to display lines: {:?}", element);
         let mut lines = self
-            .to_lines(element, element.value().name() == "pre")
+            .to_lines(element, element.value().name() == "pre", -1)
             .into_iter()
             .map(standardize_empty)
             .collect::<Vec<Line>>();
@@ -26,12 +26,23 @@ impl Formatter {
         lines
     }
 
-    fn to_lines(&self, element: ElementRef, pre_formatted: bool) -> Vec<Line<'static>> {
+    fn to_lines(
+        &self,
+        element: ElementRef,
+        pre_formatted: bool,
+        indent_level: isize,
+    ) -> Vec<Line<'static>> {
         if is_hidden(&element) {
             return vec![];
         }
 
         let tag_name = element.value().name();
+
+        let mut indent_local = indent_level;
+
+        if tag_name == "li" {
+            indent_local += 1
+        }
 
         if self.config.is_element_ignored(&element) {
             return vec![];
@@ -62,24 +73,32 @@ impl Formatter {
             // Show there is an image without rendering the image.
             lines.push(create_optionally_styled_line("IMAGE", style));
         } else {
-            lines = self.extract_lines(element, pre_formatted || tag_name == "pre", style);
-        }
-
-        if tag_name == "li" {
-            if let Some(line) = lines.first_mut() {
-                line.spans.insert(
-                    0,
-                    Span::styled("• ", style.copied().unwrap_or_else(Style::default)),
-                );
-            }
+            lines = self.extract_lines(
+                element,
+                pre_formatted || tag_name == "pre",
+                style,
+                indent_local,
+            );
         }
 
         if lines.is_empty() {
             return vec![];
         }
 
+        if tag_name == "li" {
+            lines = handle_list_item(&element, style, lines);
+        }
+
         if self.config.is_block_element(&element) {
-            // Relies on the above line to verify lines isn't empty
+            // Indent if needed.
+            if indent_local > 0 {
+                let indent_block = " ".repeat(indent_local as usize * 2);
+                for line in lines.iter_mut() {
+                    if let Some(span) = line.spans.first_mut() {
+                        span.content = format!("{indent_block}{}", span.content).into();
+                    }
+                }
+            }
             if let Some(styled) = style {
                 lines = lines
                     .into_iter()
@@ -98,6 +117,7 @@ impl Formatter {
         element: ElementRef,
         pre_formatted: bool,
         style: Option<&Style>,
+        indent_level: isize,
     ) -> Vec<Line<'static>> {
         let mut lines = Vec::new();
         element.children().for_each(|node| match node.value() {
@@ -117,7 +137,7 @@ impl Formatter {
                 }
             }
             Node::Element(_) => ElementRef::wrap(node).iter().for_each(|element| {
-                let element_lines = self.to_lines(*element, pre_formatted);
+                let element_lines = self.to_lines(*element, pre_formatted, indent_level);
                 if element_lines.is_empty() {
                     return;
                 }
@@ -215,6 +235,50 @@ fn merge_with_previous_line(lines: &mut Vec<Line<'static>>, mut new_lines: Vec<L
     }
 
     lines.append(&mut new_lines);
+}
+
+fn handle_list_item(
+    element: &ElementRef,
+    style: Option<&Style>,
+    mut lines: Vec<Line<'static>>,
+) -> Vec<Line<'static>> {
+    let marker = determine_marker(element);
+    lines.retain(|line| !line.spans.is_empty());
+    if let Some(line) = lines.first_mut() {
+        line.spans.insert(
+            0,
+            Span::styled(marker, style.copied().unwrap_or_else(Style::default)),
+        );
+    }
+    lines
+}
+
+fn determine_marker(element: &ElementRef) -> String {
+    if let Some(value) = element.value().attr("value") {
+        return format!("{}. ", value);
+    }
+    element
+        .parent_element()
+        .filter(|parent| parent.value().name() == "ol")
+        .and_then(|parent| {
+            find_child_index(parent, element).map(|idx| {
+                idx + parent
+                    .value()
+                    .attr("start")
+                    .and_then(|s| s.parse::<usize>().ok())
+                    .unwrap_or(1)
+            })
+        })
+        .map(|idx| format!("{idx}. "))
+        .unwrap_or_else(|| "• ".into())
+}
+
+fn find_child_index(parent: ElementRef, child: &ElementRef) -> Option<usize> {
+    parent
+        .children()
+        .filter_map(ElementRef::wrap)
+        .enumerate()
+        .find_map(|(index, el)| if el == *child { Some(index) } else { None })
 }
 
 #[cfg(test)]
@@ -494,6 +558,147 @@ This is line one.
                 Span::from("        This is line three with an "),
                 Span::styled("italic", Style::default().add_modifier(Modifier::ITALIC)),
                 Span::from(" word."),
+            ]),
+            Line::default(),
+        ]);
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_to_display_ordered_list() {
+        let html = r#"
+        <html>
+            <body>
+                <ol>
+                    <li>First item</li>
+                    <li>Second item</li>
+                </ol>
+                <ol start="5">
+                    <li>Fifth item</li>
+                    <li>Sixth item</li>
+                </ol>
+            </body>
+        </html>
+    "#;
+
+        let formatter = Formatter::test(FormatConfig::new(
+            HashSet::new(),
+            HashSet::from(["li".to_string()]),
+            HashMap::new(),
+        ));
+        let binding = Html::parse_document(html);
+        let result = Text::from(
+            binding
+                .select(&Selector::parse("body").unwrap())
+                .flat_map(|element| formatter.to_display(element))
+                .collect::<Vec<Line>>(),
+        );
+
+        let expected = Text::from(vec![
+            Line::default(),
+            Line::from(vec![Span::from("1. "), Span::from("First item")]),
+            Line::default(),
+            Line::from(vec![Span::from("2. "), Span::from("Second item")]),
+            Line::default(),
+            Line::from(vec![Span::from("5. "), Span::from("Fifth item")]),
+            Line::default(),
+            Line::from(vec![Span::from("6. "), Span::from("Sixth item")]),
+            Line::default(),
+        ]);
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_to_display_unordered_list() {
+        let html = r#"
+        <html>
+            <body>
+                <ul>
+                    <li>Apple</li>
+                    <li>Banana</li>
+                    <li>Cherry</li>
+                </ul>
+            </body>
+        </html>
+    "#;
+
+        let formatter = Formatter::test(FormatConfig::new(
+            HashSet::new(),
+            HashSet::from(["li".to_string()]),
+            HashMap::new(),
+        ));
+        let binding = Html::parse_document(html);
+        let result = Text::from(
+            binding
+                .select(&Selector::parse("body").unwrap())
+                .flat_map(|element| formatter.to_display(element))
+                .collect::<Vec<Line>>(),
+        );
+
+        let expected = Text::from(vec![
+            Line::default(),
+            Line::from(vec![Span::from("• "), Span::from("Apple")]),
+            Line::default(),
+            Line::from(vec![Span::from("• "), Span::from("Banana")]),
+            Line::default(),
+            Line::from(vec![Span::from("• "), Span::from("Cherry")]),
+            Line::default(),
+        ]);
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_to_display_nested_ordered_list_with_values() {
+        let html = r#"
+    <html>
+        <body>
+            <ol>
+                <li value="3"><span>The Condition is evaluated:</span>
+                    <ol>
+                        <li value="1"><span>If true, the control moves to Step 4.</span></li>
+                        <li value="2"><span>If false, the control jumps to Step 7.</span></li>
+                    </ol>
+                </li>
+                <li value="4"><span>The body of the loop is executed.</span></li>
+            </ol>
+        </body>
+    </html>
+    "#;
+
+        let formatter = Formatter::test(FormatConfig::new(
+            HashSet::new(),
+            HashSet::from(["li".to_string()]),
+            HashMap::new(),
+        ));
+        let binding = Html::parse_document(html);
+        let result = Text::from(
+            binding
+                .select(&Selector::parse("body").unwrap())
+                .flat_map(|element| formatter.to_display(element))
+                .collect::<Vec<Line>>(),
+        );
+
+        let expected = Text::from(vec![
+            Line::default(),
+            Line::from(vec![
+                Span::from("3. "),
+                Span::from("The Condition is evaluated:"),
+            ]),
+            Line::from(vec![
+                Span::from("  1. "),
+                Span::from("If true, the control moves to Step 4."),
+            ]),
+            Line::from(vec![
+                Span::from("  2. "),
+                Span::from("If false, the control jumps to Step 7."),
+            ]),
+            Line::default(),
+            Line::from(vec![
+                Span::from("4. "),
+                Span::from("The body of the loop is executed."),
             ]),
             Line::default(),
         ]);
