@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.4]
+### Added
+- Additional selectors for old.reddit.com and better selectors for stack overflow.
+
+### Fixed
+- Too high indentation, reduced it slightly.
+
 ## [0.12.3]
 ### Added
 - Ability to configure the log, database and config location through environment variables.

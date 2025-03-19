@@ -94,7 +94,7 @@ fg = "Gray"
 "*www.w3schools.com*" = "#main"
 "*linuxhandbook.com*" = "article"
 "*docs.spring.io*" = "article"
-"*stackoverflow.com*" = ".js-post-body, .user-details, .comment-body"
+"*stackoverflow.com*" = ".js-post-body, div.owner a, a.owner, a.comments-link, .comment-body"
 "*github.com/*/blob/*" = ".react-code-line-contents"
 "*github.com/*/issues/*" = "main"
 "*github.com*" = ".markdown-body"
@@ -112,6 +112,7 @@ fg = "Gray"
 "*hackr.io/blog*" = "article"
 "*www.tutorialspoint.com*" = "div#mainContent"
 "*techbeamers.com*" = "div.entry-content > *:not(div.ruby-table-contents)"
+"*old.reddit.com/r/*/comments/*" = "a.title, a.author, div.entry > form, div.expando > form"
 
 [format]
 # All elements from this list are ignored.
