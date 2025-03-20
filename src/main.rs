@@ -51,7 +51,7 @@ fn main() {
         args.history.no_history,
         pretty_print,
         args.selection.selector.clone(),
-        ignored,
+        &ignored,
         args.selection.no_block,
         nth_element,
     );

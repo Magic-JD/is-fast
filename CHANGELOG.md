@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.13.0]
+### Added
+- Site specific configuration. Configuration that should only apply to one site, can now be matched only to that site.
+- Site configs are added with `[custom_config]` `"*site.glob.match/*" = ["alternate_headers.toml", "interesting_colorscheme.toml"]`
+- All configs supplied will be added to the base config.
+- The custom config files should be placed in the same location as your standard config.
+- A small number of custom files will be inbuilt into the binary (currently just alternate_headers). A local file with the same name will take priority over them.
+- Headers has been added as a new configuration. These can be configured generally or on a site by site basis.
+
+### Fixed
+- The stock mini script works again.
+
 ## [0.12.4]
 ### Added
 - Additional selectors for old.reddit.com and better selectors for stack overflow.

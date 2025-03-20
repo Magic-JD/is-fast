@@ -83,7 +83,7 @@ impl SyntaxConfig {
 impl SitePicker {
     pub fn new(
         custom_configs: &HashMap<String, Vec<String>>,
-        ignored_additional: Vec<String>,
+        ignored_additional: &[String],
         no_block: bool,
         cache_mode: Option<&CacheMode>,
     ) -> Self {
@@ -94,9 +94,9 @@ impl SitePicker {
             .map(|u_config| override_defaults_site(&mut site, u_config));
 
         let base_site_config =
-            Self::create_base_site_config(&site, &ignored_additional, no_block, cache_mode);
+            Self::create_base_site_config(&site, ignored_additional, no_block, cache_mode);
         let mut site_mapping = HashMap::new();
-        site_mapping.insert("".to_string(), base_site_config);
+        site_mapping.insert(String::new(), base_site_config);
         for (url, filenames) in custom_configs {
             let mut base_site_raw_mut = site.clone();
             for file in filenames {
@@ -107,7 +107,7 @@ impl SitePicker {
                 url.to_string(),
                 Self::create_base_site_config(
                     &base_site_raw_mut,
-                    &ignored_additional,
+                    ignored_additional,
                     no_block,
                     cache_mode,
                 ),
@@ -230,8 +230,7 @@ impl SitePicker {
             .matches(url)
             .iter()
             .find_map(|idx| self.globs.get(*idx))
-            .map(|glob| glob.glob())
-            .unwrap_or("")
+            .map_or("", Glob::glob)
     }
 
     fn get_custom_config(filename: &String) -> SiteRawConfig {

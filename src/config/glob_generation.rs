@@ -3,12 +3,12 @@ use globset::{Glob, GlobSet, GlobSetBuilder};
 pub fn generate_globs(urls: Vec<&String>) -> (GlobSet, Vec<Glob>) {
     let mut builder = GlobSetBuilder::new();
     let mut globs = Vec::new();
-    urls.iter().for_each(|pattern| {
+    for pattern in urls {
         if let Ok(glob) = Glob::new(pattern) {
             builder.add(glob.clone());
             globs.push(glob);
         }
-    });
+    }
     let matcher = builder
         .build()
         .inspect_err(|err| log::error!("{err} : cannot build glob matcher."))

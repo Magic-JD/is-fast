@@ -130,7 +130,7 @@ impl Config {
         no_history: bool,
         pretty_print: Vec<DisplayConfig>,
         selector_override: Option<String>,
-        ignored_additional: Vec<String>,
+        ignored_additional: &[String],
         no_block: bool,
         nth_element: Vec<usize>,
     ) {
@@ -148,7 +148,7 @@ impl Config {
     }
 
     fn default() -> Config {
-        Self::new(None, None, false, vec![], None, vec![], false, vec![])
+        Self::new(None, None, false, vec![], None, &[], false, vec![])
     }
 
     // This is where the key configuration is combined, and I would rather have these values being passed
@@ -161,7 +161,7 @@ impl Config {
         no_history: bool,
         pretty_print: Vec<DisplayConfig>,
         selector_override: Option<String>,
-        ignored_additional: Vec<String>,
+        ignored_additional: &[String],
         no_block: bool,
         nth_element: Vec<usize>,
     ) -> Self {
