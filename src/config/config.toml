@@ -88,6 +88,8 @@ engine = "duckduckgo"
 "*techbeamers.com*" = "div.entry-content > *:not(div.ruby-table-contents)"
 "*old.reddit.com/r/*/comments/*" = "a.title, a.author, div.entry > form, div.expando > form"
 
+# This defines the other configs that should be appended for the matching sites.
+# These configs should be defined in the same directory as your default config.
 [custom_config]
 "*finance.yahoo.com*" = ["alternate_headers.toml"]
 "*stackoverflow.com*" = ["alternate_headers.toml"]
@@ -185,6 +187,7 @@ bold = true
 fg = "Gray"
 
 
+# This defines the headers that will be included when fetching the page.
 [headers]
 "Accept" = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
 "Accept-Language" = "en-US,en;q=0.9"
@@ -206,6 +209,10 @@ ignored_tags = ["script", "style", "noscript", "head", "title", "meta", "input",
 # Adding an element to this list will ensure that every instance of that element sits on its own line.
 # Limited CSS selectors are supported as above.
 block_elements = ["p", "div", "table", "article", "img", "section", "pre", "blockquote", "ul", "ol", "dl", "dt", "dd", "li", "h1", "h2", "h3", "h4", "h5", "h6"]
+# These elements should be indented when nested.
+# Limited CSS selectors are supported as above.
+indent_elements = ["li"]
+
 
 # Section relating to syntax highlighting.
 [syntax]

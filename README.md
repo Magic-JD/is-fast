@@ -75,6 +75,7 @@ cargo install --git https://github.com/Magic-JD/is-fast.git
 - [Site Configuration](#site-configuration)
   - [🏷 Block Elements](#-block-elements)
   - [🚫 Ignored Tags](#-ignored-tags)
+  - [➡️ Indent Elements](#-indent-elements)
   - [🎨 Text Styles](#-text-styles)
   - [🌈 Syntax Highlighting](#-syntax-highlighting)
   - [🗄️ Cache Settings](#-cache-settings)
@@ -374,8 +375,6 @@ Title
 - Item 2
 ```
 
-Each **block element** is **separated by a new line** for better readability.
-
 ## 🚫 Ignored Tags
 
 ### Definition
@@ -387,8 +386,7 @@ Ignored tags support the same limited CSS selector logic as block elements. See 
 
 ```toml
 ignored_tags = [
-    "script", "style", "noscript", "head", "title", "meta", "input", "button", "svg", "nav",
-    "footer", "header", "aside"
+    "script", "style", "noscript", "head", "title", "meta", "input", "button", "svg", "nav", "footer", "header", "aside"
 ]
 ```
 
@@ -411,8 +409,48 @@ ignored_tags = [
 Hello, world!
 ```
 
-- **`<script>` and `<footer>` are removed**.
-- **Only meaningful content remains**.
+## ➡️ Indent Elements
+
+All lines within these elements will be indented by 2 spaces (Note: on wrap the wrapped line will not be indented). Nested elements will be indented further.
+
+Intented tags support the same limited CSS selector logic as block elements. See above for more information.
+
+```toml
+ignored_tags = [
+    "li"
+]
+```
+
+### Effect on Output
+
+#### Input HTML:
+
+```html
+    <html>
+        <body>
+            <span> Here is a list: </span>
+            <ol>
+                <li value="1"><span>The Condition is evaluated:</span>
+                    <ol>
+                        <li value="1"><span>If true, the control moves to Step 4.</span></li>
+                        <li value="2"><span>If false, the control jumps to Step 7.</span></li>
+                    </ol>
+                </li>
+                <li value="2"><span>The body of the loop is executed.</span></li>
+            </ol>
+        </body>
+    </html>
+```
+
+#### Output After Processing:
+
+```
+Here is a list:
+  1. The condition is evaluated:
+    1. If true, the control moves to Step 4.
+    2. If false, the control jumps to Step 7.
+  2 The body of the loop is executed.
+```
 
 ## 🎨 Text Styles
 

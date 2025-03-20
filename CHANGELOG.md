@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.13.1]
+### Added
+- Indent elements, allowing you to indent nested elements. Currently only set for lists.
+    - To allow nested lists
+    - Like this
+        - To display
+    - Correctly
+- This is set in the site specific configuration, and I hope that this can be used with custom selectors to help comment chains ect to display better in the future.
+
+### Fixed
+- Ordered the http headers when requesting a page, as this can effect if the request is blocked or not.
+
 ## [0.13.0]
 ### Added
 - Site specific configuration. Configuration that should only apply to one site, can now be matched only to that site.

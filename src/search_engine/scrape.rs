@@ -21,6 +21,24 @@ pub static REQWEST_CLIENT: Lazy<Client> = Lazy::new(|| {
         .expect("Failed to build reqwest client")
 });
 
+pub static HEADER_ORDERING: Lazy<Vec<&str>> = Lazy::new(|| {
+    // Define the preferred order of headers
+    vec![
+        "User-Agent",
+        "Accept",
+        "Accept-Encoding",
+        "Accept-Language",
+        "Referer",
+        "Cookie",
+        "Sec-Fetch-Site",
+        "Sec-Fetch-Mode",
+        "Sec-Fetch-User",
+        "Sec-Fetch-Dest",
+        "Upgrade-Insecure-Requests",
+        "Cache-Control",
+    ]
+});
+
 pub fn scrape(html_source: &HtmlSource) -> Result<String, IsError> {
     if let Some(html) = cached_pages_read(html_source) {
         return Ok(html);
@@ -56,7 +74,19 @@ fn reqwest_scrape(html_source: &HtmlSource) -> Result<String, IsError> {
 
 fn add_url_based_headers(url: &SiteConfig, builder: RequestBuilder) -> RequestBuilder {
     let mut builder = builder;
-    for (key, value) in url.get_call().get_headers() {
+    let headers = url.get_call().get_headers();
+    // Sort headers based on their index in the preferred order list
+    // This is needed because some sites detect scraping using the header ordering
+    let mut sorted_headers: Vec<(&String, &String)> = headers.iter().collect();
+    sorted_headers.sort_by_key(|(key, _)| {
+        HEADER_ORDERING
+            .iter()
+            .position(|&name| name.eq_ignore_ascii_case(key))
+            .unwrap_or(HEADER_ORDERING.len())
+    });
+
+    // Add headers in sorted order
+    for (key, value) in sorted_headers {
         builder = builder.header(key, value);
     }
     builder

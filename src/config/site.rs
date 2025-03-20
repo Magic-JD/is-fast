@@ -182,8 +182,13 @@ impl SitePicker {
                 .map(|format| format.block_elements.iter().cloned().collect())
                 .unwrap_or_default()
         };
+        let indent_elements = config
+            .format
+            .as_ref()
+            .map(|format| format.indent_elements.iter().cloned().collect())
+            .unwrap_or_default();
         let tag_styles = convert_styles(&config.styles);
-        FormatConfig::new(ignored_tags, block_elements, tag_styles)
+        FormatConfig::new(ignored_tags, block_elements, indent_elements, tag_styles)
     }
 
     fn create_cache_config(cache_mode: Option<&CacheMode>, config: &SiteRawConfig) -> CacheConfig {

@@ -49,7 +49,7 @@ The [38;2;180;142;173mfor[0m[38;2;192;197;206m [0m[38;2;192;197;206min[0m 
 
 [38;2;192;197;206minto_iter[0m, [38;2;192;197;206miter[0m and [38;2;192;197;206miter_mut[0m all handle the conversion of a collection into an iterator in different ways, by providing different views on the data within.
 
-[1m[1m• [0m[38;2;192;197;206miter[0m[1m - This borrows each element of the collection through each iteration. Thus leaving the collection untouched and available for reuse after the loop.[0m[0m
+[1m[1m  • [0m[38;2;192;197;206miter[0m[1m - This borrows each element of the collection through each iteration. Thus leaving the collection untouched and available for reuse after the loop.[0m[0m
 
 [38;2;180;142;173mfn[0m[38;2;192;197;206m [0m[38;2;143;161;179mmain[0m[38;2;192;197;206m([0m[38;2;192;197;206m)[0m[38;2;192;197;206m [0m[38;2;192;197;206m{[0m
 [38;2;192;197;206m    [0m[38;2;180;142;173mlet[0m[38;2;192;197;206m names [0m[38;2;192;197;206m=[0m[38;2;192;197;206m [0m[38;2;192;197;206mvec![0m[38;2;192;197;206m[[0m[38;2;192;197;206m"[0m[38;2;163;190;140mBob[0m[38;2;192;197;206m"[0m[38;2;192;197;206m,[0m[38;2;192;197;206m [0m[38;2;192;197;206m"[0m[38;2;163;190;140mFrank[0m[38;2;192;197;206m"[0m[38;2;192;197;206m,[0m[38;2;192;197;206m [0m[38;2;192;197;206m"[0m[38;2;163;190;140mFerris[0m[38;2;192;197;206m"[0m[38;2;192;197;206m][0m[38;2;192;197;206m;[0m
@@ -66,7 +66,7 @@ The [38;2;180;142;173mfor[0m[38;2;192;197;206m [0m[38;2;192;197;206min[0m 
 [38;2;192;197;206m    [0m[38;2;192;197;206mprintln![0m[38;2;192;197;206m([0m[38;2;192;197;206m"[0m[38;2;163;190;140mnames: [0m[38;2;208;135;112m{:?}[0m[38;2;192;197;206m"[0m[38;2;192;197;206m,[0m[38;2;192;197;206m names[0m[38;2;192;197;206m)[0m[38;2;192;197;206m;[0m
 [38;2;192;197;206m}[0m
 
-[1m[1m• [0m[38;2;192;197;206minto_iter[0m[1m - This consumes the collection so that on each iteration the exact data is provided. Once the collection has been consumed it is no longer available for reuse as it has been 'moved' within the loop.[0m[0m
+[1m[1m  • [0m[38;2;192;197;206minto_iter[0m[1m - This consumes the collection so that on each iteration the exact data is provided. Once the collection has been consumed it is no longer available for reuse as it has been 'moved' within the loop.[0m[0m
 
 [38;2;180;142;173mfn[0m[38;2;192;197;206m [0m[38;2;143;161;179mmain[0m[38;2;192;197;206m([0m[38;2;192;197;206m)[0m[38;2;192;197;206m [0m[38;2;192;197;206m{[0m
 [38;2;192;197;206m    [0m[38;2;180;142;173mlet[0m[38;2;192;197;206m names [0m[38;2;192;197;206m=[0m[38;2;192;197;206m [0m[38;2;192;197;206mvec![0m[38;2;192;197;206m[[0m[38;2;192;197;206m"[0m[38;2;163;190;140mBob[0m[38;2;192;197;206m"[0m[38;2;192;197;206m,[0m[38;2;192;197;206m [0m[38;2;192;197;206m"[0m[38;2;163;190;140mFrank[0m[38;2;192;197;206m"[0m[38;2;192;197;206m,[0m[38;2;192;197;206m [0m[38;2;192;197;206m"[0m[38;2;163;190;140mFerris[0m[38;2;192;197;206m"[0m[38;2;192;197;206m][0m[38;2;192;197;206m;[0m
@@ -83,7 +83,7 @@ The [38;2;180;142;173mfor[0m[38;2;192;197;206m [0m[38;2;192;197;206min[0m 
 [0m
 [38;2;192;197;206m}[0m
 
-[1m[1m• [0m[38;2;192;197;206miter_mut[0m[1m - This mutably borrows each element of the collection, allowing for the collection to be modified in place.[0m[0m
+[1m[1m  • [0m[38;2;192;197;206miter_mut[0m[1m - This mutably borrows each element of the collection, allowing for the collection to be modified in place.[0m[0m
 
 [38;2;180;142;173mfn[0m[38;2;192;197;206m [0m[38;2;143;161;179mmain[0m[38;2;192;197;206m([0m[38;2;192;197;206m)[0m[38;2;192;197;206m [0m[38;2;192;197;206m{[0m
 [38;2;192;197;206m    [0m[38;2;180;142;173mlet[0m[38;2;192;197;206m [0m[38;2;180;142;173mmut[0m[38;2;192;197;206m names [0m[38;2;192;197;206m=[0m[38;2;192;197;206m [0m[38;2;192;197;206mvec![0m[38;2;192;197;206m[[0m[38;2;192;197;206m"[0m[38;2;163;190;140mBob[0m[38;2;192;197;206m"[0m[38;2;192;197;206m,[0m[38;2;192;197;206m [0m[38;2;192;197;206m"[0m[38;2;163;190;140mFrank[0m[38;2;192;197;206m"[0m[38;2;192;197;206m,[0m[38;2;192;197;206m [0m[38;2;192;197;206m"[0m[38;2;163;190;140mFerris[0m[38;2;192;197;206m"[0m[38;2;192;197;206m][0m[38;2;192;197;206m;[0m

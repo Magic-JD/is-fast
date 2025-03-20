@@ -8,6 +8,8 @@ pub struct FormatSection {
     pub(crate) ignored_tags: Vec<String>,
     #[serde(default)]
     pub(crate) block_elements: Vec<String>,
+    #[serde(default)]
+    pub(crate) indent_elements: Vec<String>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -79,6 +81,7 @@ fn override_format(
     let mut format = config.unwrap_or_else(|| FormatSection {
         ignored_tags: Vec::new(),
         block_elements: Vec::new(),
+        indent_elements: Vec::new(),
     });
 
     if let Some(u_format) = u_config {
@@ -87,6 +90,9 @@ fn override_format(
         }
         if !u_format.block_elements.is_empty() {
             format.block_elements = u_format.block_elements;
+        }
+        if !u_format.indent_elements.is_empty() {
+            format.indent_elements = u_format.indent_elements;
         }
     }
     format
@@ -142,6 +148,7 @@ mod tests {
             format: Some(FormatSection {
                 ignored_tags: vec!["script".to_string()],
                 block_elements: vec!["div".to_string()],
+                indent_elements: vec!["li".to_string()],
             }),
             syntax: Some(SyntaxHighlightingSection {
                 theme: Some("dark".to_string()),
@@ -156,6 +163,7 @@ mod tests {
             format: Some(FormatSection {
                 ignored_tags: vec!["style".to_string()],
                 block_elements: vec![],
+                indent_elements: vec!["li".to_string()],
             }),
             syntax: Some(SyntaxHighlightingSection {
                 theme: Some("light".to_string()),
@@ -175,6 +183,11 @@ mod tests {
         assert_eq!(
             default_config.format.as_ref().unwrap().block_elements,
             vec!["div"]
+        );
+
+        assert_eq!(
+            default_config.format.as_ref().unwrap().indent_elements,
+            vec!["li"]
         );
 
         // Syntax Highlighting Tests

@@ -20,7 +20,7 @@ impl Formatter {
     pub fn to_display(&self, element: ElementRef) -> Vec<Line<'static>> {
         log::trace!("Converting element to display lines: {:?}", element);
         let mut lines = self
-            .to_lines(element, element.value().name() == "pre", -1)
+            .to_lines(element, element.value().name() == "pre")
             .into_iter()
             .map(standardize_empty)
             .collect::<Vec<Line>>();
@@ -28,23 +28,12 @@ impl Formatter {
         lines
     }
 
-    fn to_lines(
-        &self,
-        element: ElementRef,
-        pre_formatted: bool,
-        indent_level: isize,
-    ) -> Vec<Line<'static>> {
+    fn to_lines(&self, element: ElementRef, pre_formatted: bool) -> Vec<Line<'static>> {
         if is_hidden(&element) {
             return vec![];
         }
 
         let tag_name = element.value().name();
-
-        let mut indent_local = indent_level;
-
-        if tag_name == "li" {
-            indent_local += 1;
-        }
 
         if self.config.is_element_ignored(&element) {
             return vec![];
@@ -77,12 +66,7 @@ impl Formatter {
             // Show there is an image without rendering the image.
             lines.push(create_optionally_styled_line("IMAGE", style));
         } else {
-            lines = self.extract_lines(
-                element,
-                pre_formatted || tag_name == "pre",
-                style,
-                indent_local,
-            );
+            lines = self.extract_lines(element, pre_formatted || tag_name == "pre", style);
         }
 
         if lines.is_empty() {
@@ -94,15 +78,6 @@ impl Formatter {
         }
 
         if self.config.is_block_element(&element) {
-            // Indent if needed.
-            if indent_local > 0 {
-                let indent_block = "  ";
-                for line in &mut lines {
-                    if let Some(span) = line.spans.first_mut() {
-                        span.content = format!("{indent_block}{}", span.content).into();
-                    }
-                }
-            }
             if let Some(styled) = style {
                 lines = lines
                     .into_iter()
@@ -112,7 +87,15 @@ impl Formatter {
             lines.insert(0, Line::default());
             lines.push(Line::default());
         }
-
+        // Indent if needed.
+        if self.config.is_indent_element(&element) {
+            let indent_block = "  ";
+            for line in &mut lines {
+                if let Some(span) = line.spans.first_mut() {
+                    span.content = format!("{indent_block}{}", span.content).into();
+                }
+            }
+        }
         lines
     }
 
@@ -121,7 +104,6 @@ impl Formatter {
         element: ElementRef,
         pre_formatted: bool,
         style: Option<&Style>,
-        indent_level: isize,
     ) -> Vec<Line<'static>> {
         let mut lines = Vec::new();
         element.children().for_each(|node| match node.value() {
@@ -141,7 +123,7 @@ impl Formatter {
                 }
             }
             Node::Element(_) => ElementRef::wrap(node).iter().for_each(|element| {
-                let element_lines = self.to_lines(*element, pre_formatted, indent_level);
+                let element_lines = self.to_lines(*element, pre_formatted);
                 if element_lines.is_empty() {
                     return;
                 }
@@ -302,6 +284,10 @@ mod tests {
             .iter()
             .map(|s| s.to_string())
             .collect::<HashSet<_>>();
+        let indent_elements = HashSet::from(["li"])
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<HashSet<_>>();
         let mut style_elements = HashMap::new();
         let bold_style = Style::new().add_modifier(Modifier::BOLD);
         let italic_style = Style::new().add_modifier(Modifier::ITALIC);
@@ -309,7 +295,12 @@ mod tests {
         style_elements.insert("i".to_string(), italic_style);
         style_elements.insert("h1".to_string(), bold_style);
         style_elements.insert("b".to_string(), bold_style);
-        FormatConfig::new(ignored_tages, block_elements, style_elements)
+        FormatConfig::new(
+            ignored_tages,
+            block_elements,
+            indent_elements,
+            style_elements,
+        )
     }
 
     fn basic_syntax_highlighter() -> SyntaxHighlighter {
@@ -448,6 +439,7 @@ mod tests {
             FormatConfig::new(
                 HashSet::from(["span.type1".to_string()]),
                 HashSet::from(["span.type2".to_string()]),
+                HashSet::new(),
                 HashMap::new(),
             ),
             basic_syntax_highlighter(),
@@ -493,6 +485,7 @@ mod tests {
             FormatConfig::new(
                 HashSet::from([".type1".to_string()]),
                 HashSet::from([".type2".to_string()]),
+                HashSet::new(),
                 HashMap::new(),
             ),
             basic_syntax_highlighter(),
@@ -537,6 +530,7 @@ mod tests {
             FormatConfig::new(
                 HashSet::from(["#remove-me".to_string()]),
                 HashSet::from(["#extra-space".to_string()]),
+                HashSet::new(),
                 HashMap::new(),
             ),
             basic_syntax_highlighter(),
@@ -622,6 +616,7 @@ This is line one.
             FormatConfig::new(
                 HashSet::new(),
                 HashSet::from(["li".to_string()]),
+                HashSet::new(),
                 HashMap::new(),
             ),
             basic_syntax_highlighter(),
@@ -667,6 +662,7 @@ This is line one.
             FormatConfig::new(
                 HashSet::new(),
                 HashSet::from(["li".to_string()]),
+                HashSet::from(["li".to_string()]),
                 HashMap::new(),
             ),
             basic_syntax_highlighter(),
@@ -681,11 +677,11 @@ This is line one.
 
         let expected = Text::from(vec![
             Line::default(),
-            Line::from(vec![Span::from("• "), Span::from("Apple")]),
+            Line::from(vec![Span::from("  • "), Span::from("Apple")]),
             Line::default(),
-            Line::from(vec![Span::from("• "), Span::from("Banana")]),
+            Line::from(vec![Span::from("  • "), Span::from("Banana")]),
             Line::default(),
-            Line::from(vec![Span::from("• "), Span::from("Cherry")]),
+            Line::from(vec![Span::from("  • "), Span::from("Cherry")]),
             Line::default(),
         ]);
 
@@ -714,6 +710,7 @@ This is line one.
             FormatConfig::new(
                 HashSet::new(),
                 HashSet::from(["li".to_string()]),
+                HashSet::from(["li".to_string()]),
                 HashMap::new(),
             ),
             basic_syntax_highlighter(),
@@ -729,20 +726,20 @@ This is line one.
         let expected = Text::from(vec![
             Line::default(),
             Line::from(vec![
-                Span::from("3. "),
+                Span::from("  3. "),
                 Span::from("The Condition is evaluated:"),
             ]),
             Line::from(vec![
-                Span::from("  1. "),
+                Span::from("    1. "),
                 Span::from("If true, the control moves to Step 4."),
             ]),
             Line::from(vec![
-                Span::from("  2. "),
+                Span::from("    2. "),
                 Span::from("If false, the control jumps to Step 7."),
             ]),
             Line::default(),
             Line::from(vec![
-                Span::from("4. "),
+                Span::from("  4. "),
                 Span::from("The body of the loop is executed."),
             ]),
             Line::default(),

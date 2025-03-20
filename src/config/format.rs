@@ -13,6 +13,7 @@ pub struct TagIdentifier {
 pub struct FormatConfig {
     pub ignored_tags: HashMap<String, TagIdentifier>,
     pub block_elements: HashMap<String, TagIdentifier>,
+    pub indent_elements: HashMap<String, TagIdentifier>,
     pub tag_styles: HashMap<String, Style>,
 }
 
@@ -20,13 +21,16 @@ impl FormatConfig {
     pub fn new(
         ignored_tags: HashSet<String>,
         block_elements: HashSet<String>,
+        indent_elements: HashSet<String>,
         tag_styles: HashMap<String, Style>,
     ) -> Self {
         let ignored_tags_map = Self::build_map_from_selectors(ignored_tags);
         let block_elements_map = Self::build_map_from_selectors(block_elements);
+        let indent_elements_map = Self::build_map_from_selectors(indent_elements);
         Self {
             ignored_tags: ignored_tags_map,
             block_elements: block_elements_map,
+            indent_elements: indent_elements_map,
             tag_styles,
         }
     }
@@ -97,6 +101,12 @@ impl FormatConfig {
     pub fn is_block_element(&self, element: &ElementRef) -> bool {
         let tag_identifier = self.block_elements.get(element.value().name());
         let general_identifier = self.block_elements.get("");
+        Self::matches_tag(element, tag_identifier) || Self::matches_tag(element, general_identifier)
+    }
+
+    pub fn is_indent_element(&self, element: &ElementRef) -> bool {
+        let tag_identifier = self.indent_elements.get(element.value().name());
+        let general_identifier = self.indent_elements.get("");
         Self::matches_tag(element, tag_identifier) || Self::matches_tag(element, general_identifier)
     }
 
