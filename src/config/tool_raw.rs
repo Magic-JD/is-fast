@@ -56,7 +56,7 @@ pub struct ToolRawConfig {
     #[serde(default)]
     pub(crate) misc: Option<MiscSection>,
     #[serde(default)]
-    pub(crate) custom_config: HashMap<String, String>,
+    pub(crate) custom_config: HashMap<String, Vec<String>>,
 }
 
 impl ToolRawConfig {

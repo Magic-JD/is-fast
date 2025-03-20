@@ -16,6 +16,7 @@ pub static REQWEST_CLIENT: Lazy<Client> = Lazy::new(|| {
         .use_rustls_tls()
         .min_tls_version(Version::TLS_1_2)
         .timeout(Duration::from_secs(4))
+        .gzip(true)
         .build()
         .expect("Failed to build reqwest client")
 });

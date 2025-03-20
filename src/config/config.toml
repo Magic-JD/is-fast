@@ -89,7 +89,8 @@ engine = "duckduckgo"
 "*old.reddit.com/r/*/comments/*" = "a.title, a.author, div.entry > form, div.expando > form"
 
 [custom_config]
-"*finance.yahoo.com*" = "alternate_useragent.toml"
+"*finance.yahoo.com*" = ["alternate_headers.toml"]
+"*stackoverflow.com*" = ["alternate_headers.toml"]
 
 
 # SITE SPECIFIC - This section can be overriden in a custom config file.

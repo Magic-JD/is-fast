@@ -11,13 +11,13 @@ use once_cell::sync::Lazy;
 use std::collections::{HashMap, HashSet};
 use std::fs;
 
-pub const ALTERNATE_USERAGENT: &str = include_str!("alternate_useragent.toml");
+pub const ALTERNATE_HEADERS: &str = include_str!("alternate_headers.toml");
 
 static EMBEDDED_CONFIG_MAP: Lazy<HashMap<String, String>> = Lazy::new(|| {
     let mut map = HashMap::new();
     map.insert(
-        "alternate_useragent.toml".to_string(),
-        ALTERNATE_USERAGENT.to_string(),
+        "alternate_headers.toml".to_string(),
+        ALTERNATE_HEADERS.to_string(),
     );
     map
 });
@@ -82,7 +82,7 @@ impl SyntaxConfig {
 
 impl SitePicker {
     pub fn new(
-        custom_configs: &HashMap<String, String>,
+        custom_configs: &HashMap<String, Vec<String>>,
         ignored_additional: Vec<String>,
         no_block: bool,
         cache_mode: Option<&CacheMode>,
@@ -97,10 +97,12 @@ impl SitePicker {
             Self::create_base_site_config(&site, &ignored_additional, no_block, cache_mode);
         let mut site_mapping = HashMap::new();
         site_mapping.insert("".to_string(), base_site_config);
-        for (url, filename) in custom_configs {
+        for (url, filenames) in custom_configs {
             let mut base_site_raw_mut = site.clone();
-            let custom = Self::get_custom_config(filename);
-            override_defaults_site(&mut base_site_raw_mut, custom);
+            for file in filenames {
+                let custom = Self::get_custom_config(file);
+                override_defaults_site(&mut base_site_raw_mut, custom);
+            }
             site_mapping.insert(
                 url.to_string(),
                 Self::create_base_site_config(
