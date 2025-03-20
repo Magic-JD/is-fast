@@ -1,4 +1,5 @@
 use crate::cli::command::{CacheMode, ColorMode};
+use crate::config::files::config_location;
 use crate::config::raw::{
     convert_styles, generate_globs, get_user_specified_config, override_defaults, parse_color,
     CacheSection, RawConfig,
@@ -9,15 +10,26 @@ use crate::search_engine::search_type::SearchEngine::{DuckDuckGo, Google, Kagi};
 use crate::DisplayConfig;
 use globset::{Glob, GlobSet};
 use nucleo_matcher::pattern::AtomKind;
-use once_cell::sync::OnceCell;
+use once_cell::sync::{Lazy, OnceCell};
 use ratatui::style::Style;
 use scraper::ElementRef;
 use std::collections::{HashMap, HashSet};
 use std::default::Default;
+use std::fs;
 use toml;
 
 static CONFIG: OnceCell<Config> = OnceCell::new();
-pub const DEFAULT_CONFIG_LOCATION: &str = include_str!("config.toml");
+pub const DEFAULT_CONFIG: &str = include_str!("config.toml");
+pub const ALTERNATE_USERAGENT: &str = include_str!("alternate_useragent.toml");
+
+static EMBEDDED_CONFIG_MAP: Lazy<HashMap<String, String>> = Lazy::new(|| {
+    let mut map = HashMap::new();
+    map.insert(
+        "alternate_useragent.toml".to_string(),
+        ALTERNATE_USERAGENT.to_string(),
+    );
+    map
+});
 const MS_IN_SECOND: i64 = 1000;
 
 #[derive(Debug, Clone)]
@@ -62,7 +74,52 @@ struct TagIdentifier {
     ids: HashSet<String>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
+struct SitePicker {
+    sites: HashMap<String, SiteConfig>,
+    matcher: GlobSet,
+    globs: Vec<Glob>,
+}
+
+impl SitePicker {
+    fn get_match(&self, url: &str) -> &str {
+        self.matcher
+            .matches(url)
+            .iter()
+            .find_map(|idx| self.globs.get(*idx))
+            .map(|glob| glob.glob())
+            .unwrap_or("")
+    }
+
+    pub fn get_format_config(&self, url: &str) -> &FormatConfig {
+        &self
+            .sites
+            .get(self.get_match(url))
+            .expect("should be either empty string and default or found")
+            .format
+    }
+
+    pub fn get_call_config(&self, url: &str) -> &CallConfig {
+        &self
+            .sites
+            .get(self.get_match(url))
+            .expect("should be either empty string and default or found")
+            .call
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+struct SiteConfig {
+    format: FormatConfig,
+    call: CallConfig,
+}
+
+#[derive(Debug, Clone, Default)]
+struct CallConfig {
+    headers: HashMap<String, String>,
+}
+
+#[derive(Debug, Clone, Default)]
 pub struct FormatConfig {
     ignored_tags: HashMap<String, TagIdentifier>,
     block_elements: HashMap<String, TagIdentifier>,
@@ -223,8 +280,8 @@ pub struct Config {
     cache: CacheConfig,
     pretty_print: Vec<DisplayConfig>,
     extraction: ExtractionConfig,
-    format: FormatConfig,
     history_widget: HistoryWidgetConfig,
+    sites: SitePicker,
 }
 
 impl Config {
@@ -273,7 +330,7 @@ impl Config {
         no_block: bool,
         nth_element: Vec<usize>,
     ) -> Self {
-        let mut config: RawConfig = toml::from_str(DEFAULT_CONFIG_LOCATION)
+        let mut config: RawConfig = toml::from_str(DEFAULT_CONFIG)
             .map_err(|e| println!("{e}"))
             .unwrap_or(RawConfig::default());
         _ = get_user_specified_config().map(|u_config| override_defaults(&mut config, u_config));
@@ -286,6 +343,30 @@ impl Config {
         );
         let cache = Self::create_cache_config(cache_mode, &config);
         let history_widget = Self::create_history_widget_config(&config);
+
+        let mut site_mapping = HashMap::new();
+        for (url, filename) in config.custom_config.clone() {
+            let custom = Self::get_custom_config(&filename);
+            let site_config =
+                Self::update_current_with_custom(config.headers.clone(), &format, custom);
+
+            site_mapping.insert(url, site_config);
+        }
+        site_mapping.insert(
+            "".to_string(),
+            SiteConfig {
+                format,
+                call: CallConfig {
+                    headers: config.headers.clone(),
+                },
+            },
+        );
+        let (matcher, globs) = generate_globs(config.custom_config.keys().collect());
+        let site_picker = SitePicker {
+            sites: site_mapping,
+            matcher,
+            globs,
+        };
         Self {
             syntax_default_language: config
                 .syntax
@@ -322,7 +403,11 @@ impl Config {
                     .and_then(|search| search.engine.clone())
                     .unwrap_or_default(),
             ),
-            open_tool: config.misc.and_then(|misc| misc.open_tool).clone(),
+            open_tool: config
+                .misc
+                .as_ref()
+                .and_then(|misc| misc.open_tool.clone())
+                .clone(),
             scroll: convert_to_scroll(
                 &config
                     .display
@@ -342,9 +427,56 @@ impl Config {
             cache,
             pretty_print,
             extraction,
-            format,
             history_widget,
+            sites: site_picker,
         }
+    }
+
+    fn update_current_with_custom(
+        mut headers: HashMap<String, String>,
+        current_format: &FormatConfig,
+        custom: RawConfig,
+    ) -> SiteConfig {
+        let mut current_update = current_format.clone();
+        let updated_format = Self::create_format_config(&custom, vec![], false);
+        updated_format
+            .tag_styles
+            .into_iter()
+            .for_each(|(key, style)| {
+                current_update.tag_styles.insert(key, style);
+            });
+        updated_format
+            .block_elements
+            .into_iter()
+            .for_each(|(key, ti)| {
+                current_update.block_elements.insert(key, ti);
+            });
+        updated_format
+            .ignored_tags
+            .into_iter()
+            .for_each(|(key, ti)| {
+                current_update.ignored_tags.insert(key, ti);
+            });
+        for (k, v) in custom.headers.into_iter() {
+            headers.insert(k, v);
+        }
+        SiteConfig {
+            format: current_update,
+            call: CallConfig { headers },
+        }
+    }
+
+    fn get_custom_config(filename: &String) -> RawConfig {
+        let mut path = config_location();
+        path.push(filename);
+        let site_config = fs::read_to_string(path)
+            .ok()
+            .or_else(|| EMBEDDED_CONFIG_MAP.get(filename).cloned())
+            .expect("Should have found embedded or locally");
+        let custom: RawConfig = toml::from_str(site_config.as_str())
+            .map_err(|e| println!("{e}"))
+            .unwrap_or(RawConfig::default());
+        custom
     }
 
     fn create_history_widget_config(config: &RawConfig) -> HistoryWidgetConfig {
@@ -381,7 +513,7 @@ impl Config {
         nth_element: Vec<usize>,
         config: &RawConfig,
     ) -> ExtractionConfig {
-        let (matcher, globs) = generate_globs(config);
+        let (matcher, globs) = generate_globs(config.selectors.keys().collect());
         let selectors = config.selectors.clone();
         let color_mode = args_color_mode.unwrap_or_else(|| {
             convert_to_color_mode(
@@ -470,8 +602,8 @@ impl Config {
         CONFIG.get_or_init(Config::default)
     }
 
-    pub fn get_format_config() -> FormatConfig {
-        Self::get_config().format.clone()
+    pub fn get_format_config(url: &str) -> FormatConfig {
+        Self::get_config().sites.get_format_config(url).clone()
     }
 
     pub fn get_default_language() -> &'static String {
@@ -523,6 +655,10 @@ impl Config {
 
     pub fn get_pretty_print() -> &'static [DisplayConfig] {
         &Self::get_config().pretty_print
+    }
+
+    pub fn get_headers(url: &str) -> &'static HashMap<String, String> {
+        &Self::get_config().sites.get_call_config(url).headers
     }
 }
 

@@ -1,4 +1,4 @@
-use crate::config::load::{Config, FormatConfig};
+use crate::config::load::FormatConfig;
 use crate::transform::syntax_highlight::highlight_code;
 use ratatui::style::{Style, Styled};
 use ratatui::text::{Line, Span};
@@ -9,10 +9,8 @@ pub struct Formatter {
 }
 
 impl Formatter {
-    pub fn new() -> Formatter {
-        Formatter {
-            config: Config::get_format_config(),
-        }
+    pub fn new(config: FormatConfig) -> Formatter {
+        Formatter { config }
     }
 
     pub fn to_display(&self, element: ElementRef) -> Vec<Line<'static>> {
@@ -288,10 +286,23 @@ mod tests {
     use scraper::{Html, Selector};
     use std::collections::{HashMap, HashSet};
 
-    impl Formatter {
-        fn test(config: FormatConfig) -> Self {
-            Self { config }
-        }
+    fn basic_format_config() -> FormatConfig {
+        let ignored_tages = HashSet::from(["head"])
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<HashSet<_>>();
+        let block_elements = HashSet::from(["h1", "pre", "body"])
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<HashSet<_>>();
+        let mut style_elements = HashMap::new();
+        let bold_style = Style::new().add_modifier(Modifier::BOLD);
+        let italic_style = Style::new().add_modifier(Modifier::ITALIC);
+        style_elements.insert("strong".to_string(), bold_style);
+        style_elements.insert("i".to_string(), italic_style);
+        style_elements.insert("h1".to_string(), bold_style);
+        style_elements.insert("b".to_string(), bold_style);
+        FormatConfig::new(ignored_tages, block_elements, style_elements)
     }
 
     #[test]
@@ -306,7 +317,7 @@ mod tests {
             </html>
         "#;
 
-        let formatter = Formatter::new();
+        let formatter = Formatter::new(basic_format_config());
         let binding = Html::parse_document(html);
         let result = Text::from(
             binding
@@ -344,7 +355,7 @@ mod tests {
             </html>
         "#;
 
-        let formatter = Formatter::new();
+        let formatter = Formatter::new(basic_format_config());
         let binding = Html::parse_document(html);
         let result = Text::from(
             binding
@@ -392,7 +403,7 @@ mod tests {
     fn test_to_display_no_content() {
         let html = "<html><body><div style='display: none;'>Hidden</div></body></html>";
 
-        let formatter = Formatter::new();
+        let formatter = Formatter::new(basic_format_config());
         let binding = Html::parse_document(html);
         let list = binding
             .select(&Selector::parse("body").unwrap())
@@ -416,7 +427,7 @@ mod tests {
         </html>
     "#;
 
-        let formatter = Formatter::test(FormatConfig::new(
+        let formatter = Formatter::new(FormatConfig::new(
             HashSet::from(["span.type1".to_string()]),
             HashSet::from(["span.type2".to_string()]),
             HashMap::new(),
@@ -458,7 +469,7 @@ mod tests {
         </html>
     "#;
 
-        let formatter = Formatter::test(FormatConfig::new(
+        let formatter = Formatter::new(FormatConfig::new(
             HashSet::from([".type1".to_string()]),
             HashSet::from([".type2".to_string()]),
             HashMap::new(),
@@ -499,7 +510,7 @@ mod tests {
         </html>
     "#;
 
-        let formatter = Formatter::test(FormatConfig::new(
+        let formatter = Formatter::new(FormatConfig::new(
             HashSet::from(["#remove-me".to_string()]),
             HashSet::from(["#extra-space".to_string()]),
             HashMap::new(),
@@ -536,7 +547,7 @@ This is line one.
             </pre>
         "#;
 
-        let formatter = Formatter::new();
+        let formatter = Formatter::new(basic_format_config());
         let binding = Html::parse_document(html);
         let result = Text::from(
             binding
@@ -581,7 +592,7 @@ This is line one.
         </html>
     "#;
 
-        let formatter = Formatter::test(FormatConfig::new(
+        let formatter = Formatter::new(FormatConfig::new(
             HashSet::new(),
             HashSet::from(["li".to_string()]),
             HashMap::new(),
@@ -623,7 +634,7 @@ This is line one.
         </html>
     "#;
 
-        let formatter = Formatter::test(FormatConfig::new(
+        let formatter = Formatter::new(FormatConfig::new(
             HashSet::new(),
             HashSet::from(["li".to_string()]),
             HashMap::new(),
@@ -667,7 +678,7 @@ This is line one.
     </html>
     "#;
 
-        let formatter = Formatter::test(FormatConfig::new(
+        let formatter = Formatter::new(FormatConfig::new(
             HashSet::new(),
             HashSet::from(["li".to_string()]),
             HashMap::new(),

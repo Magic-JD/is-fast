@@ -1,5 +1,5 @@
 use crate::config::files::config_path;
-use crate::config::load::DEFAULT_CONFIG_LOCATION;
+use crate::config::load::DEFAULT_CONFIG;
 use std::fs;
 
 pub fn run() {
@@ -7,7 +7,7 @@ pub fn run() {
     let config_path = config_path();
     if config_path.exists() {
         eprintln!("Config file already exists at {config_path:?}");
-    } else if let Err(message) = fs::write(&config_path, DEFAULT_CONFIG_LOCATION)
+    } else if let Err(message) = fs::write(&config_path, DEFAULT_CONFIG)
         .map_err(|e| format!("Error writing config file: {e}"))
     {
         eprintln!("{message}");

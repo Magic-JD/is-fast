@@ -2,8 +2,12 @@ use dirs::{config_dir, data_dir};
 use std::path::PathBuf;
 use std::{env, fs};
 
+pub fn config_location() -> PathBuf {
+    env_default_path("IS_FAST_CONFIG_DIR", config_dir)
+}
+
 pub fn config_path() -> PathBuf {
-    let mut path = env_default_path("IS_FAST_CONFIG_DIR", config_dir);
+    let mut path = config_location();
     path.push("config.toml");
     path
 }

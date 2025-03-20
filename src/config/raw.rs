@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct TagStyleConfig {
     fg: Option<String>,
     bg: Option<String>,
@@ -16,7 +16,7 @@ pub struct TagStyleConfig {
     crossed_out: Option<bool>,
     dim: Option<bool>,
 }
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct FormatSection {
     #[serde(default)]
     pub(crate) ignored_tags: Vec<String>,
@@ -24,7 +24,7 @@ pub struct FormatSection {
     pub(crate) block_elements: Vec<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct SyntaxHighlightingSection {
     #[serde(default)]
     pub(crate) theme: Option<String>,
@@ -32,7 +32,7 @@ pub struct SyntaxHighlightingSection {
     pub(crate) default_language: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct DisplaySection {
     #[serde(default)]
     pub(crate) border_color: Option<String>,
@@ -44,7 +44,7 @@ pub struct DisplaySection {
     pub(crate) color_mode: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct HistorySection {
     #[serde(default)]
     pub(crate) title_color: Option<String>,
@@ -60,7 +60,7 @@ pub struct HistorySection {
     pub(crate) enabled: Option<bool>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct SearchSection {
     #[serde(default)]
     pub(crate) engine: Option<String>,
@@ -84,7 +84,7 @@ pub struct MiscSection {
     pub(crate) open_tool: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct RawConfig {
     #[serde(default)]
     pub(crate) styles: HashMap<String, TagStyleConfig>,
@@ -104,6 +104,10 @@ pub struct RawConfig {
     pub(crate) cache: Option<CacheSection>,
     #[serde(default)]
     pub(crate) misc: Option<MiscSection>,
+    #[serde(default)]
+    pub(crate) headers: HashMap<String, String>,
+    #[serde(default)]
+    pub(crate) custom_config: HashMap<String, String>,
 }
 
 impl RawConfig {
@@ -118,6 +122,8 @@ impl RawConfig {
             search: None,
             cache: None,
             misc: None,
+            headers: HashMap::new(),
+            custom_config: HashMap::new(),
         }
     }
 }
@@ -152,6 +158,12 @@ pub fn override_defaults(config: &mut RawConfig, mut u_config: RawConfig) {
     ));
     config.cache = Some(override_cache(config.cache.take(), u_config.cache.take()));
     config.misc = Some(override_misc(config.misc.take(), u_config.misc.take()));
+    for (key, value) in u_config.headers {
+        config.headers.insert(key, value);
+    }
+    for (site, file) in u_config.custom_config {
+        config.custom_config.insert(site, file);
+    }
 }
 
 fn override_format(
@@ -320,10 +332,10 @@ fn config_from_filepath(buff: PathBuf) -> Option<RawConfig> {
         .and_then(|str| toml::from_str(str).ok())
 }
 
-pub fn generate_globs(config: &RawConfig) -> (GlobSet, Vec<Glob>) {
+pub fn generate_globs(urls: Vec<&String>) -> (GlobSet, Vec<Glob>) {
     let mut builder = GlobSetBuilder::new();
     let mut globs = Vec::new();
-    config.selectors.iter().for_each(|(pattern, _)| {
+    urls.iter().for_each(|pattern| {
         if let Ok(glob) = Glob::new(pattern) {
             builder.add(glob.clone());
             globs.push(glob);
@@ -493,9 +505,11 @@ mod tests {
             search: None,
             cache: None,
             misc: None,
+            headers: Default::default(),
+            custom_config: Default::default(),
         };
 
-        let (matcher, globs) = generate_globs(&raw_config);
+        let (matcher, globs) = generate_globs(raw_config.selectors.keys().collect());
 
         assert_eq!(globs.len(), 2);
         assert!(matcher.is_match("example.com/index.html"));
@@ -537,6 +551,8 @@ mod tests {
             search: None,
             cache: None,
             misc: None,
+            headers: Default::default(),
+            custom_config: Default::default(),
         };
 
         let user_config = RawConfig {
@@ -571,6 +587,8 @@ mod tests {
             search: None,
             cache: None,
             misc: None,
+            headers: Default::default(),
+            custom_config: Default::default(),
         };
 
         override_defaults(&mut default_config, user_config);

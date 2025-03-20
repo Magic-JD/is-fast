@@ -8,7 +8,6 @@ use crate::search_engine::scrape::scrape;
 use crate::transform::filter::filter;
 use crate::transform::format::Formatter;
 use nu_ansi_term::{Color, Style};
-use once_cell::sync::Lazy;
 use ratatui::prelude::Text;
 use ratatui::style::Style as RatStyle;
 use ratatui::style::{Color as RatColor, Modifier};
@@ -16,8 +15,6 @@ use ratatui::text::Line;
 use ratatui::widgets::Paragraph;
 use scraper::{ElementRef, Html, Selector};
 use std::fs;
-
-static FORMATTER: Lazy<Formatter> = Lazy::new(Formatter::new);
 
 #[derive(Clone)]
 pub struct PageExtractor {
@@ -87,7 +84,7 @@ impl PageExtractor {
             html,
             self.config().get_selectors(html_source.get_url()),
         )
-            .map(|elements| self.process_elements(elements))
+            .map(|elements| self.process_elements(html_source.get_url(), elements))
             .and_then(|text| {
                 if text
                     .lines
@@ -113,11 +110,11 @@ impl PageExtractor {
         title
     }
 
-    fn process_elements(&self, elements: Vec<ElementRef>) -> Text<'static> {
+    fn process_elements(&self, url: &str, elements: Vec<ElementRef>) -> Text<'static> {
         log::trace!("Processing all elements");
         let mut lines: Vec<Vec<Line>> = elements
             .into_iter()
-            .map(|element| FORMATTER.to_display(element))
+            .map(|element| Formatter::new(Config::get_format_config(url)).to_display(element))
             .filter(|lines| !lines.is_empty())
             .collect();
         let nth_element = self.config().nth_element();

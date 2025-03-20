@@ -1,10 +1,11 @@
+use crate::config::load::Config;
 use crate::errors::error::IsError;
 use crate::errors::error::IsError::{General, Scrape};
 use crate::search_engine::cache::{cached_pages_purge, cached_pages_read, cached_pages_write};
 use encoding_rs::{Encoding, UTF_8};
 use encoding_rs_io::DecodeReaderBytesBuilder;
 use once_cell::sync::Lazy;
-use reqwest::blocking::{Client, Response};
+use reqwest::blocking::{Client, RequestBuilder, Response};
 use reqwest::tls::Version;
 use std::io::Read;
 use std::time::Duration;
@@ -43,14 +44,9 @@ pub fn format_url(url: &str) -> Option<String> {
 }
 
 fn reqwest_scrape(url: &str) -> Result<String, IsError> {
-    REQWEST_CLIENT
-        .get(url)
-        .header("User-Agent", "Lynx/2.8.8dev.3 libwww-FM/2.14 SSL-MM/1.4.1")
-        .header(
-            "Accept",
-            "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-        )
-        .header("Accept-Language", "en-US,en;q=0.9")
+    let builder = REQWEST_CLIENT.get(url);
+    let builder = add_url_based_headers(url, builder);
+    builder
         .send()
         .map_err(|_| {
             Scrape(format!(
@@ -64,6 +60,14 @@ fn reqwest_scrape(url: &str) -> Result<String, IsError> {
             Ok(res)
         })
         .and_then(|response| decode_text(url, response))
+}
+
+fn add_url_based_headers(url: &str, builder: RequestBuilder) -> RequestBuilder {
+    let mut builder = builder;
+    for (key, value) in Config::get_headers(url) {
+        builder = builder.header(key, value);
+    }
+    builder
 }
 
 fn error_for_fail_response_code(url: &str, response: &Response) -> IsError {
