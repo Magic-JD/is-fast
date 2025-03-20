@@ -1,5 +1,6 @@
 use crate::errors::error::IsError;
 use crate::errors::error::IsError::{Search as SearchError, Selector as SelectorError};
+use crate::search_engine::link::HtmlSource::LinkSource;
 use crate::search_engine::link::Link;
 use crate::search_engine::scrape::{cache_purge, scrape};
 use crate::search_engine::search_type::Search;
@@ -9,9 +10,12 @@ use scraper::{Html, Selector};
 pub struct DuckDuckGoSearch;
 impl DuckDuckGoSearch {
     pub fn get_links(search_term: &str) -> Result<Vec<Link>, IsError> {
-        let url = format!("https://html.duckduckgo.com/html/?q={}", &search_term);
-        scrape(&url)
-            .and_then(|html| Self::links_from_html(&html).inspect_err(|_| cache_purge(&url)))
+        let html_source = &LinkSource(Link::new(&format!(
+            "https://html.duckduckgo.com/html/?q={}",
+            &search_term
+        )));
+        scrape(html_source)
+            .and_then(|html| Self::links_from_html(&html).inspect_err(|_| cache_purge(html_source)))
     }
 
     fn links_from_html(html: &str) -> Result<Vec<Link>, IsError> {

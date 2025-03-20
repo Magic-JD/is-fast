@@ -1,3 +1,7 @@
+#[cfg(not(test))]
+use crate::config::load::Config;
+use crate::config::site::SiteConfig;
+
 #[derive(Clone)]
 pub enum HtmlSource {
     LinkSource(Link),
@@ -11,6 +15,11 @@ impl HtmlSource {
             HtmlSource::FileSource(file) => &file.associated_url,
         }
     }
+
+    #[cfg(not(test))]
+    pub fn get_config(&self) -> SiteConfig {
+        Config::get_site_config(self.get_url()).clone()
+    }
 }
 
 #[derive(Clone)]
@@ -20,8 +29,15 @@ pub struct Link {
 impl Link {
     pub fn new(url: &str) -> Self {
         Self {
-            url: url.to_string(),
+            url: Self::format_url(url),
         }
+    }
+
+    fn format_url(url: &str) -> String {
+        if url.starts_with("http") {
+            return url.to_string();
+        }
+        format!("https://{url}")
     }
 }
 
@@ -35,6 +51,22 @@ impl File {
         Self {
             file_path: file,
             associated_url,
+        }
+    }
+}
+#[cfg(test)]
+pub mod tests {
+    use super::*;
+    use once_cell::sync::Lazy;
+    use parking_lot::RwLock;
+
+    pub static TEST_CONFIG: Lazy<RwLock<SiteConfig>> =
+        Lazy::new(|| RwLock::new(SiteConfig::default()));
+
+    impl HtmlSource {
+        #[cfg(test)]
+        pub fn get_config(&self) -> SiteConfig {
+            TEST_CONFIG.read().clone()
         }
     }
 }

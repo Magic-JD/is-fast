@@ -7,6 +7,7 @@ use crate::search_engine::scrape;
 use crate::search_engine::scrape::scrape;
 use crate::transform::filter::filter;
 use crate::transform::format::Formatter;
+use crate::transform::syntax_highlight::SyntaxHighlighter;
 use nu_ansi_term::{Color, Style};
 use ratatui::prelude::Text;
 use ratatui::style::Style as RatStyle;
@@ -49,7 +50,7 @@ impl PageExtractor {
 
     fn get_tui_text(&self, html_source: &HtmlSource) -> (String, Text<'static>) {
         let html_result: Result<String, IsError> = match html_source {
-            HtmlSource::LinkSource(link) => scrape(&link.url),
+            HtmlSource::LinkSource(_) => scrape(html_source),
             HtmlSource::FileSource(file) => fs::read_to_string(&file.file_path).map_err(Io),
         };
         let selector = Selector::parse("title").expect("invalid title selector");
@@ -65,8 +66,8 @@ impl PageExtractor {
             Ok((title, text))
         })
         .unwrap_or_else(|err| {
-            if let HtmlSource::LinkSource(link) = html_source {
-                scrape::cache_purge(&link.url);
+            if let HtmlSource::LinkSource(_) = html_source {
+                scrape::cache_purge(html_source);
             };
             (
                 String::from("Failed to retrieve"),
@@ -84,7 +85,7 @@ impl PageExtractor {
             html,
             self.config().get_selectors(html_source.get_url()),
         )
-            .map(|elements| self.process_elements(html_source.get_url(), elements))
+            .map(|elements| self.process_elements(html_source, elements))
             .and_then(|text| {
                 if text
                     .lines
@@ -110,11 +111,24 @@ impl PageExtractor {
         title
     }
 
-    fn process_elements(&self, url: &str, elements: Vec<ElementRef>) -> Text<'static> {
+    fn process_elements(
+        &self,
+        html_source: &HtmlSource,
+        elements: Vec<ElementRef>,
+    ) -> Text<'static> {
         log::trace!("Processing all elements");
+        let site_config = html_source.get_config();
+        let format_config = site_config.get_format();
+        let syntax_config = site_config.get_syntax();
         let mut lines: Vec<Vec<Line>> = elements
             .into_iter()
-            .map(|element| Formatter::new(Config::get_format_config(url)).to_display(element))
+            .map(|element| {
+                Formatter::new(
+                    format_config.clone(),
+                    SyntaxHighlighter::new(syntax_config.clone()),
+                )
+                .to_display(element)
+            })
             .filter(|lines| !lines.is_empty())
             .collect();
         let nth_element = self.config().nth_element();
@@ -205,8 +219,10 @@ impl PageExtractor {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::search_engine::link::tests::TEST_CONFIG;
     use crate::search_engine::link::File;
     use crate::search_engine::link::HtmlSource::FileSource;
+    use ctor::ctor;
     use globset::GlobSet;
     use ratatui::text::Span;
     use std::collections::HashMap;
@@ -216,6 +232,12 @@ mod tests {
         pub fn test_init(config: ExtractionConfig) -> Self {
             Self { config }
         }
+    }
+
+    #[ctor]
+    fn setup() {
+        TEST_CONFIG.write().format = Config::get_site_config("").format.clone();
+        TEST_CONFIG.write().syntax = Config::get_site_config("").syntax.clone();
     }
 
     #[test]

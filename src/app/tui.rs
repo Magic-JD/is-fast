@@ -2,7 +2,6 @@ use crate::config::load::Config;
 use crate::errors::error::IsError;
 use crate::errors::error::IsError::General;
 use crate::search_engine::link::HtmlSource;
-use crate::search_engine::scrape::format_url;
 use crate::tui::display::Display;
 use std::process::Command;
 
@@ -20,12 +19,12 @@ impl TuiApp {
     pub fn open_link(&mut self, index: usize, pages: &[HtmlSource]) -> Result<(), IsError> {
         let url = pages
             .get(index)
-            .and_then(|page| format_url(page.get_url()))
+            .and_then(|page| Some(page.get_url()).filter(|s| !s.is_empty()))
             .ok_or(General(String::from("Page doesn't have a url")))?;
         if let Some(tool) = Config::get_open_command() {
             // If there is a user defined tool to open, use that
             Command::new(tool)
-                .arg(&url)
+                .arg(url)
                 .status()
                 .map_err(|e| General(format!("{e} - you are trying to open with '{tool}' - confirm running this tool with url {url} externally for more information")))?;
         } else {

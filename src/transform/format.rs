@@ -1,16 +1,20 @@
-use crate::config::load::FormatConfig;
-use crate::transform::syntax_highlight::highlight_code;
+use crate::config::format::FormatConfig;
+use crate::transform::syntax_highlight::SyntaxHighlighter;
 use ratatui::style::{Style, Styled};
 use ratatui::text::{Line, Span};
 use scraper::{Element, ElementRef, Node};
 
 pub struct Formatter {
     config: FormatConfig,
+    syntax_highlighter: SyntaxHighlighter,
 }
 
 impl Formatter {
-    pub fn new(config: FormatConfig) -> Formatter {
-        Formatter { config }
+    pub fn new(config: FormatConfig, syntax_highlighter: SyntaxHighlighter) -> Formatter {
+        Formatter {
+            config,
+            syntax_highlighter,
+        }
     }
 
     pub fn to_display(&self, element: ElementRef) -> Vec<Line<'static>> {
@@ -60,7 +64,9 @@ impl Formatter {
             // Handle code differently due to performance issues.
             let language_type = extract_language_type(element);
             let code_text = extract_code(element);
-            return highlight_code(&code_text, &language_type);
+            return self
+                .syntax_highlighter
+                .highlight_code(&code_text, &language_type);
         }
 
         let style = self.config.style_for_tag(tag_name);
@@ -281,6 +287,7 @@ fn find_child_index(parent: ElementRef, child: &ElementRef) -> Option<usize> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::site::SyntaxConfig;
     use ratatui::style::{Color, Modifier};
     use ratatui::text::Text;
     use scraper::{Html, Selector};
@@ -305,6 +312,10 @@ mod tests {
         FormatConfig::new(ignored_tages, block_elements, style_elements)
     }
 
+    fn basic_syntax_highlighter() -> SyntaxHighlighter {
+        SyntaxHighlighter::new(SyntaxConfig::default())
+    }
+
     #[test]
     fn test_to_display_simple_html() {
         let html = r#"
@@ -317,7 +328,7 @@ mod tests {
             </html>
         "#;
 
-        let formatter = Formatter::new(basic_format_config());
+        let formatter = Formatter::new(basic_format_config(), basic_syntax_highlighter());
         let binding = Html::parse_document(html);
         let result = Text::from(
             binding
@@ -355,7 +366,13 @@ mod tests {
             </html>
         "#;
 
-        let formatter = Formatter::new(basic_format_config());
+        let formatter = Formatter::new(
+            basic_format_config(),
+            SyntaxHighlighter::new(SyntaxConfig {
+                syntax_default_language: "java".to_string(),
+                syntax_highlighting_theme: "base16-ocean.dark".to_string(),
+            }),
+        );
         let binding = Html::parse_document(html);
         let result = Text::from(
             binding
@@ -403,7 +420,7 @@ mod tests {
     fn test_to_display_no_content() {
         let html = "<html><body><div style='display: none;'>Hidden</div></body></html>";
 
-        let formatter = Formatter::new(basic_format_config());
+        let formatter = Formatter::new(basic_format_config(), basic_syntax_highlighter());
         let binding = Html::parse_document(html);
         let list = binding
             .select(&Selector::parse("body").unwrap())
@@ -427,11 +444,14 @@ mod tests {
         </html>
     "#;
 
-        let formatter = Formatter::new(FormatConfig::new(
-            HashSet::from(["span.type1".to_string()]),
-            HashSet::from(["span.type2".to_string()]),
-            HashMap::new(),
-        ));
+        let formatter = Formatter::new(
+            FormatConfig::new(
+                HashSet::from(["span.type1".to_string()]),
+                HashSet::from(["span.type2".to_string()]),
+                HashMap::new(),
+            ),
+            basic_syntax_highlighter(),
+        );
 
         let binding = Html::parse_document(html);
         let list = binding
@@ -469,11 +489,14 @@ mod tests {
         </html>
     "#;
 
-        let formatter = Formatter::new(FormatConfig::new(
-            HashSet::from([".type1".to_string()]),
-            HashSet::from([".type2".to_string()]),
-            HashMap::new(),
-        ));
+        let formatter = Formatter::new(
+            FormatConfig::new(
+                HashSet::from([".type1".to_string()]),
+                HashSet::from([".type2".to_string()]),
+                HashMap::new(),
+            ),
+            basic_syntax_highlighter(),
+        );
 
         let binding = Html::parse_document(html);
         let list = binding
@@ -510,11 +533,14 @@ mod tests {
         </html>
     "#;
 
-        let formatter = Formatter::new(FormatConfig::new(
-            HashSet::from(["#remove-me".to_string()]),
-            HashSet::from(["#extra-space".to_string()]),
-            HashMap::new(),
-        ));
+        let formatter = Formatter::new(
+            FormatConfig::new(
+                HashSet::from(["#remove-me".to_string()]),
+                HashSet::from(["#extra-space".to_string()]),
+                HashMap::new(),
+            ),
+            basic_syntax_highlighter(),
+        );
 
         let binding = Html::parse_document(html);
         let list = binding
@@ -547,7 +573,7 @@ This is line one.
             </pre>
         "#;
 
-        let formatter = Formatter::new(basic_format_config());
+        let formatter = Formatter::new(basic_format_config(), basic_syntax_highlighter());
         let binding = Html::parse_document(html);
         let result = Text::from(
             binding
@@ -592,11 +618,14 @@ This is line one.
         </html>
     "#;
 
-        let formatter = Formatter::new(FormatConfig::new(
-            HashSet::new(),
-            HashSet::from(["li".to_string()]),
-            HashMap::new(),
-        ));
+        let formatter = Formatter::new(
+            FormatConfig::new(
+                HashSet::new(),
+                HashSet::from(["li".to_string()]),
+                HashMap::new(),
+            ),
+            basic_syntax_highlighter(),
+        );
         let binding = Html::parse_document(html);
         let result = Text::from(
             binding
@@ -634,11 +663,14 @@ This is line one.
         </html>
     "#;
 
-        let formatter = Formatter::new(FormatConfig::new(
-            HashSet::new(),
-            HashSet::from(["li".to_string()]),
-            HashMap::new(),
-        ));
+        let formatter = Formatter::new(
+            FormatConfig::new(
+                HashSet::new(),
+                HashSet::from(["li".to_string()]),
+                HashMap::new(),
+            ),
+            basic_syntax_highlighter(),
+        );
         let binding = Html::parse_document(html);
         let result = Text::from(
             binding
@@ -678,11 +710,14 @@ This is line one.
     </html>
     "#;
 
-        let formatter = Formatter::new(FormatConfig::new(
-            HashSet::new(),
-            HashSet::from(["li".to_string()]),
-            HashMap::new(),
-        ));
+        let formatter = Formatter::new(
+            FormatConfig::new(
+                HashSet::new(),
+                HashSet::from(["li".to_string()]),
+                HashMap::new(),
+            ),
+            basic_syntax_highlighter(),
+        );
         let binding = Html::parse_document(html);
         let result = Text::from(
             binding
