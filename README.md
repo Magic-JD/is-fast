@@ -64,30 +64,33 @@ cargo install --git https://github.com/Magic-JD/is-fast.git
 ### Table Of Contents
 
 - [🔧 Configuration Guide](#configuration-guide)
-    - [Default Configuration](#default-configuration)
-    - [🏷 Block Elements](#-block-elements)
-    - [🚫 Ignored Tags](#-ignored-tags)
-    - [🔍 Selectors](#-selectors)
-    - [🎨 Text Styles](#-text-styles)
-    - [🌈 Syntax Highlighting](#-syntax-highlighting)
-    - [🎨 Display Settings](#-display-settings)
-    - [🕰️ History Settings](#-history-settings)
-    - [🔍 Search Configuration](#-search-configuration)
-    - [🗄️ Cache Settings](#-cache-settings)
-    - [❓ Miscellaneous Configuration](#-miscellaneous-settings)
-    - [📌 Summary](#-summary)
+  - [Default Configuration](#default-configuration)
+- [Tool Configuration](#tool-configuration)
+  - [🎨 Display Settings](#-display-settings)
+  - [🕰️ History Settings](#-history-settings)
+  - [🔍 Search Configuration](#-search-configuration)
+  - [🔍 Selectors](#-selectors)
+  - [❓ Miscellaneous Configuration](#-miscellaneous-settings)
+  - [📝 Custom Site Configuration](#-custom-site-configuration)
+- [Site Configuration](#site-configuration)
+  - [🏷 Block Elements](#-block-elements)
+  - [🚫 Ignored Tags](#-ignored-tags)
+  - [🎨 Text Styles](#-text-styles)
+  - [🌈 Syntax Highlighting](#-syntax-highlighting)
+  - [🗄️ Cache Settings](#-cache-settings)
+  - [🛂 Headers](#-headers)
 - [🌍 Environment Variables](#-environment-variables)
   - [Directory Configuration](#directory-configuration)
   - [Search Api Configuration](#search-api-configuration)
 - [🌐 Using `is-fast` to Open URLs Directly](#-using-is-fast-to-open-urls-directly)
-    - [`--direct` / `-d`](#--direct---d)
+  - [`--direct` / `-d`](#--direct---d)
 - [📃 Using `is-fast` with Local HTML Files](#-using-is-fast-with-local-html-files)
-    - [`--file` / `-f`](#--file---f)
-    - [`--url` / `-u`](#--url---u)
+  - [`--file` / `-f`](#--file---f)
+  - [`--url` / `-u`](#--url---u)
 - [ 🔄 Using `--piped`, `|` or `>` to Output to Standard Output](#-using---piped--or--to-output-to-standard-output)
 - [📜 Viewing History in `is-fast`](#-viewing-history-in-is-fast)
-    - [`--history`](#--history)
-    - [`--no-history`](#--no-history)
+  - [`--history`](#--history)
+  - [`--no-history`](#--no-history)
 - [⚡ Caching in `is-fast`](#-caching-in-is-fast)
   - [`--cache`](#--cache)
   - [`--no-cache`](#--no-cache)
@@ -143,183 +146,15 @@ If not generated the configuration file should be placed in:
 If the `--generate-config` command is used a copy of the default configuration will be placed there automatically.
 
 If you don't want to use the default config location, setting the environment variable `IS_FAST_CONFIG_PATH` will enable you to
-place it whereever you like.
+place it wherever you like.
 
 ```sh
 export IS_FAST_CONFIG_PATH="/full/path/to/config.toml"
 ```
 
-## 🏷 Block Elements
+# Tool Configuration
 
-### Definition
-
-Block elements are HTML tags that should have **a new line before and after** them when processed. This helps preserve
-readability and logical structure in the parsed content.
-
-Block Elements support limited CSS selector features.
-
-div#center        will newline only divs that are marked center. 
-div.this.that     will newline divs with the class this or the class that.
-.this.that        will newline any element with the class this OR the class that.
-#that             will newline any element with the id that.
-div#center.this   will newline any div with the id center OR the class this.
-div.this#center   is INVALID and will not work.
-.this#center      is INVALID and will not work.
-
-### Example Configuration
-
-```toml
-block_elements = [
-    "p", "div", "article", "section", "pre", "blockquote", "ul", "ol", "dl", "dt", "dd", "li",
-    "h1", "h2", "h3", "h4", "h5", "h6"
-]
-```
-
-### Effect on Output
-
-#### Input HTML:
-
-```html
-<p>This is a paragraph.</p><h2>Title</h2><ul><li>Item 1</li><li>Item 2</li></ul>
-```
-
-#### Output After Processing:
-
-```
-This is a paragraph.
-
-Title
-
-- Item 1
-- Item 2
-```
-
-Each **block element** is **separated by a new line** for better readability.
-
-## 🚫 Ignored Tags
-
-### Definition
-
-Ignored tags are HTML elements that **will be completely removed** from the processed content. These typically include *
-*scripts, metadata, and interactive elements** that are irrelevant to text processing.
-
-Ignored tags support the same limited CSS selector logic as block elements. See above for more information.
-
-### Example Configuration
-
-```toml
-ignored_tags = [
-    "script", "style", "noscript", "head", "title", "meta", "input", "button", "svg", "nav",
-    "footer", "header", "aside"
-]
-```
-
-### Effect on Output
-
-#### Input HTML:
-
-```html
-<head><title>My Page</title></head>
-<body>
-  <p>Hello, world!</p>
-  <script>alert("Hello");</script>
-  <footer>© 2025 My Website</footer>
-</body>
-```
-
-#### Output After Processing:
-
-```
-Hello, world!
-```
-
-- **`<script>` and `<footer>` are removed**.
-- **Only meaningful content remains**.
-
-## 🔍 Selectors
-
-### Definition
-
-Selectors allow you to **extract only relevant content** from different websites. This is useful for customizing certain
-sites for a better user experience. If no selector is provided for a specific site then `body` will be used. Glob
-matching is used to match the site, or even certain urls within the site to extract the most relevant text. NOTE: If
-there are multiple globs that could match, the most restrictive should be placed higher in the config! Selectors are
-chosen from the first match only. Note that the CSS selectors defined here apply the full standard CSS selector logic,
-and are not limited to #id and .class only.
-
-### Example Configuration
-
-```toml
-[selectors]
-"*en.wikipedia.org*" = "p"
-"*github.com/*/blob/*" = ".react-code-line-contents" # Selectors will apply in this order
-"*github.com*" = ".markdown-body"
-```
-
-### Effect
-
-When processing content from Wikipedia, only `<p>` elements will be extracted. For GitHub, if the url contains the
-endpoint blob it will return only elements with the CSS class .react-code-line-contents. Otherwise, it will return the
-.markdown-body.
-
-## 🎨 Text Styles
-
-### Definition
-
-This section defines **how different HTML tags should be styled** in the output. Colors can be specified using standard color names (e.g., red, blue), hex values (e.g., #ff5733), or RGB notation (e.g., rgb(255, 87, 51)). Note css style selectors cannot be applied here.
-
-### Example Configuration
-
-```toml
-[styles.h1]
-bold = true
-
-[styles.a]
-fg = "Cyan"
-
-[styles.blockquote]
-fg = "Gray"
-italic = true
-```
-
-This means:
-
-- `<h1>` will be **bold**.
-- `<a>` (links) will be **cyan**.
-- `<blockquote>` will be **gray** and **italicised**.
-
-## 🌈 Syntax Highlighting
-
-The `[syntax]` section defines syntax highlighting settings for code. Where possible the language type will be
-determined from the CSS classes present in the HTML.
-
-### Default Language
-
-This defines the language that is used if the language type cannot be determined from the CSS classes. This should be
-set to your primary development language.
-
-### Theme
-
-This sets the theme that should be used. Valid themes are:
-
-```
-InspiredGitHub
-Solarized (dark)
-Solarized (light)
-base16-eighties.dark
-base16-mocha.dark
-base16-ocean.dark
-base16-ocean.light
-```
-
-### Example:
-
-```toml
-[syntax]
-default_language = "rust"
-theme = "base16-ocean.dark"
-```
-
+These configuration values are set for the entire tool, and will be in effect for every site.
 
 ## 🎨 Display Settings
 
@@ -340,8 +175,6 @@ The amount that page down/page up should scroll you. Default to full page. Valid
 ### Color Mode
 
 This sets when color should be shown. The default behavior is for it to show in the TUI but not in the `--piped` or redirected output. Possible values are `tui` `never` and `always`. This can be overriden by applying the `--color` flag when running `is-fast`
-
-### Example:
 
 ```toml
 [display]
@@ -381,8 +214,6 @@ Determines the type of search used for history entries. Available options:
 ### Enabled
 
 Set this to `false` to stop tracking the sites you have visited.
-
-### Example:
 
 ```toml
 [history]
@@ -435,8 +266,6 @@ export IS_FAST_KAGI_API_KEY="your_api_key_here"
 If you want to add your own custom search engine, please fork the repository and follow the instructions on [this file](src/search_engine/search_type.rs).
 
 
-### Example Configuration
-
 ```toml
 [search]
 engine = "google"
@@ -447,16 +276,201 @@ engine = "google"
 If you want to restrict your search only to a certain domain, setting this value will only show you search results from
 that domain. This can be overridden by the `--site` argument.
 
-### Example Configuration
-
 ```toml
 [search]
 site = "en.wikipedia.org"
 ```
 
+## 🔍 Selectors
+
+### Definition
+
+Selectors allow you to **extract only relevant content** from different websites. This is useful for customizing certain
+sites for a better user experience. If no selector is provided for a specific site then `body` will be used. Glob
+matching is used to match the site, or even certain urls within the site to extract the most relevant text. NOTE: If
+there are multiple globs that could match, the most restrictive should be placed higher in the config! Selectors are
+chosen from the first match only. Note that the CSS selectors defined here apply the full standard CSS selector logic,
+and are not limited to #id and .class only. This is in the tool configuration rather than the site configuration, because it is the most common reason that you would want to have a site specific configuration. This saves the user having to create a separate file for every case.
+
+```toml
+[selectors]
+"*en.wikipedia.org*" = "p"
+"*github.com/*/blob/*" = ".react-code-line-contents" # Selectors will apply in this order
+"*github.com*" = ".markdown-body"
+```
+
+### Effect
+
+When processing content from Wikipedia, only `<p>` elements will be extracted. For GitHub, if the url contains the
+endpoint blob it will return only elements with the CSS class .react-code-line-contents. Otherwise, it will return the
+.markdown-body.
+
+## ❓ Miscellaneous Settings
+
+### Open tool
+
+This setting is unset by default, and controls the program that is used to open the page if you choose to open in browser. If unset this will be your default open tool. If you set this value it will execute the tool given to it. The tool must be available in your system to be able to run.
+
+```toml
+[misc]
+open_tool = "w3m"
+```
+
+## 📝 Custom Site Configuration
+
+This allows you to add or change the site configuration, based on the site url. Using glob matches, it allows you to specify any number of additional configurations, which are then applied in order. In any case the configurations are conflicting, the last one in the list will be applied. The configurations are given as file names, which must be located in the same config directory as your config.toml.
+
+```toml
+[custom_config]
+"*.example.com/*" = ["alternate_headers.toml", "alternate_color_scheme.toml"]
+```
+
+---
+
+# Site Configuration
+
+Site configurations are set in the config.toml file to define the default behaviour for `is-fast`, but they can be updated with additional configurations in the custom config section of the tool configuration. This allows all of these configurations to be specified on a site by site basis.
+
+## 🏷 Block Elements
+
+### Definition
+
+Block elements are HTML tags that should have **a new line before and after** them when processed. This helps preserve
+readability and logical structure in the parsed content.
+
+Block Elements support limited CSS selector features.
+
+div#center        will newline only divs that are marked center. 
+div.this.that     will newline divs with the class this or the class that.
+.this.that        will newline any element with the class this OR the class that.
+#that             will newline any element with the id that.
+div#center.this   will newline any div with the id center OR the class this.
+div.this#center   is INVALID and will not work.
+.this#center      is INVALID and will not work.
+
+```toml
+block_elements = [
+    "p", "div", "article", "section", "pre", "blockquote", "ul", "ol", "dl", "dt", "dd", "li",
+    "h1", "h2", "h3", "h4", "h5", "h6"
+]
+```
+
+### Effect on Output
+
+#### Input HTML:
+
+```html
+<p>This is a paragraph.</p><h2>Title</h2><ul><li>Item 1</li><li>Item 2</li></ul>
+```
+
+#### Output After Processing:
+
+```
+This is a paragraph.
+
+Title
+
+- Item 1
+- Item 2
+```
+
+Each **block element** is **separated by a new line** for better readability.
+
+## 🚫 Ignored Tags
+
+### Definition
+
+Ignored tags are HTML elements that **will be completely removed** from the processed content. These typically include *
+*scripts, metadata, and interactive elements** that are irrelevant to text processing.
+
+Ignored tags support the same limited CSS selector logic as block elements. See above for more information.
+
+```toml
+ignored_tags = [
+    "script", "style", "noscript", "head", "title", "meta", "input", "button", "svg", "nav",
+    "footer", "header", "aside"
+]
+```
+
+### Effect on Output
+
+#### Input HTML:
+
+```html
+<head><title>My Page</title></head>
+<body>
+  <p>Hello, world!</p>
+  <script>alert("Hello");</script>
+  <footer>© 2025 My Website</footer>
+</body>
+```
+
+#### Output After Processing:
+
+```
+Hello, world!
+```
+
+- **`<script>` and `<footer>` are removed**.
+- **Only meaningful content remains**.
+
+## 🎨 Text Styles
+
+### Definition
+
+This section defines **how different HTML tags should be styled** in the output. Colors can be specified using standard color names (e.g., red, blue), hex values (e.g., #ff5733), or RGB notation (e.g., rgb(255, 87, 51)). Note css style selectors cannot be applied here.
+
+```toml
+[styles.h1]
+bold = true
+
+[styles.a]
+fg = "Cyan"
+
+[styles.blockquote]
+fg = "Gray"
+italic = true
+```
+
+This means:
+
+- `<h1>` will be **bold**.
+- `<a>` (links) will be **cyan**.
+- `<blockquote>` will be **gray** and **italicised**.
+
+## 🌈 Syntax Highlighting
+
+The `[syntax]` section defines syntax highlighting settings for code. Where possible the language type will be
+determined from the CSS classes present in the HTML.
+
+### Default Language
+
+This defines the language that is used if the language type cannot be determined from the CSS classes. This should be
+set to your primary development language.
+
+### Theme
+
+This sets the theme that should be used. Valid themes are:
+
+```
+InspiredGitHub
+Solarized (dark)
+Solarized (light)
+base16-eighties.dark
+base16-mocha.dark
+base16-ocean.dark
+base16-ocean.light
+```
+
+```toml
+[syntax]
+default_language = "rust"
+theme = "base16-ocean.dark"
+```
+
 ## 🗄️ Cache Settings
 
-Caching stores the raw HTML associated with a URL, allowing for faster retrieval of previously accessed results. This is particularly useful for scripts where you may need to select multiple elements from the same page by repeatedly calling the search function with different selectors. 
+Caching stores the raw HTML associated with a URL, allowing for faster retrieval of previously accessed results. This is particularly useful for scripts where you may need to select multiple elements from the same page by repeatedly calling the search function with different selectors.
 ### Configuration Options
 
 ### `cache_mode`
@@ -479,8 +493,6 @@ Caching stores the raw HTML associated with a URL, allowing for faster retrieval
 - **Type**: Integer
 - **Default**: `300` (5 minutes)
 
-## Example Configuration
-
 ```toml
 [cache]
 cache_mode = "readwrite"
@@ -490,35 +502,16 @@ ttl = 300
 
 Note that the `--flash-cache` flag overrides this config setting readwrite mode, infinite max size and a ttl of 5 seconds while it is applied.
 
+## 🛂 Headers
 
-## ❓ Miscellaneous Settings
-
-### Open tool
-
-This setting is unset by default, and controls the program that is used to open the page if you choose to open in browser. If unset this will be your default open tool. If you set this value it will execute the tool given to it. The tool must be available in your system to be able to run.
-
-### Example Configuration
+This section allows you to define the headers that will be added when you make the request.
 
 ```toml
-[misc]
-open_tool = "w3m"
+[headers]
+"Accept" = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
+"Accept-Language" = "en-US,en;q=0.9"
+"User-Agent" = "Lynx/2.8.8dev.3 libwww-FM/2.14 SSL-MM/1.4.1"
 ```
-
-## 📌 Summary
-
-| Configuration           | Purpose                                                             |
-|-------------------------|---------------------------------------------------------------------|
-| **Block Elements**      | Ensure new lines before and after specified tags.                   |
-| **Ignored Tags**        | Remove unnecessary elements like scripts, metadata, and navigation. |
-| **Selectors**           | Extract only specific content from websites.                        |
-| **Styles**              | Define how text should be formatted.                                |
-| **Syntax Highlighting** | Defines how the syntax highlighting should be handled.              |
-| **Display Settings**    | Controls visual aspects like borders and margins.                   |
-| **History Settings**    | Configures history display colors and search behavior.              |
-| **Search Settings**     | Determines whether to use DuckDuckGo, Google or Kagi.               |
-| **Cache Settings**      | Determines the settings to apply to the cache.                      |
-| **Misc**                | Miscellaneous settings.                                             |
----
 
 # 🌍 Environment Variables
 
@@ -554,8 +547,6 @@ done using the `--direct` option.
 If this option is provided, `is-fast` will immediately load and render the contents of the given URL inside the terminal
 interface.
 
-#### Example Usage:
-
 ```sh
 is-fast --direct "https://example.com"
 is-fast -d https://example.com
@@ -575,8 +566,6 @@ Additionally, you can associate the file with a reference URL using the `--url` 
 If this option is provided, `is-fast` will render the given HTML file inside its terminal viewer instead of fetching
 search results from the internet.
 
-#### Example Usage:
-
 ```sh
 is-fast --file example.html
 is-fast -f example.html
@@ -588,8 +577,6 @@ is-fast -f example.html
 
 This option is only valid when `--file` is used. It allows you to provide a URL that will be used for informing which
 selector should be used with this file.
-
-#### Example Usage:
 
 ```sh
 is-fast --file example.html --url example.com
@@ -628,7 +615,7 @@ Here is how you could get a list of all the titles this way.
 is-fast --history | mlr --icsv --ojson cat | jq '.[].title'
 ```
 
-#### Example Usage:
+#### Other Uses:
 
 ```sh
 # Output the contents of a local file to stdout
@@ -658,8 +645,6 @@ rather than an interactive TUI viewer.
 **Show previously viewed pages.**
 
 If this option is provided, `is-fast` will display a list of previously visited webpages, numbered with the most recent entries at the bottom. You can scroll up and down and select to open. The entries are stored locally in a SQLite database. If you don't wish for your sites to be tracked, then you can switch this feature off in the Configuration. The argument will still show your current history, but new searches will not add to your history. You can delete from your history by using the delete key in the history view, or by running the command `--clear-history`.
-
-#### Example Usage:
 
 ```sh
 is-fast --history
@@ -691,8 +676,6 @@ EOF
 
 When this flag is used with a search command will not log history for that request.
 
-#### Example Usage:
-
 ```sh
 is-fast --no-history "how to deal with an obnoxious boss"
 ```
@@ -711,8 +694,6 @@ Note, if the provided flag conflicts with the config, the flag will always take 
 
 This will cache the result even if caching is normally disabled.
 
-#### Example Usage:
-
 ```sh
 is-fast --cache "Java how to use entity manager"
 ```
@@ -721,8 +702,6 @@ is-fast --cache "Java how to use entity manager"
 
 This will not cache the result even if caching is normally enabled.
 
-#### Example Usage:
-
 ```sh
 is-fast --no-cache --direct "www.football.com/live/game" --selector "div.scores"
 ```
@@ -730,8 +709,6 @@ is-fast --no-cache --direct "www.football.com/live/game" --selector "div.scores"
 ### `--flash-cache`
 
 This uses a special mode where the cache size is maximum for the duration of the request, but the TTL is only 5 seconds. This is useful for scripting, where you want temporary caching without filling your cache.
-
-#### Example Usage:
 
 ```sh
 isf_find() {
@@ -762,8 +739,6 @@ isf_find() {
 Allows you to explicitly set the cache mode. Available options are `readwrite`, `read`, `write`, `never`, and `flash`.
 
 The write mode is useful if you have a bad cached value stored, as it will override the bad value with the newer one.
-
-#### Example Usage:
 
 ```sh
 is-fast --cache-mode write --direct "www.previously_bad_result.com"
@@ -875,8 +850,6 @@ To remove stored history or cached pages, use the following options:
 - `--clear-history` clears all stored history.
 - `--clear-cache` clears all cached pages.
 - `--clear-all` clears both cache and history.
-
-#### Example Usage:
 
 ```sh
 is-fast --clear-history

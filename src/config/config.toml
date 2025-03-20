@@ -1,3 +1,101 @@
+# NON SITE SPECIFIC
+# These configurations can't be configured differently for different sites.
+
+# General display options.
+[display]
+# The color of the border.
+border_color = "#89b4fa"
+# A percentage of the page width to be applied on either side.
+page_margin = 10
+# The amount page down/up scrolls - can be set to full, half, or a number of lines (as a string)
+page_scroll = "full"
+# When colors should be shown for the page results. Options are in the Tui only, Never or Always (including piped values)
+# This setting can be overriden by the --color flag.
+color_mode = "tui"
+
+# Setting for the history page
+[history]
+# Sets the color of the title on the history entries.
+title_color = "#89b4fa"
+# Sets the url color on the history entries.
+url_color = "#bac2de"
+# Sets the color for the time on the history entries.
+time_color = "#f2cdcd"
+# Sets the color of the search text.
+text_color = "#74c7ec"
+# Sets the type of search - valid options Fuzzy | Substring | Exact.
+# Defaults to fuzzy.
+search_type = "fuzzy"
+# Set this to `false` to stop tracking the sites you have visited.
+enabled = true
+
+[misc]
+# open_tool = "firefox" # Uses system open as default, only uncomment if you want to override this behaviour
+
+# Search settings.
+[search]
+# Available options:
+# - "duckduckgo" (default) - Uses DuckDuckGo for searches.
+# - "google" - Uses Google Custom Search (requires API setup).
+# - "kagi" - Uses Kagi Search (requires API setup)
+#
+# If using Google Search, you must configure the API:
+# 1. Enable the Google Custom Search API in the Google Cloud Console.
+# 2. Generate an API Key.
+# 3. Create a Custom Search Engine and obtain its Search Engine ID.
+# 4. Set the following environment variables:
+#    export IS_FAST_GOOGLE_API_KEY="your_api_key_here"
+#    export IS_FAST_GOOGLE_SEARCH_ENGINE_ID="your_search_engine_id_here"
+#
+# If using Kagi search you must configure the api: https://help.kagi.com/kagi/api/search.html
+# 1. Obtain access to the API (Currently in closed Beta)
+# 2. Generate an API key.
+# 3. Set the following environment variable:
+#   export IS_FAST_KAGI_API_KEY
+#
+# To add a custom search engine, fork the repository and follow the
+# instructions in src/search/search_type.rs.
+engine = "duckduckgo"
+# Uncommnt to restrict search results to only the given domain. Only compatable with duckduckgo search.
+# Can be overriden with the --site flag.
+# site = "domain.name.org"
+
+# This determines which part of the page will be selected. No good one for a site you use? Add your own, and make a pull
+# request @https://github.com/Magic-JD/is-fast.
+[selectors]
+"*wikipedia.org*" = "div.mw-content-ltr > *:not(table, figure, div.hatnote, div.floatright)"
+"*www.baeldung.com*" = ".post-content"
+"*www.w3schools.com*" = "#main"
+"*linuxhandbook.com*" = "article"
+"*docs.spring.io*" = "article"
+"*stackoverflow.com*" = ".js-post-body, div.owner a, a.owner, a.comments-link, .comment-body"
+"*github.com/*/blob/*" = ".react-code-line-contents"
+"*github.com/*/issues/*" = "main"
+"*github.com*" = ".markdown-body"
+"*apnews.com*" = ".RichTextStoryBody"
+"*geeksforgeeks.org*" = ".text"
+"*programiz.com*" = ".editor-contents"
+"*merriam-webster.com*" = "div.vg"
+"*developer.mozilla.org*" = "main.main-content"
+"*realpython.com*" = "div.article-body > *:not(div.sidebar-module)"
+"*docs.oracle.com*/tutorial/*" = "div#PageContent"
+"*www.simplilearn.com*" = "article"
+"*wiki.python.org*" = "div#content"
+"*www.coursera.org/tutorials*" = "div.rc-Body"
+"*pythonexamples.org*" = "div#entry-content"
+"*hackr.io/blog*" = "article"
+"*www.tutorialspoint.com*" = "div#mainContent"
+"*techbeamers.com*" = "div.entry-content > *:not(div.ruby-table-contents)"
+"*old.reddit.com/r/*/comments/*" = "a.title, a.author, div.entry > form, div.expando > form"
+
+[custom_config]
+"*finance.yahoo.com*" = ["alternate_headers.toml"]
+"*stackoverflow.com*" = ["alternate_headers.toml"]
+
+
+# SITE SPECIFIC - This section can be overriden in a custom config file.
+
+
 # Styles for each element
 # Example:
 # [styles.example]
@@ -86,33 +184,12 @@ bold = true
 [styles.dd]
 fg = "Gray"
 
-# This determines which part of the page will be selected. No good one for a site you use? Add your own, and make a pull
-# request @https://github.com/Magic-JD/is-fast.
-[selectors]
-"*wikipedia.org*" = "div.mw-content-ltr > *:not(table, figure, div.hatnote, div.floatright)"
-"*www.baeldung.com*" = ".post-content"
-"*www.w3schools.com*" = "#main"
-"*linuxhandbook.com*" = "article"
-"*docs.spring.io*" = "article"
-"*stackoverflow.com*" = ".js-post-body, div.owner a, a.owner, a.comments-link, .comment-body"
-"*github.com/*/blob/*" = ".react-code-line-contents"
-"*github.com/*/issues/*" = "main"
-"*github.com*" = ".markdown-body"
-"*apnews.com*" = ".RichTextStoryBody"
-"*geeksforgeeks.org*" = ".text"
-"*programiz.com*" = ".editor-contents"
-"*merriam-webster.com*" = "div.vg"
-"*developer.mozilla.org*" = "main.main-content"
-"*realpython.com*" = "div.article-body > *:not(div.sidebar-module)"
-"*docs.oracle.com*/tutorial/*" = "div#PageContent"
-"*www.simplilearn.com*" = "article"
-"*wiki.python.org*" = "div#content"
-"*www.coursera.org/tutorials*" = "div.rc-Body"
-"*pythonexamples.org*" = "div#entry-content"
-"*hackr.io/blog*" = "article"
-"*www.tutorialspoint.com*" = "div#mainContent"
-"*techbeamers.com*" = "div.entry-content > *:not(div.ruby-table-contents)"
-"*old.reddit.com/r/*/comments/*" = "a.title, a.author, div.entry > form, div.expando > form"
+
+[headers]
+"Accept" = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
+"Accept-Language" = "en-US,en;q=0.9"
+"User-Agent" = "Lynx/2.8.8dev.3 libwww-FM/2.14 SSL-MM/1.4.1"
+
 
 [format]
 # All elements from this list are ignored.
@@ -145,62 +222,6 @@ default_language = "rust"
 theme = "base16-ocean.dark"
 
 
-# General display options.
-[display]
-# The color of the border.
-border_color = "#89b4fa"
-# A percentage of the page width to be applied on either side.
-page_margin = 10
-# The amount page down/up scrolls - can be set to full, half, or a number of lines (as a string)
-page_scroll = "full"
-# When colors should be shown for the page results. Options are in the Tui only, Never or Always (including piped values)
-# This setting can be overriden by the --color flag.
-color_mode = "tui"
-
-# Setting for the history page
-[history]
-# Sets the color of the title on the history entries.
-title_color = "#89b4fa"
-# Sets the url color on the history entries.
-url_color = "#bac2de"
-# Sets the color for the time on the history entries.
-time_color = "#f2cdcd"
-# Sets the color of the search text.
-text_color = "#74c7ec"
-# Sets the type of search - valid options Fuzzy | Substring | Exact.
-# Defaults to fuzzy.
-search_type = "fuzzy"
-# Set this to `false` to stop tracking the sites you have visited.
-enabled = true
-
-# Search settings.
-[search]
-# Available options:
-# - "duckduckgo" (default) - Uses DuckDuckGo for searches.
-# - "google" - Uses Google Custom Search (requires API setup).
-# - "kagi" - Uses Kagi Search (requires API setup)
-#
-# If using Google Search, you must configure the API:
-# 1. Enable the Google Custom Search API in the Google Cloud Console.
-# 2. Generate an API Key.
-# 3. Create a Custom Search Engine and obtain its Search Engine ID.
-# 4. Set the following environment variables:
-#    export IS_FAST_GOOGLE_API_KEY="your_api_key_here"
-#    export IS_FAST_GOOGLE_SEARCH_ENGINE_ID="your_search_engine_id_here"
-#
-# If using Kagi search you must configure the api: https://help.kagi.com/kagi/api/search.html
-# 1. Obtain access to the API (Currently in closed Beta)
-# 2. Generate an API key.
-# 3. Set the following environment variable:
-#   export IS_FAST_KAGI_API_KEY
-#
-# To add a custom search engine, fork the repository and follow the
-# instructions in src/search/search_type.rs.
-engine = "duckduckgo"
-# Uncommnt to restrict search results to only the given domain. Only compatable with duckduckgo search.
-# Can be overriden with the --site flag.
-# site = "domain.name.org"
-
 # Caching stores the raw html that is called associated with the url. When enabled it provides results you have seen
 # before much faster. It is especially useful for scripts where you might want to select a number of different elements
 # from the same page by repeatedly calling is fast on that page with different selectors.
@@ -214,5 +235,3 @@ max_size = 100
 # persist. If you want to remove that data you should use the --clear-cache flag.
 ttl = 300
 
-[misc]
-# open_tool = "firefox" # Uses system open as default, only uncomment if you want to override this behaviour

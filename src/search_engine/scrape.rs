@@ -1,10 +1,12 @@
+use crate::config::site::SiteConfig;
 use crate::errors::error::IsError;
-use crate::errors::error::IsError::{General, Scrape};
+use crate::errors::error::IsError::Scrape;
 use crate::search_engine::cache::{cached_pages_purge, cached_pages_read, cached_pages_write};
+use crate::search_engine::link::HtmlSource;
 use encoding_rs::{Encoding, UTF_8};
 use encoding_rs_io::DecodeReaderBytesBuilder;
 use once_cell::sync::Lazy;
-use reqwest::blocking::{Client, Response};
+use reqwest::blocking::{Client, RequestBuilder, Response};
 use reqwest::tls::Version;
 use std::io::Read;
 use std::time::Duration;
@@ -14,43 +16,29 @@ pub static REQWEST_CLIENT: Lazy<Client> = Lazy::new(|| {
         .use_rustls_tls()
         .min_tls_version(Version::TLS_1_2)
         .timeout(Duration::from_secs(4))
+        .gzip(true)
         .build()
         .expect("Failed to build reqwest client")
 });
 
-pub fn scrape(url: &str) -> Result<String, IsError> {
-    let url = &format_url(url).ok_or(General(String::from("invalid url")))?;
-    if let Some(html) = cached_pages_read(url) {
+pub fn scrape(html_source: &HtmlSource) -> Result<String, IsError> {
+    if let Some(html) = cached_pages_read(html_source) {
         return Ok(html);
     }
-    reqwest_scrape(url)
+    reqwest_scrape(html_source)
         .inspect(|html| log::trace!("scraping page {html}"))
-        .inspect(|html| cached_pages_write(url, html))
+        .inspect(|html| cached_pages_write(html_source, html))
 }
 
-pub fn cache_purge(url: &str) {
+pub fn cache_purge(url: &HtmlSource) {
     cached_pages_purge(url);
 }
 
-pub fn format_url(url: &str) -> Option<String> {
-    if url.is_empty() {
-        return None;
-    }
-    if url.starts_with("http") {
-        return Some(url.to_string());
-    }
-    Some(format!("https://{url}"))
-}
-
-fn reqwest_scrape(url: &str) -> Result<String, IsError> {
-    REQWEST_CLIENT
-        .get(url)
-        .header("User-Agent", "Lynx/2.8.8dev.3 libwww-FM/2.14 SSL-MM/1.4.1")
-        .header(
-            "Accept",
-            "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-        )
-        .header("Accept-Language", "en-US,en;q=0.9")
+fn reqwest_scrape(html_source: &HtmlSource) -> Result<String, IsError> {
+    let url = html_source.get_url();
+    let builder = REQWEST_CLIENT.get(url);
+    let builder = add_url_based_headers(&html_source.get_config(), builder);
+    builder
         .send()
         .map_err(|_| {
             Scrape(format!(
@@ -64,6 +52,14 @@ fn reqwest_scrape(url: &str) -> Result<String, IsError> {
             Ok(res)
         })
         .and_then(|response| decode_text(url, response))
+}
+
+fn add_url_based_headers(url: &SiteConfig, builder: RequestBuilder) -> RequestBuilder {
+    let mut builder = builder;
+    for (key, value) in url.get_call().get_headers() {
+        builder = builder.header(key, value);
+    }
+    builder
 }
 
 fn error_for_fail_response_code(url: &str, response: &Response) -> IsError {

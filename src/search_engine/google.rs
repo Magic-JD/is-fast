@@ -1,5 +1,6 @@
 use crate::errors::error::IsError;
 use crate::errors::error::IsError::Search as SearchError;
+use crate::search_engine::link::HtmlSource::LinkSource;
 use crate::search_engine::link::Link;
 use crate::search_engine::scrape::scrape;
 use crate::search_engine::search_type::Search;
@@ -40,9 +41,9 @@ impl GoogleSearch {
         search_engine_id: &str,
         query: &str,
     ) -> Result<Vec<Link>, IsError> {
-        scrape(&format!(
+        scrape(&LinkSource(Link::new(&format!(
             "https://www.googleapis.com/customsearch/v1?key={api_key}&cx={search_engine_id}&q={query}",
-        ))
+        ))))
         .and_then(|json| from_str::<SearchResult>(&json).map_err(|e| SearchError(e.to_string())))
         .map(|search_result| Self::search_result_to_links(&search_result))
         .map_err(|e| SearchError(e.to_string()))
