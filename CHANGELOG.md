@@ -1,4 +1,7 @@
 # Changelog
+## [0.13.2]
+### Fixed
+- Longest and therefore most specific glob match will always be returned.
 
 ## [0.13.1]
 ### Added

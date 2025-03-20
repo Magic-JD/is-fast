@@ -93,7 +93,9 @@ impl ExtractionConfig {
                 self.matcher
                     .matches(url)
                     .iter()
-                    .find_map(|idx| self.globs.get(*idx))
+                    .filter_map(|&idx| self.globs.get(idx))
+                    // Ensure that we take the most complex match
+                    .max_by_key(|glob| glob.to_string().len())
                     .and_then(|glob| self.selectors.get(&glob.to_string()))
             })
             .map_or_else(|| "body", String::as_str)

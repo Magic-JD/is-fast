@@ -234,8 +234,10 @@ impl SitePicker {
         self.matcher
             .matches(url)
             .iter()
-            .find_map(|idx| self.globs.get(*idx))
-            .map_or("", Glob::glob)
+            .filter_map(|&idx| self.globs.get(idx))
+            // Take the longest possible match
+            .max_by_key(|glob| glob.glob().len())
+            .map_or("", |glob| glob.glob())
     }
 
     fn get_custom_config(filename: &String) -> SiteRawConfig {
