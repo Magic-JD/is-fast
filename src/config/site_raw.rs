@@ -1,15 +1,21 @@
 use crate::config::color_conversion::TagStyleConfig;
 use serde::Deserialize;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct FormatSection {
     #[serde(default)]
-    pub(crate) ignored_tags: Vec<String>,
+    pub(crate) ignored_tags: HashSet<String>,
     #[serde(default)]
-    pub(crate) block_elements: Vec<String>,
+    pub(crate) clear_existing_ignored_tags: bool,
     #[serde(default)]
-    pub(crate) indent_elements: Vec<String>,
+    pub(crate) block_elements: HashSet<String>,
+    #[serde(default)]
+    pub(crate) clear_existing_block_tags: bool,
+    #[serde(default)]
+    pub(crate) indent_elements: HashSet<String>,
+    #[serde(default)]
+    pub(crate) clear_existing_indent_tags: bool,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -79,21 +85,27 @@ fn override_format(
     u_config: Option<FormatSection>,
 ) -> FormatSection {
     let mut format = config.unwrap_or_else(|| FormatSection {
-        ignored_tags: Vec::new(),
-        block_elements: Vec::new(),
-        indent_elements: Vec::new(),
+        ignored_tags: HashSet::new(),
+        clear_existing_ignored_tags: false,
+        block_elements: HashSet::new(),
+        clear_existing_block_tags: false,
+        indent_elements: HashSet::new(),
+        clear_existing_indent_tags: false,
     });
 
     if let Some(u_format) = u_config {
-        if !u_format.ignored_tags.is_empty() {
-            format.ignored_tags = u_format.ignored_tags;
+        if u_format.clear_existing_ignored_tags {
+            format.ignored_tags.clear();
         }
-        if !u_format.block_elements.is_empty() {
-            format.block_elements = u_format.block_elements;
+        format.ignored_tags.extend(u_format.ignored_tags);
+        if u_format.clear_existing_block_tags {
+            format.block_elements.clear();
         }
-        if !u_format.indent_elements.is_empty() {
-            format.indent_elements = u_format.indent_elements;
+        format.block_elements.extend(u_format.block_elements);
+        if u_format.clear_existing_indent_tags {
+            format.indent_elements.clear();
         }
+        format.indent_elements.extend(u_format.indent_elements);
     }
     format
 }
@@ -146,9 +158,12 @@ mod tests {
         let mut default_config = SiteRawConfig {
             styles: HashMap::new(),
             format: Some(FormatSection {
-                ignored_tags: vec!["script".to_string()],
-                block_elements: vec!["div".to_string()],
-                indent_elements: vec!["li".to_string()],
+                ignored_tags: HashSet::from(["script".to_string()]),
+                clear_existing_ignored_tags: false,
+                block_elements: HashSet::from(["div".to_string()]),
+                clear_existing_block_tags: false,
+                indent_elements: HashSet::from(["li".to_string()]),
+                clear_existing_indent_tags: false,
             }),
             syntax: Some(SyntaxHighlightingSection {
                 theme: Some("dark".to_string()),
@@ -161,9 +176,12 @@ mod tests {
         let user_config = SiteRawConfig {
             styles: HashMap::new(),
             format: Some(FormatSection {
-                ignored_tags: vec!["style".to_string()],
-                block_elements: vec![],
-                indent_elements: vec!["li".to_string()],
+                ignored_tags: HashSet::from(["style".to_string()]),
+                clear_existing_ignored_tags: true,
+                block_elements: HashSet::from(["h1".to_string()]),
+                clear_existing_block_tags: false,
+                indent_elements: HashSet::from(["li".to_string()]),
+                clear_existing_indent_tags: false,
             }),
             syntax: Some(SyntaxHighlightingSection {
                 theme: Some("light".to_string()),
@@ -178,16 +196,16 @@ mod tests {
         // Format Tests
         assert_eq!(
             default_config.format.as_ref().unwrap().ignored_tags,
-            vec!["style"]
+            HashSet::from(["style".to_string()]) // Replaced due to clear existing being true.
         );
         assert_eq!(
             default_config.format.as_ref().unwrap().block_elements,
-            vec!["div"]
+            HashSet::from(["div".to_string(), "h1".to_string()]) // Appended due to clear existing being false.
         );
 
         assert_eq!(
             default_config.format.as_ref().unwrap().indent_elements,
-            vec!["li"]
+            HashSet::from(["li".to_string()])
         );
 
         // Syntax Highlighting Tests

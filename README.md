@@ -349,11 +349,14 @@ div#center.this   will newline any div with the id center OR the class this.
 div.this#center   is INVALID and will not work.
 .this#center      is INVALID and will not work.
 
+You can specify if you want your configuration to override the existing tags, or just append to them.
+
 ```toml
 block_elements = [
     "p", "div", "article", "section", "pre", "blockquote", "ul", "ol", "dl", "dt", "dd", "li",
     "h1", "h2", "h3", "h4", "h5", "h6"
 ]
+clear_existing_block_tags = true
 ```
 
 ### Effect on Output
@@ -384,10 +387,13 @@ Ignored tags are HTML elements that **will be completely removed** from the proc
 
 Ignored tags support the same limited CSS selector logic as block elements. See above for more information.
 
+You can specify if you want your new config to replace or append to the default list. By default this will append.
+
 ```toml
 ignored_tags = [
     "script", "style", "noscript", "head", "title", "meta", "input", "button", "svg", "nav", "footer", "header", "aside"
 ]
+clear_existing_ignored_tags = false
 ```
 
 ### Effect on Output
@@ -415,10 +421,13 @@ All lines within these elements will be indented by 2 spaces (Note: on wrap the 
 
 Intented tags support the same limited CSS selector logic as block elements. See above for more information.
 
+As above, you can specify if you want this to replace the default tags, or just append to the existing tags.
+
 ```toml
-ignored_tags = [
+indent_tags = [
     "li"
 ]
+# clear_existing_intent_tags = false -> Defaults to false if not included.
 ```
 
 ### Effect on Output

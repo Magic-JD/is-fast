@@ -1,4 +1,9 @@
 # Changelog
+
+## [0.13.3]
+### Added
+- You can now specify if you want to replace or extend the block, indent and ignored elements.
+
 ## [0.13.2]
 ### Fixed
 - Longest and therefore most specific glob match will always be returned.
