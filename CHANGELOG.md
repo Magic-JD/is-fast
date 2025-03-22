@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.14.1]
+### Fix
+- Added brotli decoding to handle some sites that use it.
+
 ## [0.14.0]
 ### Added
 - Styles also works with basic CSS syntax.

@@ -3,6 +3,7 @@ use crate::errors::error::IsError;
 use crate::errors::error::IsError::Scrape;
 use crate::search_engine::cache::{cached_pages_purge, cached_pages_read, cached_pages_write};
 use crate::search_engine::link::HtmlSource;
+use brotli::Decompressor;
 use encoding_rs::{Encoding, UTF_8};
 use encoding_rs_io::DecodeReaderBytesBuilder;
 use once_cell::sync::Lazy;
@@ -117,11 +118,29 @@ fn decode_text(url: &str, response: Response) -> Result<String, IsError> {
             }
         });
 
-    let bytes = response.bytes().map_err(|_| {
+    let is_brotli = response
+        .headers()
+        .get("Content-Encoding")
+        .and_then(|ct| ct.to_str().ok())
+        .filter(|s| *s == "br")
+        .is_some();
+
+    let mut bytes = response.bytes().map_err(|_| {
         Scrape(format!(
             "Request failed for {url}, could not extract content."
         ))
     })?;
+
+    if is_brotli {
+        let mut decompressed = Vec::new();
+        let mut brotli_decoder = Decompressor::new(&*bytes, 4096);
+        brotli_decoder.read_to_end(&mut decompressed).map_err(|_| {
+            Scrape(format!(
+                "Request failed for {url}, Brotli decompression failed."
+            ))
+        })?;
+        bytes = decompressed.into();
+    }
 
     let encoding = encoding_from_headers
         .or_else(|| Encoding::for_bom(&bytes).map(|(enc, _)| enc))
