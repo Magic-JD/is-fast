@@ -1,5 +1,5 @@
 use crate::cli::command::{CacheMode, ColorMode};
-use crate::config::color_conversion::parse_color;
+use crate::config::color_conversion::{parse_color, TagStyleConfig};
 use crate::config::files::config_path;
 use crate::config::glob_generation::generate_globs;
 use crate::config::site::{SiteConfig, SitePicker};
@@ -135,6 +135,7 @@ impl Config {
         ignored_additional: &[String],
         no_block: bool,
         nth_element: Vec<usize>,
+        styles: Vec<(String, TagStyleConfig)>,
     ) {
         let this = Self::new(
             args_color_mode,
@@ -145,12 +146,13 @@ impl Config {
             ignored_additional,
             no_block,
             nth_element,
+            styles,
         );
         CONFIG.try_insert(this).expect("Failed to insert config");
     }
 
     fn default() -> Config {
-        Self::new(None, None, false, vec![], None, &[], false, vec![])
+        Self::new(None, None, false, vec![], None, &[], false, vec![], vec![])
     }
 
     // This is where the key configuration is combined, and I would rather have these values being passed
@@ -166,6 +168,7 @@ impl Config {
         ignored_additional: &[String],
         no_block: bool,
         nth_element: Vec<usize>,
+        styles: Vec<(String, TagStyleConfig)>,
     ) -> Self {
         let mut tool: ToolRawConfig =
             toml::from_str(DEFAULT_CONFIG).unwrap_or(ToolRawConfig::default());
@@ -176,6 +179,7 @@ impl Config {
             ignored_additional,
             no_block,
             cache_mode,
+            &styles,
         );
         let extraction =
             Self::create_extraction_config(args_color_mode, selector_override, nth_element, &tool);

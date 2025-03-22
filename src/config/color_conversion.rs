@@ -1,8 +1,10 @@
+use crate::errors::error::IsError;
 use ratatui::prelude::{Color, Modifier, Style};
 use serde::Deserialize;
 use std::collections::HashMap;
+use std::str::FromStr;
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Default)]
 pub struct TagStyleConfig {
     fg: Option<String>,
     bg: Option<String>,
@@ -11,6 +13,47 @@ pub struct TagStyleConfig {
     underlined: Option<bool>,
     crossed_out: Option<bool>,
     dim: Option<bool>,
+}
+
+impl FromStr for TagStyleConfig {
+    type Err = IsError;
+
+    fn from_str(string: &str) -> Result<Self, Self::Err> {
+        let mut config = TagStyleConfig::default();
+
+        string.split(';').for_each(|kv| {
+            let kv = kv.trim();
+            let mut split = kv.split('=');
+            if let Some(key) = split.next() {
+                let value = split.next().map(|s| s.trim().to_string());
+                match key.trim().to_lowercase().as_str() {
+                    "fg" => config.fg = value,
+                    "bg" => config.bg = value,
+                    "bold" => config.bold = Self::parse_bool(value),
+                    "italic" => config.italic = Self::parse_bool(value),
+                    "underlined" => config.underlined = Self::parse_bool(value),
+                    "crossed_out" => config.crossed_out = Self::parse_bool(value),
+                    "dim" => config.dim = Self::parse_bool(value),
+                    _ => {
+                        if !key.trim().is_empty() {
+                            log::error!("Unrecognized tag style key: {}", key);
+                        }
+                    }
+                }
+            }
+        });
+        Ok(config)
+    }
+}
+
+impl TagStyleConfig {
+    fn parse_bool(value: Option<String>) -> Option<bool> {
+        match value.as_deref() {
+            None => Some(true),
+            Some("true") => Some(true),
+            Some(_) => Some(false),
+        }
+    }
 }
 
 pub fn convert_styles(styles: &HashMap<String, TagStyleConfig>) -> HashMap<String, Style> {
@@ -151,5 +194,54 @@ mod tests {
         assert!(!error_style.add_modifier.contains(Modifier::ITALIC));
         assert!(error_style.add_modifier.contains(Modifier::UNDERLINED));
         assert!(!error_style.add_modifier.contains(Modifier::DIM));
+    }
+
+    #[test]
+    fn test_valid_single_property() {
+        let config = TagStyleConfig::from_str("fg=red").unwrap();
+        assert_eq!(config.fg, Some("red".to_string()));
+        assert_eq!(config.bg, None);
+    }
+
+    #[test]
+    fn test_multiple_properties() {
+        let config = TagStyleConfig::from_str("fg=blue; bg=black; bold=true").unwrap();
+        assert_eq!(config.fg, Some("blue".to_string()));
+        assert_eq!(config.bg, Some("black".to_string()));
+        assert_eq!(config.bold, Some(true));
+    }
+
+    #[test]
+    fn test_trailing_semicolon() {
+        let config = TagStyleConfig::from_str("fg=green;").unwrap();
+        assert_eq!(config.fg, Some("green".to_string()));
+    }
+
+    #[test]
+    fn test_spaces_around_equals() {
+        let config = TagStyleConfig::from_str(" fg = yellow ; bg = white ").unwrap();
+        assert_eq!(config.fg, Some("yellow".to_string()));
+        assert_eq!(config.bg, Some("white".to_string()));
+    }
+
+    #[test]
+    fn test_invalid_property_ignored() {
+        let config = TagStyleConfig::from_str("unknown=somevalue; fg=purple").unwrap();
+        assert_eq!(config.fg, Some("purple".to_string()));
+    }
+
+    #[test]
+    fn test_missing_value() {
+        let config = TagStyleConfig::from_str("fg=; bg=white").unwrap();
+        assert_eq!(config.fg, Some("".to_string())); // Empty value still valid
+        assert_eq!(config.bg, Some("white".to_string()));
+    }
+
+    #[test]
+    fn test_boolean_parsing() {
+        let config = TagStyleConfig::from_str("bold=true; italic=false; underlined").unwrap();
+        assert_eq!(config.bold, Some(true));
+        assert_eq!(config.italic, Some(false));
+        assert_eq!(config.underlined, Some(true)); // Missing value should default to true
     }
 }

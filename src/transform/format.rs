@@ -58,15 +58,15 @@ impl Formatter {
                 .highlight_code(&code_text, &language_type);
         }
 
-        let style = self.config.style_for_tag(tag_name);
+        let style = self.config.style_for_tag(&element);
 
         let mut lines = Vec::new();
 
         if tag_name == "img" {
             // Show there is an image without rendering the image.
-            lines.push(create_optionally_styled_line("IMAGE", style));
+            lines.push(create_optionally_styled_line("IMAGE", style.as_ref()));
         } else {
-            lines = self.extract_lines(element, pre_formatted || tag_name == "pre", style);
+            lines = self.extract_lines(element, pre_formatted || tag_name == "pre", style.as_ref());
         }
 
         if lines.is_empty() {
@@ -74,14 +74,14 @@ impl Formatter {
         }
 
         if tag_name == "li" {
-            lines = handle_list_item(&element, style, lines);
+            lines = handle_list_item(&element, style.as_ref(), lines);
         }
 
         if self.config.is_block_element(&element) {
             if let Some(styled) = style {
                 lines = lines
                     .into_iter()
-                    .map(|line| line.set_style(*styled))
+                    .map(|line| line.set_style(styled))
                     .collect();
             }
             lines.insert(0, Line::default());

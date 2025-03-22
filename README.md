@@ -104,6 +104,7 @@ cargo install --git https://github.com/Magic-JD/is-fast.git
   - [`--color`](#--color)
   - [`--last`](#--last)
   - [`--ignore`](#--ignore)
+  - [`--style-element`](#--style-element)
   - [`--no-block`](#--no-block)
   - [`--pretty-print`](#--pretty-print)
 - [🧹 Clearing Data](#-clearing-data) 
@@ -419,7 +420,7 @@ Hello, world!
 
 All lines within these elements will be indented by 2 spaces (Note: on wrap the wrapped line will not be indented). Nested elements will be indented further.
 
-Intented tags support the same limited CSS selector logic as block elements. See above for more information.
+Indented tags support the same limited CSS selector logic as block elements. See above for more information.
 
 As above, you can specify if you want this to replace the default tags, or just append to the existing tags.
 
@@ -465,7 +466,7 @@ Here is a list:
 
 ### Definition
 
-This section defines **how different HTML tags should be styled** in the output. Colors can be specified using standard color names (e.g., red, blue), hex values (e.g., #ff5733), or RGB notation (e.g., rgb(255, 87, 51)). Note css style selectors cannot be applied here.
+This section defines **how different HTML tags should be styled** in the output. Colors can be specified using standard color names (e.g., red, blue), hex values (e.g., #ff5733), or RGB notation (e.g., rgb(255, 87, 51)). Css selectors will be applied as above. Styles will be combined when they match multiple cases.
 
 ```toml
 [styles.h1]
@@ -484,6 +485,17 @@ This means:
 - `<h1>` will be **bold**.
 - `<a>` (links) will be **cyan**.
 - `<blockquote>` will be **gray** and **italicised**.
+
+### Style Precedence and Merging
+
+Styles are cumulative and follow a priority order. The precedence for matching styles is:
+
+- Basic (default) style – applies when no specific match exists.
+- Tag selector – applies to all elements of a given type (e.g., div).
+- Untagged class selector – applies to all elements with the class (e.g., .that).
+- Tagged class selector – applies to a specific tag with the class (e.g., div.that).
+- Untagged ID selector – applies to the element with a specific ID (e.g., #this).
+- Tagged ID selector – applies to a specific tag with a specific ID (e.g., div#this).
 
 ## 🌈 Syntax Highlighting
 
@@ -832,6 +844,29 @@ This allows the user to specify additional elements to ignore. These follow the 
 ```sh
 is-fast --last --ignore="div.sidebar,div#ignore" --ignore=".bad-vibes"
 ```
+
+### `--style-element`
+
+This flag allows users to apply inline styles to specific elements in the output.
+
+**Format:**  
+```
+--style-element="tag#id.class.otherclass:fg=red;bg=green;bold"
+```
+- The selector (`tag#id.class.otherclass`) determines which elements the style applies to.
+- The style rules (`fg=red;bg=green;bold`) define the appearance of the element.
+- Boolean attributes (like `bold`) default to `true` if no value is provided (`bold=true` is a valid alternative).
+
+**Usage Examples:**  
+```sh
+is-fast --style-element="h1.title:fg=blue;bold" --style-element="p:fg=gray"
+```
+This will:
+- Style `<h1 class="title">` elements with blue foreground and bold text.
+- Style `<p>` elements with a gray foreground.
+
+You can specify multiple `--style-element` flags to apply different styles to different elements. This provides fine-grained control over text appearance in the output.
+
 
 ### `--no-block`
 
