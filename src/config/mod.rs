@@ -1,4 +1,4 @@
-mod color_conversion;
+pub mod color_conversion;
 pub mod files;
 pub mod format;
 mod glob_generation;

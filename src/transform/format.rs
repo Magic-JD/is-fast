@@ -1,7 +1,7 @@
+use crate::config::color_conversion::Style;
 use crate::config::format::FormatConfig;
+use crate::page::structure::{Line, Span};
 use crate::transform::syntax_highlight::SyntaxHighlighter;
-use ratatui::style::{Style, Styled};
-use ratatui::text::{Line, Span};
 use scraper::{Element, ElementRef, Node};
 
 pub struct Formatter {
@@ -17,7 +17,7 @@ impl Formatter {
         }
     }
 
-    pub fn to_display(&self, element: ElementRef) -> Vec<Line<'static>> {
+    pub fn to_display(&self, element: ElementRef) -> Vec<Line> {
         log::trace!("Converting element to display lines: {:?}", element);
         let mut lines = self
             .to_lines(element, element.value().name() == "pre")
@@ -28,7 +28,7 @@ impl Formatter {
         lines
     }
 
-    fn to_lines(&self, element: ElementRef, pre_formatted: bool) -> Vec<Line<'static>> {
+    fn to_lines(&self, element: ElementRef, pre_formatted: bool) -> Vec<Line> {
         if is_hidden(&element) {
             return vec![];
         }
@@ -45,7 +45,7 @@ impl Formatter {
                 // and the second will be the start of the next line.
                 // Must be treated differently to block elements as it requires no empty line.
                 Line::default(),
-                Line::from(Span::from("")),
+                Line::default(),
             ];
         }
 
@@ -58,15 +58,15 @@ impl Formatter {
                 .highlight_code(&code_text, &language_type);
         }
 
-        let style = self.config.style_for_tag(tag_name);
+        let style = self.config.style_for_tag(&element);
 
         let mut lines = Vec::new();
 
         if tag_name == "img" {
             // Show there is an image without rendering the image.
-            lines.push(create_optionally_styled_line("IMAGE", style));
+            lines.push(create_optionally_styled_line("IMAGE", style.as_ref()));
         } else {
-            lines = self.extract_lines(element, pre_formatted || tag_name == "pre", style);
+            lines = self.extract_lines(element, pre_formatted || tag_name == "pre", style.as_ref());
         }
 
         if lines.is_empty() {
@@ -74,14 +74,14 @@ impl Formatter {
         }
 
         if tag_name == "li" {
-            lines = handle_list_item(&element, style, lines);
+            lines = handle_list_item(&element, style.as_ref(), lines);
         }
 
         if self.config.is_block_element(&element) {
             if let Some(styled) = style {
                 lines = lines
                     .into_iter()
-                    .map(|line| line.set_style(*styled))
+                    .map(|line| line.set_style(styled))
                     .collect();
             }
             lines.insert(0, Line::default());
@@ -92,7 +92,7 @@ impl Formatter {
             let indent_block = "  ";
             for line in &mut lines {
                 if let Some(span) = line.spans.first_mut() {
-                    span.content = format!("{indent_block}{}", span.content).into();
+                    span.content = format!("{indent_block}{}", span.content);
                 }
             }
         }
@@ -104,7 +104,7 @@ impl Formatter {
         element: ElementRef,
         pre_formatted: bool,
         style: Option<&Style>,
-    ) -> Vec<Line<'static>> {
+    ) -> Vec<Line> {
         let mut lines = Vec::new();
         element.children().for_each(|node| match node.value() {
             Node::Text(text) => {
@@ -185,22 +185,22 @@ fn is_hidden(element: &ElementRef) -> bool {
 }
 
 fn standardize_empty(line: Line) -> Line {
-    if line.spans.is_empty() || line.spans.iter().all(|span| span.content.trim().is_empty()) {
+    if line.content().trim().is_empty() {
         Line::default()
     } else {
         line
     }
 }
 
-fn create_optionally_styled_line(content: &str, style: Option<&Style>) -> Line<'static> {
+fn create_optionally_styled_line(content: &str, style: Option<&Style>) -> Line {
     if let Some(style) = style {
-        Line::from(Span::styled(content.to_string(), *style))
+        Line::from_single(Span::styled(content, *style))
     } else {
-        Line::from(Span::from(content.to_string()))
+        Line::from_single(Span::from(content))
     }
 }
 
-fn merge_with_previous_line(lines: &mut Vec<Line<'static>>, mut new_lines: Vec<Line<'static>>) {
+fn merge_with_previous_line(lines: &mut Vec<Line>, mut new_lines: Vec<Line>) {
     if let (Some(prev_end), Some(new_start)) = (lines.last_mut(), new_lines.first_mut()) {
         if let (Some(end), Some(start)) = (prev_end.spans.last(), new_start.spans.first()) {
             // Text from two different elements should almost always have a space - only exception for punctuation.
@@ -226,15 +226,16 @@ fn merge_with_previous_line(lines: &mut Vec<Line<'static>>, mut new_lines: Vec<L
 fn handle_list_item(
     element: &ElementRef,
     style: Option<&Style>,
-    mut lines: Vec<Line<'static>>,
-) -> Vec<Line<'static>> {
+    mut lines: Vec<Line>,
+) -> Vec<Line> {
     let marker = determine_marker(element);
     lines.retain(|line| !line.spans.is_empty());
     if let Some(line) = lines.first_mut() {
-        line.spans.insert(
-            0,
-            Span::styled(marker, style.copied().unwrap_or_else(Style::default)),
-        );
+        if let Some(style) = style {
+            line.spans.insert(0, Span::styled(&marker, *style));
+        } else {
+            line.spans.insert(0, Span::from(&marker));
+        }
     }
     lines
 }
@@ -269,11 +270,22 @@ fn find_child_index(parent: ElementRef, child: &ElementRef) -> Option<usize> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::color_conversion::Color;
     use crate::config::site::SyntaxConfig;
-    use ratatui::style::{Color, Modifier};
-    use ratatui::text::Text;
     use scraper::{Html, Selector};
     use std::collections::{HashMap, HashSet};
+
+    fn bold() -> Style {
+        let mut bold_style = Style::default();
+        bold_style.bold = Some(true);
+        bold_style
+    }
+
+    fn italic() -> Style {
+        let mut italic_style = Style::default();
+        italic_style.italic = Some(true);
+        italic_style
+    }
 
     fn basic_format_config() -> FormatConfig {
         let ignored_tages = HashSet::from(["head"])
@@ -289,12 +301,10 @@ mod tests {
             .map(|s| s.to_string())
             .collect::<HashSet<_>>();
         let mut style_elements = HashMap::new();
-        let bold_style = Style::new().add_modifier(Modifier::BOLD);
-        let italic_style = Style::new().add_modifier(Modifier::ITALIC);
-        style_elements.insert("strong".to_string(), bold_style);
-        style_elements.insert("i".to_string(), italic_style);
-        style_elements.insert("h1".to_string(), bold_style);
-        style_elements.insert("b".to_string(), bold_style);
+        style_elements.insert("strong".to_string(), bold());
+        style_elements.insert("i".to_string(), italic());
+        style_elements.insert("h1".to_string(), bold());
+        style_elements.insert("b".to_string(), bold());
         FormatConfig::new(
             ignored_tages,
             block_elements,
@@ -321,28 +331,22 @@ mod tests {
 
         let formatter = Formatter::new(basic_format_config(), basic_syntax_highlighter());
         let binding = Html::parse_document(html);
-        let result = Text::from(
-            binding
-                .select(&Selector::parse("body").unwrap())
-                .flat_map(|element| formatter.to_display(element))
-                .collect::<Vec<Line>>(),
-        );
+        let result = binding
+            .select(&Selector::parse("body").unwrap())
+            .flat_map(|element| formatter.to_display(element))
+            .collect::<Vec<Line>>();
 
-        let expected = Text::from(vec![
+        let expected = vec![
             Line::default(),
-            Line::from(Span::styled(
-                "Hello, World!",
-                Style::default().add_modifier(Modifier::BOLD),
-            ))
-            .set_style(Style::default().add_modifier(Modifier::BOLD)),
+            Line::from_single(Span::styled("Hello, World!", bold())).set_style(bold()),
             Line::default(),
-            Line::from_iter([
+            Line::from(vec![
                 Span::from("This is a "),
-                Span::styled("test", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled("test", bold()),
                 Span::from("."),
             ]),
             Line::default(),
-        ]);
+        ];
 
         assert_eq!(result, expected);
     }
@@ -365,44 +369,42 @@ mod tests {
             }),
         );
         let binding = Html::parse_document(html);
-        let result = Text::from(
-            binding
-                .select(&Selector::parse("body").unwrap())
-                .flat_map(|element| formatter.to_display(element))
-                .collect::<Vec<Line>>(),
-        );
+        let result = binding
+            .select(&Selector::parse("body").unwrap())
+            .flat_map(|element| formatter.to_display(element))
+            .collect::<Vec<Line>>();
 
         // Since `highlight_code` transforms the code, we check if the output contains expected text
         assert!(result
-            .to_string()
+            .iter()
+            .map(Line::content)
+            .collect::<Vec<String>>()
+            .join("")
             .contains("fn main() { println!(\"Hello, Rust!\"); }"));
 
-        let expected = Text::from(vec![
+        let expected = vec![
             Line::default(),
-            Line::from_iter([
-                Span::styled("fn", Style::default().fg(Color::Rgb(180, 142, 173))),
-                Span::styled(" ", Style::default().fg(Color::Rgb(192, 197, 206))),
-                Span::styled("main", Style::default().fg(Color::Rgb(143, 161, 179))),
-                Span::styled("(", Style::default().fg(Color::Rgb(192, 197, 206))),
-                Span::styled(")", Style::default().fg(Color::Rgb(192, 197, 206))),
-                Span::styled(" ", Style::default().fg(Color::Rgb(192, 197, 206))),
-                Span::styled("{", Style::default().fg(Color::Rgb(192, 197, 206))),
-                Span::styled(" ", Style::default().fg(Color::Rgb(192, 197, 206))),
-                Span::styled("println!", Style::default().fg(Color::Rgb(192, 197, 206))),
-                Span::styled("(", Style::default().fg(Color::Rgb(192, 197, 206))),
-                Span::styled("\"", Style::default().fg(Color::Rgb(192, 197, 206))),
-                Span::styled(
-                    "Hello, Rust!",
-                    Style::default().fg(Color::Rgb(163, 190, 140)),
-                ),
-                Span::styled("\"", Style::default().fg(Color::Rgb(192, 197, 206))),
-                Span::styled(")", Style::default().fg(Color::Rgb(192, 197, 206))),
-                Span::styled(";", Style::default().fg(Color::Rgb(192, 197, 206))),
-                Span::styled(" ", Style::default().fg(Color::Rgb(192, 197, 206))),
-                Span::styled("}", Style::default().fg(Color::Rgb(192, 197, 206))),
+            Line::from(vec![
+                Span::styled("fn", Style::fg(Color::rgb(180, 142, 173))),
+                Span::styled(" ", Style::fg(Color::rgb(192, 197, 206))),
+                Span::styled("main", Style::fg(Color::rgb(143, 161, 179))),
+                Span::styled("(", Style::fg(Color::rgb(192, 197, 206))),
+                Span::styled(")", Style::fg(Color::rgb(192, 197, 206))),
+                Span::styled(" ", Style::fg(Color::rgb(192, 197, 206))),
+                Span::styled("{", Style::fg(Color::rgb(192, 197, 206))),
+                Span::styled(" ", Style::fg(Color::rgb(192, 197, 206))),
+                Span::styled("println!", Style::fg(Color::rgb(192, 197, 206))),
+                Span::styled("(", Style::fg(Color::rgb(192, 197, 206))),
+                Span::styled("\"", Style::fg(Color::rgb(192, 197, 206))),
+                Span::styled("Hello, Rust!", Style::fg(Color::rgb(163, 190, 140))),
+                Span::styled("\"", Style::fg(Color::rgb(192, 197, 206))),
+                Span::styled(")", Style::fg(Color::rgb(192, 197, 206))),
+                Span::styled(";", Style::fg(Color::rgb(192, 197, 206))),
+                Span::styled(" ", Style::fg(Color::rgb(192, 197, 206))),
+                Span::styled("}", Style::fg(Color::rgb(192, 197, 206))),
             ]),
             Line::default(),
-        ]);
+        ];
 
         assert_eq!(result, expected);
     }
@@ -458,9 +460,9 @@ mod tests {
                 Span::from("Second paragraph."),
             ]),
             Line::default(),
-            Line::from(Span::from("Should have extra spacing")),
+            Line::from_single(Span::from("Should have extra spacing")),
             Line::default(),
-            Line::from("Third paragraph."),
+            Line::from_single(Span::from("Third paragraph.")),
         ];
 
         assert_eq!(list, expected_output);
@@ -504,7 +506,7 @@ mod tests {
                 Span::from("Second paragraph."),
             ]),
             Line::default(),
-            Line::from(Span::from("Should have extra spacing")),
+            Line::from_single(Span::from("Should have extra spacing")),
             Line::default(),
         ];
 
@@ -549,9 +551,9 @@ mod tests {
                 Span::from("Second paragraph."),
             ]),
             Line::default(),
-            Line::from(Span::from("This should have extra spacing")),
+            Line::from_single(Span::from("This should have extra spacing")),
             Line::default(),
-            Line::from("Third paragraph."),
+            Line::from_single(Span::from("Third paragraph.")),
         ];
 
         assert_eq!(list, expected_output);
@@ -569,28 +571,26 @@ This is line one.
 
         let formatter = Formatter::new(basic_format_config(), basic_syntax_highlighter());
         let binding = Html::parse_document(html);
-        let result = Text::from(
-            binding
-                .select(&Selector::parse("body").unwrap())
-                .flat_map(|element| formatter.to_display(element))
-                .collect::<Vec<Line>>(),
-        );
+        let result = binding
+            .select(&Selector::parse("body").unwrap())
+            .flat_map(|element| formatter.to_display(element))
+            .collect::<Vec<Line>>();
 
-        let expected = Text::from(vec![
+        let expected = vec![
             Line::default(),
-            Line::from("This is line one."),
-            Line::from_iter([
+            Line::from_single(Span::from("This is line one.")),
+            Line::from(vec![
                 Span::from("    This is line two with a "),
-                Span::styled("bold", Style::default().add_modifier(Modifier::BOLD)),
+                Span::styled("bold", bold()),
                 Span::from(" word."),
             ]),
-            Line::from_iter([
+            Line::from(vec![
                 Span::from("        This is line three with an "),
-                Span::styled("italic", Style::default().add_modifier(Modifier::ITALIC)),
+                Span::styled("italic", italic()),
                 Span::from(" word."),
             ]),
             Line::default(),
-        ]);
+        ];
 
         assert_eq!(result, expected);
     }
@@ -622,14 +622,12 @@ This is line one.
             basic_syntax_highlighter(),
         );
         let binding = Html::parse_document(html);
-        let result = Text::from(
-            binding
-                .select(&Selector::parse("body").unwrap())
-                .flat_map(|element| formatter.to_display(element))
-                .collect::<Vec<Line>>(),
-        );
+        let result = binding
+            .select(&Selector::parse("body").unwrap())
+            .flat_map(|element| formatter.to_display(element))
+            .collect::<Vec<Line>>();
 
-        let expected = Text::from(vec![
+        let expected = vec![
             Line::default(),
             Line::from(vec![Span::from("1. "), Span::from("First item")]),
             Line::default(),
@@ -639,7 +637,7 @@ This is line one.
             Line::default(),
             Line::from(vec![Span::from("6. "), Span::from("Sixth item")]),
             Line::default(),
-        ]);
+        ];
 
         assert_eq!(result, expected);
     }
@@ -668,14 +666,12 @@ This is line one.
             basic_syntax_highlighter(),
         );
         let binding = Html::parse_document(html);
-        let result = Text::from(
-            binding
-                .select(&Selector::parse("body").unwrap())
-                .flat_map(|element| formatter.to_display(element))
-                .collect::<Vec<Line>>(),
-        );
+        let result = binding
+            .select(&Selector::parse("body").unwrap())
+            .flat_map(|element| formatter.to_display(element))
+            .collect::<Vec<Line>>();
 
-        let expected = Text::from(vec![
+        let expected = vec![
             Line::default(),
             Line::from(vec![Span::from("  • "), Span::from("Apple")]),
             Line::default(),
@@ -683,7 +679,7 @@ This is line one.
             Line::default(),
             Line::from(vec![Span::from("  • "), Span::from("Cherry")]),
             Line::default(),
-        ]);
+        ];
 
         assert_eq!(result, expected);
     }
@@ -716,14 +712,12 @@ This is line one.
             basic_syntax_highlighter(),
         );
         let binding = Html::parse_document(html);
-        let result = Text::from(
-            binding
-                .select(&Selector::parse("body").unwrap())
-                .flat_map(|element| formatter.to_display(element))
-                .collect::<Vec<Line>>(),
-        );
+        let result = binding
+            .select(&Selector::parse("body").unwrap())
+            .flat_map(|element| formatter.to_display(element))
+            .collect::<Vec<Line>>();
 
-        let expected = Text::from(vec![
+        let expected = vec![
             Line::default(),
             Line::from(vec![
                 Span::from("  3. "),
@@ -743,7 +737,7 @@ This is line one.
                 Span::from("The body of the loop is executed."),
             ]),
             Line::default(),
-        ]);
+        ];
 
         assert_eq!(result, expected);
     }

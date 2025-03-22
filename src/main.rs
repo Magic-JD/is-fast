@@ -9,6 +9,7 @@ mod cli;
 mod config;
 mod database;
 mod errors;
+mod page;
 mod pipe;
 mod search_engine;
 mod transform;
@@ -23,13 +24,16 @@ use crate::cli::command::Cli;
 use crate::cli::parser::{
     determine_cache_mode, determine_ignored, determine_nth_element, parse_pretty_print,
 };
+use crate::config::color_conversion::Style;
 use crate::config::load::Config;
 use crate::database::history_database;
+use crate::errors::error::IsError;
 use crate::search_engine::cache;
 use actions::generate_config;
 use clap::Parser;
 use config::log::init_logger;
 use crossterm::tty::IsTty;
+use std::str::FromStr;
 
 #[derive(Clone, Debug, PartialEq)]
 enum DisplayConfig {
@@ -45,6 +49,7 @@ fn main() {
     let cache_command = determine_cache_mode(&args.cache);
     let ignored = determine_ignored(args.selection.ignore);
     let nth_element = determine_nth_element(args.selection.nth_element);
+    let styles = determine_styles(args.output.style_element);
     Config::init(
         args.output.color.clone(),
         cache_command.as_ref(),
@@ -54,6 +59,7 @@ fn main() {
         &ignored,
         args.selection.no_block,
         nth_element,
+        &styles,
     );
     // Generate config doesn't need a display, process and return.
     if args.task.generate_config {
@@ -81,6 +87,27 @@ fn main() {
         app.show_pages(&page_result);
     }
     app.shutdown();
+}
+
+fn determine_styles(styles: Vec<String>) -> Vec<(String, Style)> {
+    styles
+        .into_iter()
+        .filter_map(|style| {
+            let mut split = style.split(':');
+            if let Some(key) = split.next() {
+                if let Ok(tag_content) = split
+                    .next()
+                    .ok_or(IsError::TagStyleError(format!(
+                        "No configuration for {key}",
+                    )))
+                    .and_then(Style::from_str)
+                {
+                    return Some((key.to_string(), tag_content));
+                }
+            }
+            None
+        })
+        .collect()
 }
 
 fn process_clear_command(clear_cache: bool, clear_history: bool, clear_all: bool) -> bool {

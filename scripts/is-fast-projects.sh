@@ -12,6 +12,9 @@ isf_stock() {
         --selector "section.container > h1, span.base" \
         --piped \
         --no-cache \
+        --color=always \
+        --style-element="span.txt-negative:fg=red" \
+        --style-element="span.txt-positive:fg=green" \
         --pretty-print="margin:5"
 }
 

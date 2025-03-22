@@ -1,6 +1,7 @@
+use crate::config::color_conversion::{Color, Style};
 use crate::config::site::SyntaxConfig;
+use crate::page::structure::{Line, Span};
 use once_cell::sync::Lazy;
-use ratatui::prelude::{Color, Line, Span, Style};
 use syntect::easy::HighlightLines;
 use syntect::highlighting::{Style as SyntectStyle, Theme, ThemeSet};
 use syntect::parsing::{SyntaxReference, SyntaxSet};
@@ -19,7 +20,7 @@ impl SyntaxHighlighter {
         Self { config }
     }
 
-    pub fn highlight_code(&self, text: &str, language: &str) -> Vec<Line<'static>> {
+    pub fn highlight_code(&self, text: &str, language: &str) -> Vec<Line> {
         let syntax = SYNTAX_SET
             .find_syntax_by_token(language) // Attempt to use language from css
             .unwrap_or_else(|| self.get_default_syntax());
@@ -34,16 +35,14 @@ impl SyntaxHighlighter {
         syntax_set: &SyntaxSet,
         highlighter: &mut HighlightLines,
         line: &str,
-    ) -> Line<'static> {
+    ) -> Line {
         let highlighted_string = highlighter
             .highlight_line(line, syntax_set)
             .expect("Line could not be highlighted."); // Should not happen -> if it does it's important to fix
         let styled_spans = highlighted_string
             .iter()
-            .map(|(style, content)| {
-                Span::styled((*content).to_string(), Self::convert_syntect_style(*style))
-            })
-            .filter(|s| s.content != "\n")
+            .map(|(style, content)| Span::styled(content, Self::convert_syntect_style(*style)))
+            .filter(|s| !s.content.is_empty())
             .collect::<Vec<Span>>();
         Line::from(styled_spans)
     }
@@ -63,11 +62,7 @@ impl SyntaxHighlighter {
     }
 
     fn convert_syntect_style(syntect_style: SyntectStyle) -> Style {
-        Style::default().fg(Color::Rgb(
-            syntect_style.foreground.r,
-            syntect_style.foreground.g,
-            syntect_style.foreground.b,
-        ))
+        Style::fg(Color::from_syntect_color(syntect_style.foreground))
     }
 }
 
@@ -89,7 +84,7 @@ mod tests {
             !result.first().unwrap().spans.is_empty(),
             "Highlighted line should not be empty"
         );
-        assert_eq!(result.first().unwrap().to_string(), "fn main() {}");
+        assert_eq!(result.first().unwrap().content(), "fn main() {}");
     }
 
     #[test]
@@ -101,31 +96,28 @@ mod tests {
         let syntax_highlighter = SyntaxHighlighter::new(SYNTAX_CONFIG.clone());
         let highlighted = syntax_highlighter.highlight_code(&code, "rust");
         let expected = vec![
-            Line::from_iter([
-                Span::styled("fn", Style::default().fg(Color::Rgb(180, 142, 173))),
-                Span::styled(" ", Style::default().fg(Color::Rgb(192, 197, 206))),
-                Span::styled("main", Style::default().fg(Color::Rgb(143, 161, 179))),
-                Span::styled("(", Style::default().fg(Color::Rgb(192, 197, 206))),
-                Span::styled(")", Style::default().fg(Color::Rgb(192, 197, 206))),
-                Span::styled(" ", Style::default().fg(Color::Rgb(192, 197, 206))),
-                Span::styled("{", Style::default().fg(Color::Rgb(192, 197, 206))),
+            Line::from(vec![
+                Span::styled("fn", Style::fg(Color::rgb(180, 142, 173))),
+                Span::styled(" ", Style::fg(Color::rgb(192, 197, 206))),
+                Span::styled("main", Style::fg(Color::rgb(143, 161, 179))),
+                Span::styled("(", Style::fg(Color::rgb(192, 197, 206))),
+                Span::styled(")", Style::fg(Color::rgb(192, 197, 206))),
+                Span::styled(" ", Style::fg(Color::rgb(192, 197, 206))),
+                Span::styled("{", Style::fg(Color::rgb(192, 197, 206))),
             ]),
-            Line::from_iter([
-                Span::styled("    ", Style::default().fg(Color::Rgb(192, 197, 206))),
-                Span::styled("println!", Style::default().fg(Color::Rgb(192, 197, 206))),
-                Span::styled("(", Style::default().fg(Color::Rgb(192, 197, 206))),
-                Span::styled("\"", Style::default().fg(Color::Rgb(192, 197, 206))),
-                Span::styled(
-                    "Hello, world!",
-                    Style::default().fg(Color::Rgb(163, 190, 140)),
-                ),
-                Span::styled("\"", Style::default().fg(Color::Rgb(192, 197, 206))),
-                Span::styled(")", Style::default().fg(Color::Rgb(192, 197, 206))),
-                Span::styled(";", Style::default().fg(Color::Rgb(192, 197, 206))),
+            Line::from(vec![
+                Span::styled("    ", Style::fg(Color::rgb(192, 197, 206))),
+                Span::styled("println!", Style::fg(Color::rgb(192, 197, 206))),
+                Span::styled("(", Style::fg(Color::rgb(192, 197, 206))),
+                Span::styled("\"", Style::fg(Color::rgb(192, 197, 206))),
+                Span::styled("Hello, world!", Style::fg(Color::rgb(163, 190, 140))),
+                Span::styled("\"", Style::fg(Color::rgb(192, 197, 206))),
+                Span::styled(")", Style::fg(Color::rgb(192, 197, 206))),
+                Span::styled(";", Style::fg(Color::rgb(192, 197, 206))),
             ]),
-            Line::from_iter([Span::styled(
+            Line::from(vec![Span::styled(
                 "}",
-                Style::default().fg(Color::Rgb(192, 197, 206)),
+                Style::fg(Color::rgb(192, 197, 206)),
             )]),
         ];
 

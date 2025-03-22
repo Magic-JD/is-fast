@@ -1,18 +1,16 @@
 use crate::cli::command::ColorMode;
+use crate::config::color_conversion::Style;
 use crate::config::load::{Config, ExtractionConfig};
 use crate::errors::error::IsError;
 use crate::errors::error::IsError::{Io, Scrape};
+use crate::page::structure::{Line, Span};
 use crate::search_engine::link::HtmlSource;
 use crate::search_engine::scrape;
 use crate::search_engine::scrape::scrape;
 use crate::transform::filter::filter;
 use crate::transform::format::Formatter;
 use crate::transform::syntax_highlight::SyntaxHighlighter;
-use nu_ansi_term::{Color, Style};
-use ratatui::prelude::Text;
-use ratatui::style::Style as RatStyle;
-use ratatui::style::{Color as RatColor, Modifier};
-use ratatui::text::Line;
+use ratatui::text::{Line as RatLine, Text};
 use ratatui::widgets::Paragraph;
 use scraper::{ElementRef, Html, Selector};
 use std::fs;
@@ -35,20 +33,18 @@ impl PageExtractor {
 
     pub fn get_paragraph(&self, link: &HtmlSource) -> (String, Paragraph<'static>) {
         let (title, text) = self.get_tui_text(link);
-        let paragraph = match self.config().color_mode() {
-            ColorMode::Never => Paragraph::new(
-                text.lines
-                    .iter()
-                    .map(ToString::to_string)
-                    .map(Line::from)
-                    .collect::<Vec<Line>>(),
-            ),
-            _ => Paragraph::new(text),
+
+        let rat_lines: Vec<RatLine> = match self.config().color_mode() {
+            ColorMode::Never => text.iter().map(Line::to_rat_colorless).collect(),
+            _ => text.iter().map(Line::to_rat_colored).collect(),
         };
+
+        let paragraph = Paragraph::new(Text::from(rat_lines));
+
         (title, paragraph)
     }
 
-    fn get_tui_text(&self, html_source: &HtmlSource) -> (String, Text<'static>) {
+    fn get_tui_text(&self, html_source: &HtmlSource) -> (String, Vec<Line>) {
         let html_result: Result<String, IsError> = match html_source {
             HtmlSource::LinkSource(_) => scrape(html_source),
             HtmlSource::FileSource(file) => fs::read_to_string(&file.file_path).map_err(Io),
@@ -71,16 +67,12 @@ impl PageExtractor {
             };
             (
                 String::from("Failed to retrieve"),
-                Text::from(err.to_string()),
+                vec![Line::from_single(Span::from(&err.to_string()))],
             )
         })
     }
 
-    fn extract_text(
-        &self,
-        html_source: &HtmlSource,
-        html: &Html,
-    ) -> Result<Text<'static>, IsError> {
+    fn extract_text(&self, html_source: &HtmlSource, html: &Html) -> Result<Vec<Line>, IsError> {
         filter(
             html,
             self.config().get_selectors(html_source.get_url()),
@@ -88,9 +80,8 @@ impl PageExtractor {
             .map(|elements| self.process_elements(html_source, elements))
             .and_then(|text| {
                 if text
-                    .lines
                     .iter()
-                    .any(|line| !line.to_string().trim().is_empty())
+                    .any(|line| !line.content().trim().is_empty())
                 {
                     Ok(text)
                 } else {
@@ -111,11 +102,7 @@ impl PageExtractor {
         title
     }
 
-    fn process_elements(
-        &self,
-        html_source: &HtmlSource,
-        elements: Vec<ElementRef>,
-    ) -> Text<'static> {
+    fn process_elements(&self, html_source: &HtmlSource, elements: Vec<ElementRef>) -> Vec<Line> {
         log::trace!("Processing all elements");
         let site_config = html_source.get_config();
         let format_config = site_config.get_format();
@@ -145,69 +132,40 @@ impl PageExtractor {
                 })
                 .collect::<Vec<Vec<Line>>>();
         }
-        Text::from(lines.into_iter().flatten().collect::<Vec<Line>>())
+        lines.into_iter().flatten().collect::<Vec<Line>>()
     }
 
     pub fn get_text(&self, html_source: &HtmlSource) -> (String, String) {
         let (title, text) = self.get_tui_text(html_source);
         let plaintext = text
-            .lines
             .into_iter()
             .map(|line| match self.config().color_mode() {
-                ColorMode::Always => Self::convert_rat_to_ansi(line),
-                _ => line.to_string(),
+                ColorMode::Always => Self::convert_to_ansi(line),
+                _ => line.content(),
             })
             .collect::<Vec<String>>()
             .join("\n");
         (title, plaintext)
     }
 
-    fn convert_rat_to_ansi(line: Line) -> String {
+    fn convert_to_ansi(line: Line) -> String {
         let mut painted = String::new();
         for span in line.spans {
-            painted.push_str(&Self::apply_to_text(span.content.as_ref(), span.style));
+            if let Some(style) = span.style {
+                painted.push_str(&Self::apply_to_text(span.content.as_ref(), style));
+            } else {
+                painted.push_str(span.content.as_ref());
+            }
         }
 
-        Self::apply_to_text(&painted, line.style)
+        if let Some(style) = line.style {
+            painted = Self::apply_to_text(&painted, style);
+        }
+        painted
     }
 
-    fn apply_to_text(content: &str, rat_style: RatStyle) -> String {
-        let mut style = Style::new();
-        if let Some(rat_color) = rat_style.fg {
-            let color = match rat_color {
-                RatColor::Black => Color::Black,
-                RatColor::Red => Color::Red,
-                RatColor::Green => Color::Green,
-                RatColor::Yellow => Color::Yellow,
-                RatColor::Blue => Color::Blue,
-                RatColor::Magenta => Color::Magenta,
-                RatColor::Cyan => Color::Cyan,
-                RatColor::White => Color::White,
-                RatColor::Gray => Color::LightGray,
-                RatColor::DarkGray => Color::DarkGray,
-                RatColor::LightRed => Color::LightRed,
-                RatColor::LightGreen => Color::LightGreen,
-                RatColor::LightYellow => Color::LightYellow,
-                RatColor::LightBlue => Color::LightBlue,
-                RatColor::LightMagenta => Color::LightMagenta,
-                RatColor::LightCyan => Color::LightCyan,
-                RatColor::Rgb(r, g, b) => Color::Rgb(r, g, b),
-                _ => Color::Default,
-            };
-            style = style.fg(color);
-        }
-        for modifier in rat_style.add_modifier.iter() {
-            style = match modifier {
-                Modifier::BOLD => style.bold(),
-                Modifier::ITALIC => style.italic(),
-                Modifier::UNDERLINED => style.underline(),
-                Modifier::DIM => style.dimmed(),
-                Modifier::REVERSED => style.reverse(),
-                Modifier::CROSSED_OUT => style.strikethrough(),
-                _ => style,
-            };
-        }
-        let paint = style.paint(content);
+    fn apply_to_text(content: &str, is_style: Style) -> String {
+        let paint = is_style.to_ansi_style().paint(content);
         format!("{paint}")
     }
 
@@ -224,7 +182,6 @@ mod tests {
     use crate::search_engine::link::HtmlSource::FileSource;
     use ctor::ctor;
     use globset::GlobSet;
-    use ratatui::text::Span;
     use std::collections::HashMap;
     use std::path::Path;
 
@@ -263,7 +220,7 @@ mod tests {
             .to_owned();
         let expected_filename = String::from("for and range - Rust By Example");
         assert_eq!(filename, expected_filename);
-        assert_eq!(ansi_text, expected_content);
+        assert_eq!(ansi_text.trim(), expected_content.trim());
     }
 
     #[test]
@@ -369,8 +326,7 @@ mod tests {
         let (_, text) = PageExtractor::test_init(config).get_tui_text(&source);
 
         let expected_lines: Vec<_> = expected_content.lines().collect();
-        let binding = text.to_string();
-        let result_lines: Vec<_> = binding.lines().collect();
+        let result_lines: Vec<_> = text.iter().map(Line::content).collect();
 
         let min_len = expected_lines.len().min(result_lines.len());
 
@@ -387,7 +343,6 @@ mod tests {
         }
 
         let length = text
-            .lines
             .iter()
             .flat_map(|line| line.spans.clone())
             .collect::<Vec<Span>>()

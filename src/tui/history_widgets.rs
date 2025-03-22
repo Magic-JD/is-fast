@@ -50,18 +50,21 @@ impl HistoryWidgetGenerator {
                 SearchOn::Title => {
                     let cell = vec![
                         Cell::from(highlight_text(h.title.clone(), user_search))
-                            .style(*self.config.get_title_style()),
-                        Cell::from(h.url.clone()).style(*self.config.get_url_style()),
-                        Cell::from(date_to_display(&h.time)).style(*self.config.get_time_style()),
+                            .style(self.config.get_title_style().to_rat_style()),
+                        Cell::from(h.url.clone()).style(self.config.get_url_style().to_rat_style()),
+                        Cell::from(date_to_display(&h.time))
+                            .style(self.config.get_time_style().to_rat_style()),
                     ];
                     Row::new(cell)
                 }
                 SearchOn::Url => {
                     let cells = vec![
-                        Cell::from(h.title.clone()).style(*self.config.get_title_style()),
+                        Cell::from(h.title.clone())
+                            .style(self.config.get_title_style().to_rat_style()),
                         Cell::from(highlight_text(h.url.clone(), user_search))
-                            .style(*self.config.get_url_style()),
-                        Cell::from(date_to_display(&h.time)).style(*self.config.get_time_style()),
+                            .style(self.config.get_url_style().to_rat_style()),
+                        Cell::from(date_to_display(&h.time))
+                            .style(self.config.get_time_style().to_rat_style()),
                     ];
                     Row::new(cells)
                 }
@@ -73,8 +76,12 @@ impl HistoryWidgetGenerator {
     pub fn draw_search_text<'a>(&self, user_input: &str, search_on: &SearchOn) -> Paragraph<'a> {
         let searched_on_text = searched_on_to_string(search_on);
         Paragraph::new(
-            Line::from(format!(" [{searched_on_text}] {user_input}"))
-                .style(self.config.get_text_style().add_modifier(Modifier::BOLD)),
+            Line::from(format!(" [{searched_on_text}] {user_input}")).style(
+                self.config
+                    .get_text_style()
+                    .to_rat_style()
+                    .add_modifier(Modifier::BOLD),
+            ),
         )
     }
     pub fn draw_history_count(&self, row_count: u16) -> ratatui::prelude::Text<'static> {

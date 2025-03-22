@@ -118,6 +118,9 @@ pub struct OutputArgs {
         help = "Additional display configuration when printing to the terminal. Available options: wrap, margin, title"
     )]
     pub pretty_print: Vec<String>,
+
+    #[arg(long, help = "Apply the given style to an element.")]
+    pub style_element: Vec<String>,
 }
 
 #[derive(Debug, Parser)]

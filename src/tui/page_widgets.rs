@@ -42,7 +42,7 @@ pub fn new_page(index: usize, sources: &[HtmlSource]) -> (String, Paragraph<'sta
 pub fn draw_page_numbers(index: usize, pages: usize) -> Text<'static> {
     Text::from(Line::styled(
         format!(" [{index}/{pages}] "),
-        **TUI_BORDER_COLOR,
+        *TUI_BORDER_COLOR,
     ))
     .alignment(Alignment::Right)
 }

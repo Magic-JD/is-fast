@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.14.0]
+### Added
+- Styles also works with basic CSS syntax.
+    - Styles will combine together, with priority being basic, tag, untagged class, tagged class, untagged id, tagged id.
+    - e.g. The element is div#this.that
+    - Default style is undefined
+    - .that (matches any .that) is BOLD and RED
+    - \#this is ITALIC and BLUE
+    - div is UNDERLINED
+    - div.that is GREEN
+    - div#this is ORANGE
+    - The result will be BOLD, ITALIC, UNDERLINED, and ORANGE (with the color priority order being ORANGE, BLUE, GREEN, RED).
+- Styles can be passed into the query directly.
+    - Format is `--style-element="tag#id.class.otherclass:fg=red;bg=green;bold"`
+    - For booleans `bold` is equal to `bold=true`
+    - Multiple style elements can be added with multiple flags: `--style-element="x:fg=red" --style-element="y:fg=blue"`
+    - All the normal style elements are supported. 
+- Scripts updated to add color to the stock script.
+
 ## [0.13.3]
 ### Added
 - You can now specify if you want to replace or extend the block, indent and ignored elements.

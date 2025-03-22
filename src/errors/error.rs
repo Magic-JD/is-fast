@@ -34,4 +34,7 @@ pub enum IsError {
 
     #[error("Csv errors: {0}")]
     Csv(String),
+
+    #[error("TagStyle errors: {0}")]
+    TagStyleError(String),
 }
