@@ -1,4 +1,4 @@
-use crate::config::color_conversion::TagStyleConfig;
+use crate::config::color_conversion::Style;
 use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
 
@@ -39,7 +39,7 @@ pub struct CacheSection {
 #[derive(Debug, Deserialize, Clone)]
 pub struct SiteRawConfig {
     #[serde(default)]
-    pub(crate) styles: HashMap<String, TagStyleConfig>,
+    pub(crate) styles: HashMap<String, Style>,
     #[serde(default)]
     pub(crate) format: Option<FormatSection>,
     #[serde(default)]

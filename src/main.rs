@@ -9,6 +9,7 @@ mod cli;
 mod config;
 mod database;
 mod errors;
+mod page;
 mod pipe;
 mod search_engine;
 mod transform;
@@ -23,7 +24,7 @@ use crate::cli::command::Cli;
 use crate::cli::parser::{
     determine_cache_mode, determine_ignored, determine_nth_element, parse_pretty_print,
 };
-use crate::config::color_conversion::TagStyleConfig;
+use crate::config::color_conversion::Style;
 use crate::config::load::Config;
 use crate::database::history_database;
 use crate::errors::error::IsError;
@@ -58,7 +59,7 @@ fn main() {
         &ignored,
         args.selection.no_block,
         nth_element,
-        styles,
+        &styles,
     );
     // Generate config doesn't need a display, process and return.
     if args.task.generate_config {
@@ -88,19 +89,18 @@ fn main() {
     app.shutdown();
 }
 
-fn determine_styles(styles: Vec<String>) -> Vec<(String, TagStyleConfig)> {
+fn determine_styles(styles: Vec<String>) -> Vec<(String, Style)> {
     styles
         .into_iter()
         .filter_map(|style| {
-            let mut split = style.split(":");
+            let mut split = style.split(':');
             if let Some(key) = split.next() {
                 if let Ok(tag_content) = split
                     .next()
                     .ok_or(IsError::TagStyleError(format!(
-                        "No configuration for {}",
-                        key
+                        "No configuration for {key}",
                     )))
-                    .and_then(TagStyleConfig::from_str)
+                    .and_then(Style::from_str)
                 {
                     return Some((key.to_string(), tag_content));
                 }

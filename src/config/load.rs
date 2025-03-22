@@ -1,5 +1,5 @@
 use crate::cli::command::{CacheMode, ColorMode};
-use crate::config::color_conversion::{parse_color, TagStyleConfig};
+use crate::config::color_conversion::{Color, Style};
 use crate::config::files::config_path;
 use crate::config::glob_generation::generate_globs;
 use crate::config::site::{SiteConfig, SitePicker};
@@ -10,9 +10,9 @@ use crate::DisplayConfig;
 use globset::{Glob, GlobSet};
 use nucleo_matcher::pattern::AtomKind;
 use once_cell::sync::OnceCell;
-use ratatui::style::Style;
 use std::collections::HashMap;
 use std::fs;
+use std::str::FromStr;
 use toml;
 
 static CONFIG: OnceCell<Config> = OnceCell::new();
@@ -135,7 +135,7 @@ impl Config {
         ignored_additional: &[String],
         no_block: bool,
         nth_element: Vec<usize>,
-        styles: Vec<(String, TagStyleConfig)>,
+        styles: &[(String, Style)],
     ) {
         let this = Self::new(
             args_color_mode,
@@ -152,7 +152,7 @@ impl Config {
     }
 
     fn default() -> Config {
-        Self::new(None, None, false, vec![], None, &[], false, vec![], vec![])
+        Self::new(None, None, false, vec![], None, &[], false, vec![], &[])
     }
 
     // This is where the key configuration is combined, and I would rather have these values being passed
@@ -168,7 +168,7 @@ impl Config {
         ignored_additional: &[String],
         no_block: bool,
         nth_element: Vec<usize>,
-        styles: Vec<(String, TagStyleConfig)>,
+        styles: &[(String, Style)],
     ) -> Self {
         let mut tool: ToolRawConfig =
             toml::from_str(DEFAULT_CONFIG).unwrap_or(ToolRawConfig::default());
@@ -179,7 +179,7 @@ impl Config {
             ignored_additional,
             no_block,
             cache_mode,
-            &styles,
+            styles,
         );
         let extraction =
             Self::create_extraction_config(args_color_mode, selector_override, nth_element, &tool);
@@ -195,7 +195,7 @@ impl Config {
                 .display
                 .as_ref()
                 .and_then(|display| display.border_color.clone())
-                .map(|color| Style::new().fg(parse_color(&color)))
+                .and_then(|color| Color::from_str(&color).map(Style::fg).ok())
                 .unwrap_or_default(),
             search_type: to_atom_kind(
                 &tool
@@ -243,25 +243,25 @@ impl Config {
             .history
             .as_ref()
             .and_then(|history| history.title_color.clone())
-            .map(|color| Style::new().fg(parse_color(&color)))
+            .and_then(|color| Color::from_str(&color).map(Style::fg).ok())
             .unwrap_or_default();
         let url_style = config
             .history
             .as_ref()
             .and_then(|history| history.url_color.clone())
-            .map(|color| Style::new().fg(parse_color(&color)))
+            .and_then(|color| Color::from_str(&color).map(Style::fg).ok())
             .unwrap_or_default();
         let time_style = config
             .history
             .as_ref()
             .and_then(|history| history.time_color.clone())
-            .map(|color| Style::new().fg(parse_color(&color)))
+            .and_then(|color| Color::from_str(&color).map(Style::fg).ok())
             .unwrap_or_default();
         let text_style = config
             .history
             .as_ref()
             .and_then(|history| history.text_color.clone())
-            .map(|color| Style::new().fg(parse_color(&color)))
+            .and_then(|color| Color::from_str(&color).map(Style::fg).ok())
             .unwrap_or_default();
         HistoryWidgetConfig::new(url_style, title_style, time_style, text_style)
     }

@@ -1,4 +1,4 @@
-use ratatui::style::Style;
+use crate::config::color_conversion::Style;
 use scraper::ElementRef;
 use std::collections::{BTreeMap, HashMap, HashSet};
 
@@ -196,7 +196,7 @@ impl FormatConfig {
         }
         let mut merged_style = Style::default();
         for style in all_styles {
-            merged_style = merged_style.patch(style);
+            merged_style = merged_style.patch(&style);
         }
         Some(merged_style)
     }
@@ -208,14 +208,14 @@ impl FormatConfig {
         class_style: &mut Vec<Style>,
         id_style: &mut Vec<Style>,
     ) {
-        if let TagData::Styled(style) = identifier.data {
+        if let TagData::Styled(style) = identifier.data.clone() {
             head_style.push(style);
         }
         if let Some(classes) = element.value().attr("class") {
             class_style.extend(classes.split_whitespace().filter_map(|class| {
                 identifier.classes.get(class).and_then(|td| match td {
-                    TagData::Styled(style) => Some(*style),
-                    _ => None,
+                    TagData::Styled(style) => Some(style),
+                    TagData::None => None,
                 })
             }));
         }

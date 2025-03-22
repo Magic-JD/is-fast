@@ -1,5 +1,5 @@
 use crate::cli::command::CacheMode;
-use crate::config::color_conversion::{convert_styles, TagStyleConfig};
+use crate::config::color_conversion::Style;
 use crate::config::files::config_location;
 use crate::config::format::FormatConfig;
 use crate::config::glob_generation::generate_globs;
@@ -86,7 +86,7 @@ impl SitePicker {
         ignored_additional: &[String],
         no_block: bool,
         cache_mode: Option<&CacheMode>,
-        styles: &[(String, TagStyleConfig)],
+        styles: &[(String, Style)],
     ) -> Self {
         let mut site: SiteRawConfig = toml::from_str(DEFAULT_CONFIG)
             .map_err(|e| println!("{e}"))
@@ -128,7 +128,7 @@ impl SitePicker {
         ignored_additional: &[String],
         no_block: bool,
         cache_mode: Option<&CacheMode>,
-        styles: &[(String, TagStyleConfig)],
+        styles: &[(String, Style)],
     ) -> SiteConfig {
         let format = Self::create_format_config(raw, ignored_additional, no_block, styles);
         let cache = Self::create_cache_config(cache_mode, raw);
@@ -169,7 +169,7 @@ impl SitePicker {
         config: &SiteRawConfig,
         ignored_additional: &[String],
         no_block: bool,
-        styles: &[(String, TagStyleConfig)],
+        styles: &[(String, Style)],
     ) -> FormatConfig {
         let mut ignored_tags: HashSet<String> = config
             .format
@@ -193,8 +193,12 @@ impl SitePicker {
             .unwrap_or_default();
         let mut existing_styles = config.styles.clone();
         existing_styles.extend(styles.iter().cloned());
-        let tag_styles = convert_styles(&existing_styles);
-        FormatConfig::new(ignored_tags, block_elements, indent_elements, tag_styles)
+        FormatConfig::new(
+            ignored_tags,
+            block_elements,
+            indent_elements,
+            existing_styles.clone(),
+        )
     }
 
     fn create_cache_config(cache_mode: Option<&CacheMode>, config: &SiteRawConfig) -> CacheConfig {
