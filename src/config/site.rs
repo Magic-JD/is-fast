@@ -193,10 +193,7 @@ impl SitePicker {
             .unwrap_or_default();
         let mut existing_styles = config.styles.clone();
         for (key, value) in styles {
-            let new = existing_styles
-                .get(key)
-                .map(|s| s.patch(value))
-                .unwrap_or(*value);
+            let new = existing_styles.get(key).map_or(*value, |s| s.patch(value));
             existing_styles.insert(key.to_string(), new);
         }
         FormatConfig::new(

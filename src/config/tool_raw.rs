@@ -191,9 +191,7 @@ fn override_misc(misc: Option<MiscSection>, u_misc: Option<MiscSection>) -> Misc
         if let Some(open_tool) = u_misc.open_tool {
             misc.open_tool = Some(open_tool);
         }
-        if u_misc.text_size_supported {
-            misc.text_size_supported = u_misc.text_size_supported
-        }
+        misc.text_size_supported = u_misc.text_size_supported;
     }
     misc
 }

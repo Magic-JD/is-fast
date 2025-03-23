@@ -124,7 +124,7 @@ size = "Triple"
 
 [styles.h2]
 bold = true
-size = "Triple"
+size = "Double"
 
 [styles.h3]
 bold = true

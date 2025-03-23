@@ -115,9 +115,9 @@ impl Style {
     pub(crate) fn parse_size(value: Option<&str>) -> Option<Size> {
         match value {
             Some("half") => Some(Size::Half),
-            Some("1") | Some("normal") => Some(Size::Normal),
-            Some("2") | Some("double") => Some(Size::Double),
-            Some("3") | Some("triple") => Some(Size::Triple),
+            Some("1" | "normal") => Some(Size::Normal),
+            Some("2" | "double") => Some(Size::Double),
+            Some("3" | "triple") => Some(Size::Triple),
             _ => None,
         }
     }
@@ -223,27 +223,27 @@ impl Style {
         style = style.fg(color);
         self.bold.inspect(|b| {
             if *b {
-                style = style.bold()
+                style = style.bold();
             }
         });
         self.italic.inspect(|b| {
             if *b {
-                style = style.italic()
+                style = style.italic();
             }
         });
         self.underlined.inspect(|b| {
             if *b {
-                style = style.underline()
+                style = style.underline();
             }
         });
         self.dim.inspect(|b| {
             if *b {
-                style = style.dimmed()
+                style = style.dimmed();
             }
         });
         self.crossed_out.inspect(|b| {
             if *b {
-                style = style.strikethrough()
+                style = style.strikethrough();
             }
         });
         style

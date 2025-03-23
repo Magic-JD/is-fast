@@ -27,7 +27,8 @@ isf_what() {
         --color=always \
         --piped \
         --nth-element 1 \
-        --pretty-print="margin:20"
+        --pretty-print="margin:20" \
+        --style-element="sup:size=half"
 # We get the first paragraph with content only from the child p's of div.mw-content-ltr
 # note: the first paragraph can be achieved with css selectors only, but is sometimes empty on the site - this then avoids any issues with the selected paragraph being empty.)
 }

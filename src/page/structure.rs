@@ -19,6 +19,32 @@ impl Line {
         RatLine::from(text)
     }
 
+    // This reduces the amount of separate spans that need to be tracked.
+    pub fn flatten(self) -> Line {
+        let mut spans = self.spans.iter();
+        if let Some(span) = spans.next() {
+            let mut collect = vec![];
+            let mut next = span.clone();
+            for span in spans {
+                if next.style == span.style || span.content.trim().is_empty() {
+                    let new_content = next.content.clone() + span.content.as_str();
+                    if let Some(style) = next.style {
+                        next = Span::styled(&new_content, style);
+                    } else {
+                        next = Span::from(&new_content);
+                    }
+                } else {
+                    collect.push(next);
+                    next = span.clone();
+                }
+            }
+            collect.push(next);
+            Line::from(collect)
+        } else {
+            self
+        }
+    }
+
     pub fn to_rat_colored(&self) -> RatLine<'static> {
         let content = self
             .spans

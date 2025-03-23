@@ -141,7 +141,7 @@ impl PageExtractor {
         let plaintext = text
             .into_iter()
             .map(|line| match self.config().color_mode() {
-                ColorMode::Always => Self::convert_to_ansi(line),
+                ColorMode::Always => self.convert_to_ansi(&line),
                 _ => line.content(),
             })
             .collect::<Vec<String>>()
@@ -149,13 +149,13 @@ impl PageExtractor {
         (title, plaintext)
     }
 
-    fn convert_to_ansi(line: Line) -> String {
+    fn convert_to_ansi(&self, line: &Line) -> String {
         let mut painted = String::new();
-        for span in line.spans.iter() {
+        for span in &line.spans {
             if let Some(style) = span.style {
                 let mut span_content = span.content.clone();
-                if Config::get_text_size_supported() {
-                    span_content = resize_text(span_content, style.size);
+                if self.config.text_size_supported() {
+                    span_content = resize_text(&span_content, style.size);
                 }
                 let span_content = &Self::apply_to_text(&span_content, style);
                 painted.push_str(span_content);
@@ -164,7 +164,7 @@ impl PageExtractor {
             }
         }
 
-        if Config::get_text_size_supported() {
+        if self.config.text_size_supported() {
             painted = add_additional_lines(painted, &line.spans);
         }
         painted
@@ -197,13 +197,24 @@ fn add_additional_lines(content: String, spans: &[Span]) -> String {
     }
 }
 
-fn resize_text(content: String, size: Option<Size>) -> String {
+fn resize_text(content: &str, size: Option<Size>) -> String {
     if let Some(size) = size {
         return match size {
             Size::Normal => format!("\x1b]66;s=1;{content}\x07"),
             Size::Double => format!("\x1b]66;s=2;{content}\x07"),
             Size::Triple => format!("\x1b]66;s=3;{content}\x07"),
-            Size::Half => format!("\x1b]66;s=1;{content}\x07"),
+            Size::Half => {
+                let mut result = String::new();
+                let chars = content.chars().enumerate();
+
+                for (i, c) in chars {
+                    result.push(c);
+                    if (i + 1) % 2 == 0 && (i + 1) != content.len() {
+                        result.push_str("\x07\x1b]66;n=1:d=2:w=1;");
+                    }
+                }
+                format!("\x1b]66;n=1:d=2:w=1;{result}\x07")
+            }
         };
     };
     content.to_string()
@@ -244,6 +255,7 @@ mod tests {
             Some("body".to_string()),
             GlobSet::empty(),
             vec![],
+            true,
         );
         let (filename, ansi_text) = PageExtractor::test_init(config)
             .get_text(&FileSource(file))
@@ -270,6 +282,7 @@ mod tests {
             Some("body".to_string()),
             GlobSet::empty(),
             vec![],
+            true,
         );
         let (filename, plain_text) = PageExtractor::test_init(config)
             .get_text(&FileSource(file))
@@ -297,6 +310,7 @@ mod tests {
             Some("p".to_string()),
             GlobSet::empty(),
             vec![],
+            true,
         );
         let (filename, plain_text) = PageExtractor::test_init(config)
             .get_text(&FileSource(file))
@@ -324,6 +338,7 @@ mod tests {
             Some("p".to_string()),
             GlobSet::empty(),
             vec![],
+            true,
         );
         let (filename, plain_text) = PageExtractor::test_init(config)
             .get_text(&FileSource(file))
@@ -357,6 +372,7 @@ mod tests {
             Some("body".to_string()),
             GlobSet::empty(),
             vec![],
+            true,
         );
         let (_, text) = PageExtractor::test_init(config).get_tui_text(&source);
 
@@ -382,6 +398,6 @@ mod tests {
             .flat_map(|line| line.spans.clone())
             .collect::<Vec<Span>>()
             .len();
-        assert_eq!(length, 559);
+        assert_eq!(length, 271);
     }
 }

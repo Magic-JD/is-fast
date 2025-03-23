@@ -61,6 +61,7 @@ pub struct ExtractionConfig {
     selector_override: Option<String>,
     matcher: GlobSet,
     globs: Vec<Glob>,
+    text_size_supported: bool,
 }
 
 impl ExtractionConfig {
@@ -71,6 +72,7 @@ impl ExtractionConfig {
         selector_override: Option<String>,
         matcher: GlobSet,
         globs: Vec<Glob>,
+        text_size_supported: bool,
     ) -> Self {
         Self {
             color_mode,
@@ -79,6 +81,7 @@ impl ExtractionConfig {
             selector_override,
             matcher,
             globs,
+            text_size_supported,
         }
     }
 
@@ -104,6 +107,10 @@ impl ExtractionConfig {
     pub fn nth_element(&self) -> &Vec<usize> {
         &self.nth_element
     }
+
+    pub(crate) fn text_size_supported(&self) -> bool {
+        self.text_size_supported
+    }
 }
 
 #[derive(Debug)]
@@ -119,7 +126,6 @@ pub struct Config {
     extraction: ExtractionConfig,
     history_widget: HistoryWidgetConfig,
     sites: SitePicker,
-    text_size_supported: bool,
 }
 
 impl Config {
@@ -236,10 +242,6 @@ impl Config {
             extraction,
             history_widget,
             sites: site_picker,
-            text_size_supported: tool
-                .misc
-                .map(|misc| misc.text_size_supported)
-                .unwrap_or(false),
         }
     }
 
@@ -288,6 +290,10 @@ impl Config {
                     .unwrap_or_default(),
             )
         });
+        let text_size_supported = config
+            .misc
+            .as_ref()
+            .is_some_and(|misc| misc.text_size_supported);
         ExtractionConfig::new(
             color_mode,
             nth_element,
@@ -295,6 +301,7 @@ impl Config {
             selector_override,
             matcher,
             globs,
+            text_size_supported,
         )
     }
 
@@ -343,10 +350,6 @@ impl Config {
 
     pub fn get_site_config(url: &str) -> &SiteConfig {
         Self::get_config().sites.get_site_config(url)
-    }
-
-    pub fn get_text_size_supported() -> bool {
-        Self::get_config().text_size_supported
     }
 }
 

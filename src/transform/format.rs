@@ -23,6 +23,7 @@ impl Formatter {
             .to_lines(element, element.value().name() == "pre")
             .into_iter()
             .map(standardize_empty)
+            .map(Line::flatten)
             .collect::<Vec<Line>>();
         lines.dedup();
         lines
@@ -128,7 +129,13 @@ impl Formatter {
                 }
             }
             Node::Element(_) => ElementRef::wrap(node).iter().for_each(|element| {
-                let element_lines = self.to_lines(*element, pre_formatted);
+                let mut element_lines = self.to_lines(*element, pre_formatted);
+                if let Some(style) = style {
+                    element_lines = element_lines
+                        .into_iter()
+                        .map(|line| line.set_style(*style))
+                        .collect();
+                }
                 if element_lines.is_empty() {
                     return;
                 }
@@ -215,8 +222,8 @@ fn merge_with_previous_line(lines: &mut Vec<Line>, mut new_lines: Vec<Line>) {
                 || end.content.is_empty()
                 || end.content.ends_with(' ')
                 || start.content.starts_with(' ')
-                || matches!(start.content.chars().next(), Some(c) if ".:;,)}]>\"\\`'/".contains(c))
-                || matches!(end.content.chars().last(), Some(c) if "<[{(`'\"\\/".contains(c)))
+                || matches!(start.content.chars().next(), Some(c) if ".:;,<[{()}]>\"\\`'/".contains(c))
+                || matches!(end.content.chars().last(), Some(c) if "<[{()}]>`'\"\\/".contains(c)))
             {
                 prev_end.spans.push(Span::from(" "));
             }
@@ -390,23 +397,11 @@ mod tests {
         let expected = vec![
             Line::default(),
             Line::from(vec![
-                Span::styled("fn", Style::fg(Color::rgb(180, 142, 173))),
-                Span::styled(" ", Style::fg(Color::rgb(192, 197, 206))),
+                Span::styled("fn ", Style::fg(Color::rgb(180, 142, 173))),
                 Span::styled("main", Style::fg(Color::rgb(143, 161, 179))),
-                Span::styled("(", Style::fg(Color::rgb(192, 197, 206))),
-                Span::styled(")", Style::fg(Color::rgb(192, 197, 206))),
-                Span::styled(" ", Style::fg(Color::rgb(192, 197, 206))),
-                Span::styled("{", Style::fg(Color::rgb(192, 197, 206))),
-                Span::styled(" ", Style::fg(Color::rgb(192, 197, 206))),
-                Span::styled("println!", Style::fg(Color::rgb(192, 197, 206))),
-                Span::styled("(", Style::fg(Color::rgb(192, 197, 206))),
-                Span::styled("\"", Style::fg(Color::rgb(192, 197, 206))),
+                Span::styled("() { println!(\"", Style::fg(Color::rgb(192, 197, 206))),
                 Span::styled("Hello, Rust!", Style::fg(Color::rgb(163, 190, 140))),
-                Span::styled("\"", Style::fg(Color::rgb(192, 197, 206))),
-                Span::styled(")", Style::fg(Color::rgb(192, 197, 206))),
-                Span::styled(";", Style::fg(Color::rgb(192, 197, 206))),
-                Span::styled(" ", Style::fg(Color::rgb(192, 197, 206))),
-                Span::styled("}", Style::fg(Color::rgb(192, 197, 206))),
+                Span::styled("\"); }", Style::fg(Color::rgb(192, 197, 206))),
             ]),
             Line::default(),
         ];
@@ -459,11 +454,7 @@ mod tests {
             .collect::<Vec<Line>>();
 
         let expected_output = vec![
-            Line::from(vec![
-                Span::from("First paragraph."),
-                Span::from(" "),
-                Span::from("Second paragraph."),
-            ]),
+            Line::from(vec![Span::from("First paragraph. Second paragraph.")]),
             Line::default(),
             Line::from_single(Span::from("Should have extra spacing")),
             Line::default(),
@@ -505,11 +496,7 @@ mod tests {
             .collect::<Vec<Line>>();
 
         let expected_output = vec![
-            Line::from(vec![
-                Span::from("First paragraph."),
-                Span::from(" "),
-                Span::from("Second paragraph."),
-            ]),
+            Line::from(vec![Span::from("First paragraph. Second paragraph.")]),
             Line::default(),
             Line::from_single(Span::from("Should have extra spacing")),
             Line::default(),
@@ -550,11 +537,7 @@ mod tests {
             .collect::<Vec<Line>>();
 
         let expected_output = vec![
-            Line::from(vec![
-                Span::from("First paragraph."),
-                Span::from(" "),
-                Span::from("Second paragraph."),
-            ]),
+            Line::from(vec![Span::from("First paragraph. Second paragraph.")]),
             Line::default(),
             Line::from_single(Span::from("This should have extra spacing")),
             Line::default(),
@@ -634,13 +617,13 @@ This is line one.
 
         let expected = vec![
             Line::default(),
-            Line::from(vec![Span::from("1. "), Span::from("First item")]),
+            Line::from(vec![Span::from("1. First item")]),
             Line::default(),
-            Line::from(vec![Span::from("2. "), Span::from("Second item")]),
+            Line::from(vec![Span::from("2. Second item")]),
             Line::default(),
-            Line::from(vec![Span::from("5. "), Span::from("Fifth item")]),
+            Line::from(vec![Span::from("5. Fifth item")]),
             Line::default(),
-            Line::from(vec![Span::from("6. "), Span::from("Sixth item")]),
+            Line::from(vec![Span::from("6. Sixth item")]),
             Line::default(),
         ];
 
@@ -678,11 +661,11 @@ This is line one.
 
         let expected = vec![
             Line::default(),
-            Line::from(vec![Span::from("  • "), Span::from("Apple")]),
+            Line::from(vec![Span::from("  • Apple")]),
             Line::default(),
-            Line::from(vec![Span::from("  • "), Span::from("Banana")]),
+            Line::from(vec![Span::from("  • Banana")]),
             Line::default(),
-            Line::from(vec![Span::from("  • "), Span::from("Cherry")]),
+            Line::from(vec![Span::from("  • Cherry")]),
             Line::default(),
         ];
 
@@ -724,23 +707,15 @@ This is line one.
 
         let expected = vec![
             Line::default(),
-            Line::from(vec![
-                Span::from("  3. "),
-                Span::from("The Condition is evaluated:"),
-            ]),
-            Line::from(vec![
-                Span::from("    1. "),
-                Span::from("If true, the control moves to Step 4."),
-            ]),
-            Line::from(vec![
-                Span::from("    2. "),
-                Span::from("If false, the control jumps to Step 7."),
-            ]),
+            Line::from(vec![Span::from("  3. The Condition is evaluated:")]),
+            Line::from(vec![Span::from(
+                "    1. If true, the control moves to Step 4.",
+            )]),
+            Line::from(vec![Span::from(
+                "    2. If false, the control jumps to Step 7.",
+            )]),
             Line::default(),
-            Line::from(vec![
-                Span::from("  4. "),
-                Span::from("The body of the loop is executed."),
-            ]),
+            Line::from(vec![Span::from("  4. The body of the loop is executed.")]),
             Line::default(),
         ];
 
