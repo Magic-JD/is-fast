@@ -91,15 +91,40 @@ impl Color {
     }
 }
 
+#[derive(Debug, Deserialize, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Size {
+    #[serde(alias = "1", alias = "normal")]
+    Normal,
+    #[serde(alias = "2", alias = "double")]
+    Double,
+    #[serde(alias = "3", alias = "triple")]
+    Triple,
+    #[serde(alias = "half")]
+    Half,
+}
+
 #[derive(Debug, Deserialize, Clone, Copy, Default, PartialEq, Eq, Hash)]
 pub struct Style {
     fg: Option<Color>,
     bg: Option<Color>,
+    pub(crate) size: Option<Size>,
     pub(crate) bold: Option<bool>,
     pub(crate) italic: Option<bool>,
     underlined: Option<bool>,
     crossed_out: Option<bool>,
     dim: Option<bool>,
+}
+
+impl Style {
+    pub(crate) fn parse_size(value: Option<&str>) -> Option<Size> {
+        match value {
+            Some("half") => Some(Size::Half),
+            Some("1" | "normal") => Some(Size::Normal),
+            Some("2" | "double") => Some(Size::Double),
+            Some("3" | "triple") => Some(Size::Triple),
+            _ => None,
+        }
+    }
 }
 
 impl FromStr for Style {
@@ -116,6 +141,7 @@ impl FromStr for Style {
                 match key.trim().to_lowercase().as_str() {
                     "fg" => config.fg = value.and_then(|col| Color::from_str(col.as_str()).ok()),
                     "bg" => config.bg = value.and_then(|col| Color::from_str(col.as_str()).ok()),
+                    "size" => config.size = Self::parse_size(value.as_deref()),
                     "bold" => config.bold = Self::parse_bool(value.as_deref()),
                     "italic" => config.italic = Self::parse_bool(value.as_deref()),
                     "underlined" => config.underlined = Self::parse_bool(value.as_deref()),
@@ -170,6 +196,7 @@ impl Style {
         Self {
             fg: Some(color),
             bg: None,
+            size: None,
             bold: None,
             italic: None,
             underlined: None,
@@ -182,6 +209,7 @@ impl Style {
         Self {
             fg: other.fg.or(self.fg),
             bg: other.bg.or(self.bg),
+            size: other.size.or(self.size),
             bold: other.bold.or(self.bold),
             italic: other.italic.or(self.italic),
             underlined: other.underlined.or(self.underlined),
@@ -192,34 +220,37 @@ impl Style {
 
     pub fn to_ansi_style(self) -> AnsiStyle {
         let mut style = AnsiStyle::new();
-        let mut color = AnsiColor::Default;
         if let Some(is_color) = &self.fg {
-            color = AnsiColor::Rgb(is_color.r, is_color.g, is_color.b);
+            let color = AnsiColor::Rgb(is_color.r, is_color.g, is_color.b);
+            style = style.fg(color);
         }
-        style = style.fg(color);
+        if let Some(is_color) = &self.bg {
+            let color = AnsiColor::Rgb(is_color.r, is_color.g, is_color.b);
+            style = style.on(color);
+        }
         self.bold.inspect(|b| {
             if *b {
-                style = style.bold()
+                style = style.bold();
             }
         });
         self.italic.inspect(|b| {
             if *b {
-                style = style.italic()
+                style = style.italic();
             }
         });
         self.underlined.inspect(|b| {
             if *b {
-                style = style.underline()
+                style = style.underline();
             }
         });
         self.dim.inspect(|b| {
             if *b {
-                style = style.dimmed()
+                style = style.dimmed();
             }
         });
         self.crossed_out.inspect(|b| {
             if *b {
-                style = style.strikethrough()
+                style = style.strikethrough();
             }
         });
         style
@@ -275,10 +306,11 @@ mod tests {
     }
 
     #[test]
-    fn test_convert_styles() {
+    fn test_convert_styles_rat() {
         let style = Style {
             fg: Color::from_str("red").ok(),
             bg: Color::from_str("#000000").ok(),
+            size: None,
             bold: Some(true),
             italic: Some(false),
             underlined: Some(true),
@@ -291,12 +323,51 @@ mod tests {
         assert_eq!(error_style.fg, Some(RatColor::Rgb(208, 84, 84)));
         assert_eq!(error_style.bg, Some(RatColor::Rgb(0, 0, 0)));
 
-        error_style.add_modifier.contains(Modifier::UNDERLINED);
-
         assert!(error_style.add_modifier.contains(Modifier::BOLD));
         assert!(!error_style.add_modifier.contains(Modifier::ITALIC));
         assert!(error_style.add_modifier.contains(Modifier::UNDERLINED));
+        assert!(!error_style.add_modifier.contains(Modifier::CROSSED_OUT));
         assert!(!error_style.add_modifier.contains(Modifier::DIM));
+    }
+
+    #[test]
+    fn test_convert_styles_ansi() {
+        let style = Style {
+            fg: Color::from_str("red").ok(),
+            bg: Color::from_str("#000000").ok(),
+            size: None,
+            bold: Some(true),
+            italic: Some(true),
+            underlined: Some(true),
+            crossed_out: Some(true),
+            dim: Some(true),
+        };
+
+        let error_style = style.to_ansi_style();
+
+        assert_eq!(error_style.foreground, Some(AnsiColor::Rgb(208, 84, 84)));
+        assert_eq!(error_style.background, Some(AnsiColor::Rgb(0, 0, 0)));
+
+        assert!(error_style.is_underline);
+        assert!(error_style.is_bold);
+        assert!(error_style.is_italic);
+        assert!(error_style.is_strikethrough);
+        assert!(error_style.is_dimmed);
+    }
+
+    #[test]
+    fn test_convert_styles_ansi_default() {
+        let style = Style::default();
+        let error_style = style.to_ansi_style();
+
+        assert_eq!(error_style.foreground, None);
+        assert_eq!(error_style.background, None);
+
+        assert!(!error_style.is_underline);
+        assert!(!error_style.is_bold);
+        assert!(!error_style.is_italic);
+        assert!(!error_style.is_strikethrough);
+        assert!(!error_style.is_dimmed);
     }
 
     #[test]

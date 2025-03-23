@@ -313,9 +313,15 @@ endpoint blob it will return only elements with the CSS class .react-code-line-c
 
 This setting is unset by default, and controls the program that is used to open the page if you choose to open in browser. If unset this will be your default open tool. If you set this value it will execute the tool given to it. The tool must be available in your system to be able to run.
 
+### Text size supported
+
+Enabling this will allow text size to be shown when available. This is currently only supported for direct output to kitty terminal. If you are not running this code in kitty v0.40.0+ terminal, or you are using tmux, screen, zellij or another alternate screen then this will not work, and you should not turn it on. By default, this is false. If this is switched off, the text size configuration will have no impact on the output.
+
+
 ```toml
 [misc]
 open_tool = "w3m"
+text_size_supported = false
 ```
 
 ## 📝 Custom Site Configuration
@@ -466,7 +472,17 @@ Here is a list:
 
 ### Definition
 
-This section defines **how different HTML tags should be styled** in the output. Colors can be specified using standard color names (e.g., red, blue), hex values (e.g., #ff5733), or RGB notation (e.g., rgb(255, 87, 51)). Css selectors will be applied as above. Styles will be combined when they match multiple cases.
+This section defines **how different HTML tags should be styled** in the output. Colors can be specified using standard color names (e.g., red, blue), hex values (e.g., #ff5733), or RGB notation (e.g., rgb(255, 87, 51)). Css selectors will be applied as above. Styles will be combined when they match multiple cases. Standard ansi escape codes (e.g. bold, underlined) can all be added.
+
+#### Kitty text size protocol
+
+Size is supported through the kitty text size protocol. This will currently only work with the kitty terminal version 0.40.0+. It will not work if you are running tmux, screen ect. It will only show the size when directly printed to terminal, not through the tui. This feature is very new, so availability in other terminals will depend on uptake.
+
+Valid values for size are `normal` (to reset size in a nested element), `double`, `triple` and `half`.
+The first letter is not case-sensitive.
+As an alternative the values 1, 2 or 3 can also be used for normal, double and triple.
+
+This feature needs to be specifically switched on in the misc section.
 
 ```toml
 [styles.h1]
@@ -478,6 +494,7 @@ fg = "Cyan"
 [styles.blockquote]
 fg = "Gray"
 italic = true
+size = "Double"
 ```
 
 This means:

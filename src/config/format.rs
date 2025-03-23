@@ -177,7 +177,8 @@ impl FormatConfig {
                 &mut id_style,
             );
         }
-        let tag_identifier = self.tag_styles.get(element.value().name());
+        let element_tag = element.value().name();
+        let tag_identifier = self.tag_styles.get(element_tag);
         if let Some(tag) = tag_identifier {
             Self::insert_values(
                 element,
