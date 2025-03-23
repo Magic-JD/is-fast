@@ -93,9 +93,13 @@ impl Color {
 
 #[derive(Debug, Deserialize, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Size {
+    #[serde(alias = "1", alias = "normal")]
     Normal,
+    #[serde(alias = "2", alias = "double")]
     Double,
+    #[serde(alias = "3", alias = "triple")]
     Triple,
+    #[serde(alias = "half")]
     Half,
 }
 
