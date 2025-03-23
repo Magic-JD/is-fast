@@ -216,11 +216,14 @@ impl Style {
 
     pub fn to_ansi_style(self) -> AnsiStyle {
         let mut style = AnsiStyle::new();
-        let mut color = AnsiColor::Default;
         if let Some(is_color) = &self.fg {
-            color = AnsiColor::Rgb(is_color.r, is_color.g, is_color.b);
+            let color = AnsiColor::Rgb(is_color.r, is_color.g, is_color.b);
+            style = style.fg(color);
         }
-        style = style.fg(color);
+        if let Some(is_color) = &self.bg {
+            let color = AnsiColor::Rgb(is_color.r, is_color.g, is_color.b);
+            style = style.on(color);
+        }
         self.bold.inspect(|b| {
             if *b {
                 style = style.bold();
@@ -299,7 +302,7 @@ mod tests {
     }
 
     #[test]
-    fn test_convert_styles() {
+    fn test_convert_styles_rat() {
         let style = Style {
             fg: Color::from_str("red").ok(),
             bg: Color::from_str("#000000").ok(),
@@ -316,12 +319,51 @@ mod tests {
         assert_eq!(error_style.fg, Some(RatColor::Rgb(208, 84, 84)));
         assert_eq!(error_style.bg, Some(RatColor::Rgb(0, 0, 0)));
 
-        error_style.add_modifier.contains(Modifier::UNDERLINED);
-
         assert!(error_style.add_modifier.contains(Modifier::BOLD));
         assert!(!error_style.add_modifier.contains(Modifier::ITALIC));
         assert!(error_style.add_modifier.contains(Modifier::UNDERLINED));
+        assert!(!error_style.add_modifier.contains(Modifier::CROSSED_OUT));
         assert!(!error_style.add_modifier.contains(Modifier::DIM));
+    }
+
+    #[test]
+    fn test_convert_styles_ansi() {
+        let style = Style {
+            fg: Color::from_str("red").ok(),
+            bg: Color::from_str("#000000").ok(),
+            size: None,
+            bold: Some(true),
+            italic: Some(true),
+            underlined: Some(true),
+            crossed_out: Some(true),
+            dim: Some(true),
+        };
+
+        let error_style = style.to_ansi_style();
+
+        assert_eq!(error_style.foreground, Some(AnsiColor::Rgb(208, 84, 84)));
+        assert_eq!(error_style.background, Some(AnsiColor::Rgb(0, 0, 0)));
+
+        assert!(error_style.is_underline);
+        assert!(error_style.is_bold);
+        assert!(error_style.is_italic);
+        assert!(error_style.is_strikethrough);
+        assert!(error_style.is_dimmed);
+    }
+
+    #[test]
+    fn test_convert_styles_ansi_default() {
+        let style = Style::default();
+        let error_style = style.to_ansi_style();
+
+        assert_eq!(error_style.foreground, None);
+        assert_eq!(error_style.background, None);
+
+        assert!(!error_style.is_underline);
+        assert!(!error_style.is_bold);
+        assert!(!error_style.is_italic);
+        assert!(!error_style.is_strikethrough);
+        assert!(!error_style.is_dimmed);
     }
 
     #[test]
