@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.1]
+### Added
+- Added support for kitty text size protocol.
+- For supported terminals (kitty v0.40.0+, not using tmux, zellig, screen, ect) text size can be set in the configuration.
+- This will only show when the text is output to the terminal directly using piped.
+- This must be enabled in the configuration in the misc section.
+
 ## [0.14.1]
 ### Fix
 - Added brotli decoding to handle some sites that use it.
