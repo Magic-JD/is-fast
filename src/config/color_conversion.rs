@@ -91,15 +91,36 @@ impl Color {
     }
 }
 
+#[derive(Debug, Deserialize, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Size {
+    Normal,
+    Double,
+    Triple,
+    Half,
+}
+
 #[derive(Debug, Deserialize, Clone, Copy, Default, PartialEq, Eq, Hash)]
 pub struct Style {
     fg: Option<Color>,
     bg: Option<Color>,
+    pub(crate) size: Option<Size>,
     pub(crate) bold: Option<bool>,
     pub(crate) italic: Option<bool>,
     underlined: Option<bool>,
     crossed_out: Option<bool>,
     dim: Option<bool>,
+}
+
+impl Style {
+    pub(crate) fn parse_size(value: Option<&str>) -> Option<Size> {
+        match value {
+            Some("half") => Some(Size::Half),
+            Some("1") | Some("normal") => Some(Size::Normal),
+            Some("2") | Some("double") => Some(Size::Double),
+            Some("3") | Some("triple") => Some(Size::Triple),
+            _ => None,
+        }
+    }
 }
 
 impl FromStr for Style {
@@ -116,6 +137,7 @@ impl FromStr for Style {
                 match key.trim().to_lowercase().as_str() {
                     "fg" => config.fg = value.and_then(|col| Color::from_str(col.as_str()).ok()),
                     "bg" => config.bg = value.and_then(|col| Color::from_str(col.as_str()).ok()),
+                    "size" => config.size = Self::parse_size(value.as_deref()),
                     "bold" => config.bold = Self::parse_bool(value.as_deref()),
                     "italic" => config.italic = Self::parse_bool(value.as_deref()),
                     "underlined" => config.underlined = Self::parse_bool(value.as_deref()),
@@ -170,6 +192,7 @@ impl Style {
         Self {
             fg: Some(color),
             bg: None,
+            size: None,
             bold: None,
             italic: None,
             underlined: None,
@@ -182,6 +205,7 @@ impl Style {
         Self {
             fg: other.fg.or(self.fg),
             bg: other.bg.or(self.bg),
+            size: other.size.or(self.size),
             bold: other.bold.or(self.bold),
             italic: other.italic.or(self.italic),
             underlined: other.underlined.or(self.underlined),
@@ -279,6 +303,7 @@ mod tests {
         let style = Style {
             fg: Color::from_str("red").ok(),
             bg: Color::from_str("#000000").ok(),
+            size: None,
             bold: Some(true),
             italic: Some(false),
             underlined: Some(true),

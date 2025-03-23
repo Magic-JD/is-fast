@@ -1,9 +1,9 @@
 
-[1;39m[1;39mRust By Example[0m[0m
+[1;39mRust By Example[0m
 
-[1;39m[38;2;128;204;204mfor loops[0m[0m
+[1;38;2;128;204;204mfor loops[0m
 
-[1;39m[38;2;128;204;204mfor and range[0m[0m
+[1;38;2;128;204;204mfor and range[0m
 
 The [38;2;180;142;173mfor[0m[38;2;192;197;206m [0m[38;2;192;197;206min[0m construct can be used to iterate through an [38;2;192;197;206mIterator[0m. One of the easiest ways to create an iterator is to use the range notation [38;2;192;197;206ma[0m[38;2;192;197;206m..[0m[38;2;192;197;206mb[0m. This yields values from [38;2;192;197;206ma[0m (inclusive) to [38;2;192;197;206mb[0m (exclusive) in steps of one.
 
@@ -41,13 +41,13 @@ Alternatively, [38;2;192;197;206ma[0m[38;2;192;197;206m..[0m[38;2;192;197;2
 [38;2;192;197;206m    [0m[38;2;192;197;206m}[0m
 [38;2;192;197;206m}[0m
 
-[1;39m[38;2;128;204;204mfor and iterators[0m[0m
+[1;38;2;128;204;204mfor and iterators[0m
 
 The [38;2;180;142;173mfor[0m[38;2;192;197;206m [0m[38;2;192;197;206min[0m construct is able to interact with an [38;2;192;197;206mIterator[0m in several ways. As discussed in the section on the [38;2;128;204;204mIterator[0m trait, by default the [38;2;180;142;173mfor[0m loop will apply the [38;2;192;197;206minto_iter[0m function to the collection. However, this is not the only means of converting collections into iterators.
 
 [38;2;192;197;206minto_iter[0m, [38;2;192;197;206miter[0m and [38;2;192;197;206miter_mut[0m all handle the conversion of a collection into an iterator in different ways, by providing different views on the data within.
 
-[1;39m[1;39m  • [0m[38;2;192;197;206miter[0m[1;39m - This borrows each element of the collection through each iteration. Thus leaving the collection untouched and available for reuse after the loop.[0m[0m
+[1;39m  • [0m[1;38;2;192;197;206miter[0m[1;39m - This borrows each element of the collection through each iteration. Thus leaving the collection untouched and available for reuse after the loop.[0m
 
 [38;2;180;142;173mfn[0m[38;2;192;197;206m [0m[38;2;143;161;179mmain[0m[38;2;192;197;206m([0m[38;2;192;197;206m)[0m[38;2;192;197;206m [0m[38;2;192;197;206m{[0m
 [38;2;192;197;206m    [0m[38;2;180;142;173mlet[0m[38;2;192;197;206m names [0m[38;2;192;197;206m=[0m[38;2;192;197;206m [0m[38;2;192;197;206mvec![0m[38;2;192;197;206m[[0m[38;2;192;197;206m"[0m[38;2;163;190;140mBob[0m[38;2;192;197;206m"[0m[38;2;192;197;206m,[0m[38;2;192;197;206m [0m[38;2;192;197;206m"[0m[38;2;163;190;140mFrank[0m[38;2;192;197;206m"[0m[38;2;192;197;206m,[0m[38;2;192;197;206m [0m[38;2;192;197;206m"[0m[38;2;163;190;140mFerris[0m[38;2;192;197;206m"[0m[38;2;192;197;206m][0m[38;2;192;197;206m;[0m
@@ -63,7 +63,7 @@ The [38;2;180;142;173mfor[0m[38;2;192;197;206m [0m[38;2;192;197;206min[0m 
 [38;2;192;197;206m    [0m[38;2;192;197;206mprintln![0m[38;2;192;197;206m([0m[38;2;192;197;206m"[0m[38;2;163;190;140mnames: [0m[38;2;208;135;112m{:?}[0m[38;2;192;197;206m"[0m[38;2;192;197;206m,[0m[38;2;192;197;206m names[0m[38;2;192;197;206m)[0m[38;2;192;197;206m;[0m
 [38;2;192;197;206m}[0m
 
-[1;39m[1;39m  • [0m[38;2;192;197;206minto_iter[0m[1;39m - This consumes the collection so that on each iteration the exact data is provided. Once the collection has been consumed it is no longer available for reuse as it has been 'moved' within the loop.[0m[0m
+[1;39m  • [0m[1;38;2;192;197;206minto_iter[0m[1;39m - This consumes the collection so that on each iteration the exact data is provided. Once the collection has been consumed it is no longer available for reuse as it has been 'moved' within the loop.[0m
 
 [38;2;180;142;173mfn[0m[38;2;192;197;206m [0m[38;2;143;161;179mmain[0m[38;2;192;197;206m([0m[38;2;192;197;206m)[0m[38;2;192;197;206m [0m[38;2;192;197;206m{[0m
 [38;2;192;197;206m    [0m[38;2;180;142;173mlet[0m[38;2;192;197;206m names [0m[38;2;192;197;206m=[0m[38;2;192;197;206m [0m[38;2;192;197;206mvec![0m[38;2;192;197;206m[[0m[38;2;192;197;206m"[0m[38;2;163;190;140mBob[0m[38;2;192;197;206m"[0m[38;2;192;197;206m,[0m[38;2;192;197;206m [0m[38;2;192;197;206m"[0m[38;2;163;190;140mFrank[0m[38;2;192;197;206m"[0m[38;2;192;197;206m,[0m[38;2;192;197;206m [0m[38;2;192;197;206m"[0m[38;2;163;190;140mFerris[0m[38;2;192;197;206m"[0m[38;2;192;197;206m][0m[38;2;192;197;206m;[0m
@@ -79,7 +79,7 @@ The [38;2;180;142;173mfor[0m[38;2;192;197;206m [0m[38;2;192;197;206min[0m 
 [38;2;192;197;206m    [0m[38;2;101;115;126m//[0m[38;2;101;115;126m FIXME ^ Comment out this line[0m
 [38;2;192;197;206m}[0m
 
-[1;39m[1;39m  • [0m[38;2;192;197;206miter_mut[0m[1;39m - This mutably borrows each element of the collection, allowing for the collection to be modified in place.[0m[0m
+[1;39m  • [0m[1;38;2;192;197;206miter_mut[0m[1;39m - This mutably borrows each element of the collection, allowing for the collection to be modified in place.[0m
 
 [38;2;180;142;173mfn[0m[38;2;192;197;206m [0m[38;2;143;161;179mmain[0m[38;2;192;197;206m([0m[38;2;192;197;206m)[0m[38;2;192;197;206m [0m[38;2;192;197;206m{[0m
 [38;2;192;197;206m    [0m[38;2;180;142;173mlet[0m[38;2;192;197;206m [0m[38;2;180;142;173mmut[0m[38;2;192;197;206m names [0m[38;2;192;197;206m=[0m[38;2;192;197;206m [0m[38;2;192;197;206mvec![0m[38;2;192;197;206m[[0m[38;2;192;197;206m"[0m[38;2;163;190;140mBob[0m[38;2;192;197;206m"[0m[38;2;192;197;206m,[0m[38;2;192;197;206m [0m[38;2;192;197;206m"[0m[38;2;163;190;140mFrank[0m[38;2;192;197;206m"[0m[38;2;192;197;206m,[0m[38;2;192;197;206m [0m[38;2;192;197;206m"[0m[38;2;163;190;140mFerris[0m[38;2;192;197;206m"[0m[38;2;192;197;206m][0m[38;2;192;197;206m;[0m
@@ -96,7 +96,7 @@ The [38;2;180;142;173mfor[0m[38;2;192;197;206m [0m[38;2;192;197;206min[0m 
 
 In the above snippets note the type of [38;2;180;142;173mmatch[0m branch, that is the key difference in the types of iteration. The difference in type then of course implies differing actions that are able to be performed.
 
-[1;39m[38;2;128;204;204mSee also:[0m[0m
+[1;38;2;128;204;204mSee also:[0m
 
 [38;2;128;204;204mIterator[0m
 

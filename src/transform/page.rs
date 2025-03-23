@@ -1,5 +1,5 @@
 use crate::cli::command::ColorMode;
-use crate::config::color_conversion::Style;
+use crate::config::color_conversion::{Size, Style};
 use crate::config::load::{Config, ExtractionConfig};
 use crate::errors::error::IsError;
 use crate::errors::error::IsError::{Io, Scrape};
@@ -13,6 +13,7 @@ use crate::transform::syntax_highlight::SyntaxHighlighter;
 use ratatui::text::{Line as RatLine, Text};
 use ratatui::widgets::Paragraph;
 use scraper::{ElementRef, Html, Selector};
+use std::cmp::max;
 use std::fs;
 
 #[derive(Clone)]
@@ -150,28 +151,62 @@ impl PageExtractor {
 
     fn convert_to_ansi(line: Line) -> String {
         let mut painted = String::new();
-        for span in line.spans {
+        for span in line.spans.iter() {
             if let Some(style) = span.style {
-                painted.push_str(&Self::apply_to_text(span.content.as_ref(), style));
+                let mut span_content = span.content.clone();
+                if Config::get_text_size_supported() {
+                    span_content = resize_text(span_content, style.size);
+                }
+                let span_content = &Self::apply_to_text(&span_content, style);
+                painted.push_str(span_content);
             } else {
                 painted.push_str(span.content.as_ref());
             }
         }
 
-        if let Some(style) = line.style {
-            painted = Self::apply_to_text(&painted, style);
+        if Config::get_text_size_supported() {
+            painted = add_additional_lines(painted, &line.spans);
         }
         painted
     }
 
     fn apply_to_text(content: &str, is_style: Style) -> String {
-        let paint = is_style.to_ansi_style().paint(content);
-        format!("{paint}")
+        is_style.to_ansi_style().paint(content).to_string()
     }
 
     fn sanitize(html: &str) -> String {
         html.replace('\t', "    ").replace(['\r', '\u{feff}'], "")
     }
+}
+
+fn add_additional_lines(content: String, spans: &[Span]) -> String {
+    let mut max_height = 0;
+    spans
+        .iter()
+        .filter_map(|span| span.style)
+        .filter_map(|style| style.size)
+        .for_each(|size| match size {
+            Size::Double => max_height = max(max_height, 1),
+            Size::Triple => max_height = max(max_height, 2),
+            _ => {}
+        });
+    match max_height {
+        1 => format!("{content}\n"),
+        2 => format!("{content}\n\n"),
+        _ => content,
+    }
+}
+
+fn resize_text(content: String, size: Option<Size>) -> String {
+    if let Some(size) = size {
+        return match size {
+            Size::Normal => format!("\x1b]66;s=1;{content}\x07"),
+            Size::Double => format!("\x1b]66;s=2;{content}\x07"),
+            Size::Triple => format!("\x1b]66;s=3;{content}\x07"),
+            Size::Half => format!("\x1b]66;s=1;{content}\x07"),
+        };
+    };
+    content.to_string()
 }
 
 #[cfg(test)]

@@ -41,6 +41,8 @@ pub struct SearchSection {
 pub struct MiscSection {
     #[serde(default)]
     pub(crate) open_tool: Option<String>,
+    #[serde(default)]
+    pub(crate) text_size_supported: bool,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -180,11 +182,17 @@ fn override_search(
 }
 
 fn override_misc(misc: Option<MiscSection>, u_misc: Option<MiscSection>) -> MiscSection {
-    let mut misc = misc.unwrap_or(MiscSection { open_tool: None });
+    let mut misc = misc.unwrap_or(MiscSection {
+        open_tool: None,
+        text_size_supported: false,
+    });
 
     if let Some(u_misc) = u_misc {
         if let Some(open_tool) = u_misc.open_tool {
             misc.open_tool = Some(open_tool);
+        }
+        if u_misc.text_size_supported {
+            misc.text_size_supported = u_misc.text_size_supported
         }
     }
     misc

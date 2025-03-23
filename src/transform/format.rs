@@ -48,17 +48,22 @@ impl Formatter {
                 Line::default(),
             ];
         }
-
+        let style = self.config.style_for_tag(&element);
         if tag_name == "code" {
             // Handle code differently due to performance issues.
             let language_type = extract_language_type(element);
             let code_text = extract_code(element);
-            return self
+            let mut lines = self
                 .syntax_highlighter
                 .highlight_code(&code_text, &language_type);
+            if let Some(style) = style {
+                lines = lines
+                    .into_iter()
+                    .map(|line| line.set_style(style))
+                    .collect();
+            }
+            return lines;
         }
-
-        let style = self.config.style_for_tag(&element);
 
         let mut lines = Vec::new();
 

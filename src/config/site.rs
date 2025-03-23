@@ -192,7 +192,13 @@ impl SitePicker {
             .map(|format| format.indent_elements.iter().cloned().collect())
             .unwrap_or_default();
         let mut existing_styles = config.styles.clone();
-        existing_styles.extend(styles.iter().cloned());
+        for (key, value) in styles {
+            let new = existing_styles
+                .get(key)
+                .map(|s| s.patch(value))
+                .unwrap_or(*value);
+            existing_styles.insert(key.to_string(), new);
+        }
         FormatConfig::new(
             ignored_tags,
             block_elements,

@@ -32,6 +32,13 @@ enabled = true
 [misc]
 # open_tool = "firefox" # Uses system open as default, only uncomment if you want to override this behaviour
 
+# EXPERIMENTAL
+# Set text size. Text size is only supported for kitty terminal 0.40.0+.
+# If you are not running kitty 0.40.0+ raw (i.e. without screen/tmux/zellig), enabling this will not work.
+# If running in an unsupported terminal or screen, this will cause the resized text to disappear.
+# Text wrap will not work correctly if the resized text is larger than the wrap.
+# text_size_supported = false
+
 # Search settings.
 [search]
 # Available options:
@@ -113,12 +120,19 @@ engine = "duckduckgo"
 
 [styles.h1]
 bold = true
+size = "Triple"
 
 [styles.h2]
 bold = true
+size = "Triple"
 
 [styles.h3]
 bold = true
+size = "Double"
+
+[styles.h4]
+bold = true
+size = "Double"
 
 [styles.a]
 fg = "Cyan"

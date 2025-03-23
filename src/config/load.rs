@@ -119,6 +119,7 @@ pub struct Config {
     extraction: ExtractionConfig,
     history_widget: HistoryWidgetConfig,
     sites: SitePicker,
+    text_size_supported: bool,
 }
 
 impl Config {
@@ -235,6 +236,10 @@ impl Config {
             extraction,
             history_widget,
             sites: site_picker,
+            text_size_supported: tool
+                .misc
+                .map(|misc| misc.text_size_supported)
+                .unwrap_or(false),
         }
     }
 
@@ -338,6 +343,10 @@ impl Config {
 
     pub fn get_site_config(url: &str) -> &SiteConfig {
         Self::get_config().sites.get_site_config(url)
+    }
+
+    pub fn get_text_size_supported() -> bool {
+        Self::get_config().text_size_supported
     }
 }
 
