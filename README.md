@@ -49,7 +49,7 @@ curl --proto '=https' --tlsv1.2 -LsSf https://github.com/Magic-JD/is-fast/releas
 ### Install prebuilt binaries via Homebrew
 
 ```sh
-brew install magic-jd/tap/is-fast
+brew install is-fast
 ```
 
 ### Install latest from source with cargo:
