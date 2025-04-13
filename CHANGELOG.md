@@ -2,7 +2,7 @@
 
 ## [0.15.2]
 ### Fix
-- Added brotli decoding to handle some sites that use it.
+- Fixed bug with cursor not appearing after tui shutdown
 
 ## [0.15.1]
 ### Added
