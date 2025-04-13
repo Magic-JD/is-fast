@@ -1,4 +1,5 @@
 use crate::tui::general_widgets::default_block;
+use crossterm::cursor::Show;
 use crossterm::execute;
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
@@ -42,7 +43,7 @@ impl Display {
 
     pub fn shutdown(&self) {
         let mut terminal = self.terminal.lock().expect(SHUTDOWN_ERROR);
-        execute!(terminal.backend_mut(), LeaveAlternateScreen).expect(SHUTDOWN_ERROR);
+        execute!(terminal.backend_mut(), LeaveAlternateScreen, Show).expect(SHUTDOWN_ERROR);
         disable_raw_mode().expect(SHUTDOWN_ERROR);
     }
 

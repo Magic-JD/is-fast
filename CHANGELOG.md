@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.15.2]
+### Fix
+- Added brotli decoding to handle some sites that use it.
+
 ## [0.15.1]
 ### Added
 - Added support for kitty text size protocol.
