@@ -1217,7 +1217,7 @@ dependencies = [
 
 [[package]]
 name = "is-fast"
-version = "0.15.2"
+version = "0.15.3"
 dependencies = [
  "brotli",
  "chrono",

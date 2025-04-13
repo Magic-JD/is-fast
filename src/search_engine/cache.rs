@@ -91,7 +91,7 @@ impl Cache {
 
     fn purge_cache(&self, cache_config: &CacheConfig) -> Result<(), IsError> {
         let elements_to_retain =
-            (cache_config.max_size * (100 - cache_config.cull as usize) + 99) / 100;
+            (cache_config.max_size * (100 - cache_config.cull as usize)).div_ceil(100);
         self.get_connection()
             .prepare(
                 "DELETE FROM cache WHERE url IN (
