@@ -1,6 +1,6 @@
 [package]
 name = "is-fast"
-version = "0.15.13"
+version = "0.15.14"
 edition = "2021"
 repository = "https://github.com/Magic-JD/is-fast"
 homepage = "https://github.com/Magic-JD/is-fast"
