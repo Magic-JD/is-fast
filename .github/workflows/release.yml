@@ -140,7 +140,7 @@ jobs:
       - name: Build artifacts
         run: |
           # Actually do builds and make zips and whatnot
-          dist build ${{ needs.plan.outputs.tag-flag }} --print=linkage --output-format=json ${{ matrix.dist_args }} > dist-manifest.json
+          dist build ${{ needs.plan.outputs.tag-flag }} --print=linkage --output-format=json ${{ matrix.dist_args }} --allow-dirty | sed 's/ubuntu-20.04/ubuntu-latest/g' > dist-manifest.json
           echo "dist ran successfully"
       - id: cargo-dist
         name: Post-build
