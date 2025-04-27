@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.15.11]
+## [0.15.12]
 ### Fix
 - Allow arguments to be passed into the open tool rather than just including a tool name.
 - Update the release files so they use correct ubuntu version
