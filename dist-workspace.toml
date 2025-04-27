@@ -21,4 +21,4 @@ publish-jobs = ["homebrew"]
 install-updater = false
 
 [dist.github-custom-runners]
-global = "ubuntu-22.04"
+global = "ubuntu-latest"
