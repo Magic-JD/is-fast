@@ -19,3 +19,6 @@ install-path = "CARGO_HOME"
 publish-jobs = ["homebrew"]
 # Whether to install an updater program
 install-updater = false
+
+[dist.github-custom-runners]
+global = "ubuntu-22.04"
