@@ -1217,7 +1217,7 @@ dependencies = [
 
 [[package]]
 name = "is-fast"
-version = "0.15.3"
+version = "0.15.4"
 dependencies = [
  "brotli",
  "chrono",
@@ -1247,6 +1247,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serial_test",
+ "shell-words",
  "syntect",
  "tempfile",
  "textwrap",
@@ -2231,6 +2232,12 @@ checksum = "ae65c4249478a2647db249fb43e23cec56a2c8974a427e7bd8cb5a1d0964921a"
 dependencies = [
  "stable_deref_trait",
 ]
+
+[[package]]
+name = "shell-words"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "24188a676b6ae68c3b2cb3a01be17fbf7240ce009799bb56d5b1409051e78fde"
 
 [[package]]
 name = "shlex"

@@ -1,6 +1,6 @@
 [package]
 name = "is-fast"
-version = "0.15.3"
+version = "0.15.4"
 edition = "2021"
 repository = "https://github.com/Magic-JD/is-fast"
 homepage = "https://github.com/Magic-JD/is-fast"
@@ -44,6 +44,7 @@ encoding_rs = "0.8.35"
 encoding_rs_io = "0.1.7"
 ctor = "0.4.1"
 brotli = "7.0.0"
+shell-words = "1.1.0"
 
 [build-dependencies]
 clap = { version = "4.5.31", features = ["derive", "cargo", "env"] }

@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.15.4]
+### Fix
+- Allow arguments to be passed into the open tool rather than just including a tool name.
+
 ## [0.15.3]
 ### Fix
 - Fixed bug with cursor not appearing after tui shutdown

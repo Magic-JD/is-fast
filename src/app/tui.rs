@@ -22,11 +22,19 @@ impl TuiApp {
             .and_then(|page| Some(page.get_url()).filter(|s| !s.is_empty()))
             .ok_or(General(String::from("Page doesn't have a url")))?;
         if let Some(tool) = Config::get_open_command() {
+            match tool {
+                Err(error) => return Err(General(error.to_string())),
+                Ok(command) => {
+                    let bin = command[0].as_str();
+                    let args = &command[1..];
+                    Command::new(bin)
+                        .args(args)
+                        .arg(url)
+                        .status()
+                        .map_err(|e| General(format!("{e} - you are trying to open with '{bin}' - confirm running this tool with url {url} externally for more information")))?;
+                }
+            };
             // If there is a user defined tool to open, use that
-            Command::new(tool)
-                .arg(url)
-                .status()
-                .map_err(|e| General(format!("{e} - you are trying to open with '{tool}' - confirm running this tool with url {url} externally for more information")))?;
         } else {
             // Use system open tool
             open::that(url).map_err(|err| General(err.to_string()))?;

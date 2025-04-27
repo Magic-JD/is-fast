@@ -15,7 +15,10 @@ pub enum IsError {
     DatabaseSql(#[from] rusqlite::Error),
 
     #[error("Parse errors: {0}")]
-    Parse(#[from] chrono::format::ParseError),
+    ChronoParse(#[from] chrono::format::ParseError),
+
+    #[error("Parse errors: {0}")]
+    Parse(#[from] shell_words::ParseError),
 
     #[error("String errors: {0}")]
     String(#[from] std::string::FromUtf8Error),

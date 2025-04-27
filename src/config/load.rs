@@ -4,6 +4,7 @@ use crate::config::files::config_path;
 use crate::config::glob_generation::generate_globs;
 use crate::config::site::{SiteConfig, SitePicker};
 use crate::config::tool_raw::{override_defaults_tool, ToolRawConfig};
+use crate::errors::error::IsError;
 use crate::search_engine::search_type::SearchEngine;
 use crate::search_engine::search_type::SearchEngine::{DuckDuckGo, Google, Kagi};
 use crate::DisplayConfig;
@@ -119,7 +120,7 @@ pub struct Config {
     border_color: Style,
     search_type: AtomKind,
     search_engine: SearchEngine,
-    open_tool: Option<String>,
+    open_tool: Option<Result<Vec<String>, IsError>>,
     scroll: Scroll,
     history_enabled: bool,
     pretty_print: Vec<DisplayConfig>,
@@ -222,7 +223,7 @@ impl Config {
                 .misc
                 .as_ref()
                 .and_then(|misc| misc.open_tool.clone())
-                .clone(),
+                .map(|open_tool| shell_words::split(&open_tool).map_err(IsError::Parse)),
             scroll: convert_to_scroll(
                 &tool
                     .display
@@ -328,7 +329,7 @@ impl Config {
         &Self::get_config().search_engine
     }
 
-    pub fn get_open_command() -> Option<&'static String> {
+    pub fn get_open_command() -> Option<&'static Result<Vec<String>, IsError>> {
         Self::get_config().open_tool.as_ref()
     }
 
@@ -392,12 +393,18 @@ fn to_search_engine(search_engine: &str) -> SearchEngine {
 }
 
 fn get_user_specified_tool_config() -> Option<ToolRawConfig> {
-    get_user_base_config_file().and_then(|str| toml::from_str(&str).ok())
+    get_user_base_config_file().and_then(|str| {
+        toml::from_str(&str)
+            .map_err(|e| log::error!("Config file could not be parsed to toml {e}"))
+            .ok()
+    })
 }
 
 pub fn get_user_base_config_file() -> Option<String> {
     let buff = config_path();
-    fs::read_to_string(buff).ok()
+    fs::read_to_string(buff)
+        .map_err(|e| log::error!("Config file could not be read {e}"))
+        .ok()
 }
 
 #[derive(Debug)]
