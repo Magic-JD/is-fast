@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.16.0]
+### Added
+- Log feature flag for allowing logging to be easily set.
+- Documentation for new features, and explaining how to get more detailed logs.
+- Upgraded the logging, logging more actions.
+
 ## [0.15.14]
 ### Fix
 - Allow arguments to be passed into the open tool rather than just including a tool name.

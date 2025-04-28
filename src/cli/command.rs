@@ -17,6 +17,16 @@ pub enum CacheMode {
     Flash,
 }
 
+#[derive(Debug, PartialEq, Clone, ValueEnum, Default)]
+pub enum LogLevel {
+    #[default]
+    Error,
+    Warn,
+    Info,
+    Debug,
+    Trace,
+}
+
 #[derive(Debug, Parser)]
 pub struct OpenArgs {
     #[arg(help = "The search query to extract content from websites")]
@@ -72,7 +82,7 @@ pub struct SelectionArgs {
 pub struct CacheArgs {
     #[arg(
         long,
-        help = "Apply caching for the given search (shorthand for --cache-mode=readwrite)"
+        help = "Apply caching for the given search (shorthand for --cache-mode=read-write)"
     )]
     pub cache: bool,
 
@@ -82,11 +92,7 @@ pub struct CacheArgs {
     )]
     pub no_cache: bool,
 
-    #[arg(
-        long,
-        value_enum,
-        help = "Set cache mode (never, read, write, readwrite, flash)"
-    )]
+    #[arg(long, value_enum, help = "Set cache mode")]
     pub cache_mode: Option<CacheMode>,
 
     #[arg(
@@ -110,7 +116,7 @@ pub struct OutputArgs {
     #[arg(long, help = "Output the result to standard out")]
     pub piped: bool,
 
-    #[arg(long, value_enum, help = "Set color mode (tui, always, never)")]
+    #[arg(long, value_enum, help = "Set color mode")]
     pub color: Option<ColorMode>,
 
     #[arg(
@@ -139,6 +145,15 @@ pub struct TaskArgs {
 }
 
 #[derive(Debug, Parser)]
+pub struct LogArgs {
+    #[arg(long, help = "Activate logging")]
+    pub log: bool,
+
+    #[arg(long, value_enum, help = "Set log level")]
+    pub log_level: Option<LogLevel>,
+}
+
+#[derive(Debug, Parser)]
 #[command(name = "is-fast")]
 #[command(about = "A fast content extractor for terminal-based internet searches")]
 #[command(version = env!("CARGO_PKG_VERSION"), author = "Joseph Daunt")]
@@ -161,4 +176,7 @@ pub struct Cli {
 
     #[command(flatten)]
     pub task: TaskArgs,
+
+    #[command(flatten)]
+    pub log: LogArgs,
 }

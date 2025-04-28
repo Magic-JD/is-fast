@@ -97,6 +97,9 @@ cargo install --git https://github.com/Magic-JD/is-fast.git
   - [`--no-cache`](#--no-cache)
   - [`--flash-cache`](#--flash-cache)
   - [`--cache-mode`](#--cache-mode)
+- [🐞 Logging in `is-fast`](#-logging-in-is-fast)
+  - [`--log`](#--log)
+  - [`--log-level`](#--log-level)
 - [🔑 Customizing your results](#-customizing-your-results)
   - [`--selector`](#--selector-s)
   - [`--nth-element`](#--nth-element)
@@ -819,6 +822,36 @@ The write mode is useful if you have a bad cached value stored, as it will overr
 ```sh
 is-fast --cache-mode write --direct "www.previously_bad_result.com"
 ```
+---
+
+## 🐞 Logging in `is-fast`
+
+`is-fast` includes an optional logging system to help you debug or monitor the tool's behavior. Logs are written to a file, which by default will be placed inside your config directory. You can override this location by setting the `IS_FAST_LOG_DIR` environment variable.
+
+The logging system is based on Rust's standard logging framework, which is normally controlled through the `RUST_LOG` environment variable. Internally, enabling `--log` has the same effect as setting `RUST_LOG=is_fast=error`. If you want to enable more detailed logging for external crates as well, using the `RUST_LOG` environment variable is recommended.
+
+Example of using `RUST_LOG` to enable verbose logging across crates:
+
+```sh
+RUST_LOG="is_fast=debug,reqwest=info" is-fast "How to do rust logging"
+```
+
+### `--log`
+
+Enables logging with a default log level of `error`.
+
+```sh
+is-fast --log "Java how to use entity manager"
+```
+
+### `--log-level`
+
+Sets the specific log level to use. Available options typically include `error`, `warn`, `info`, `debug`, and `trace`.
+
+```sh
+is-fast --log --log-level debug "Debug level rust logging"
+```
+
 ---
 
 # 🔑 Customizing your results
