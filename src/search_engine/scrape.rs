@@ -7,23 +7,14 @@ use brotli::Decompressor;
 use encoding_rs::{Encoding, UTF_8};
 use encoding_rs_io::DecodeReaderBytesBuilder;
 use once_cell::sync::Lazy;
-use reqwest::blocking::{Client, RequestBuilder, Response};
-use reqwest::tls::Version;
 use std::io::Read;
 use std::time::Duration;
+use ureq::{Agent, AgentBuilder, Response};
 
-pub static REQWEST_CLIENT: Lazy<Client> = Lazy::new(|| {
-    Client::builder()
-        .use_rustls_tls()
-        .min_tls_version(Version::TLS_1_2)
-        .timeout(Duration::from_secs(4))
-        .gzip(true)
-        .build()
-        .expect("Failed to build reqwest client")
-});
+pub static UREQ_AGENT: Lazy<Agent> =
+    Lazy::new(|| AgentBuilder::new().timeout(Duration::from_secs(4)).build());
 
 pub static HEADER_ORDERING: Lazy<Vec<&str>> = Lazy::new(|| {
-    // Define the preferred order of headers
     vec![
         "User-Agent",
         "Accept",
@@ -44,7 +35,7 @@ pub fn scrape(html_source: &HtmlSource) -> Result<String, IsError> {
     if let Some(html) = cached_pages_read(html_source) {
         return Ok(html);
     }
-    reqwest_scrape(html_source)
+    ureq_scrape(html_source)
         .inspect(|html| log::trace!("scraping page {html}"))
         .inspect(|html| cached_pages_write(html_source, html))
 }
@@ -53,32 +44,29 @@ pub fn cache_purge(url: &HtmlSource) {
     cached_pages_purge(url);
 }
 
-fn reqwest_scrape(html_source: &HtmlSource) -> Result<String, IsError> {
+fn ureq_scrape(html_source: &HtmlSource) -> Result<String, IsError> {
     let url = html_source.get_url();
-    let builder = REQWEST_CLIENT.get(url);
-    let builder = add_url_based_headers(&html_source.get_config(), builder);
-    builder
-        .send()
-        .map_err(|_| {
-            Scrape(format!(
-                "Request failed for {url} - check your internet connection"
-            ))
-        })
-        .and_then(|res| {
-            if !res.status().is_success() {
-                return Err(error_for_fail_response_code(url, &res));
-            }
-            Ok(res)
-        })
-        .and_then(|response| decode_text(url, response))
+    let mut request = UREQ_AGENT.get(url);
+    request = add_url_based_headers(&html_source.get_config(), request);
+
+    let response = request.call().map_err(|e| {
+        Scrape(format!(
+            "Request failed for {url} - check your internet connection (internal server error): {e}"
+        ))
+    })?;
+
+    if !(response.status() >= 200 && response.status() < 300) {
+        return Err(error_for_fail_response_code(url, &response));
+    }
+
+    decode_text(url, response)
 }
 
-fn add_url_based_headers(url: &SiteConfig, builder: RequestBuilder) -> RequestBuilder {
-    let mut builder = builder;
+fn add_url_based_headers(url: &SiteConfig, request: ureq::Request) -> ureq::Request {
+    let mut request = request;
     let headers = url.get_call().get_headers();
-    // Sort headers based on their index in the preferred order list
-    // This is needed because some sites detect scraping using the header ordering
     let mut sorted_headers: Vec<(&String, &String)> = headers.iter().collect();
+
     sorted_headers.sort_by_key(|(key, _)| {
         HEADER_ORDERING
             .iter()
@@ -86,46 +74,37 @@ fn add_url_based_headers(url: &SiteConfig, builder: RequestBuilder) -> RequestBu
             .unwrap_or(HEADER_ORDERING.len())
     });
 
-    // Add headers in sorted order
     for (key, value) in sorted_headers {
-        builder = builder.header(key, value);
+        request = request.set(key, value);
     }
-    builder
+
+    request
 }
 
 fn error_for_fail_response_code(url: &str, response: &Response) -> IsError {
     Scrape(format!(
-        "Request failed for {url}: HTTP Status {} - {}",
-        response.status().as_u16(),
-        response
-            .status()
-            .canonical_reason()
-            .unwrap_or("Unknown error")
+        "Request failed for {url}: HTTP Status {}",
+        response.status()
     ))
 }
 
 fn decode_text(url: &str, response: Response) -> Result<String, IsError> {
-    let encoding_from_headers = response
-        .headers()
-        .get("Content-Type")
-        .and_then(|ct| ct.to_str().ok())
-        .and_then(|ct| {
-            if let Some(start) = ct.find("charset=") {
-                let charset = &ct[start + 8..].trim();
-                Encoding::for_label(charset.as_bytes())
-            } else {
-                None
-            }
-        });
+    let content_type = response.header("Content-Type").unwrap_or("");
+    let encoding_from_headers = if let Some(start) = content_type.find("charset=") {
+        let charset = &content_type[start + 8..].trim();
+        Encoding::for_label(charset.as_bytes())
+    } else {
+        None
+    };
 
     let is_brotli = response
-        .headers()
-        .get("Content-Encoding")
-        .and_then(|ct| ct.to_str().ok())
-        .filter(|s| *s == "br")
-        .is_some();
+        .header("Content-Encoding")
+        .map(|e| e.eq_ignore_ascii_case("br"))
+        .unwrap_or(false);
 
-    let mut bytes = response.bytes().map_err(|_| {
+    let mut bytes = Vec::new();
+    let mut reader = response.into_reader();
+    reader.read_to_end(&mut bytes).map_err(|_| {
         Scrape(format!(
             "Request failed for {url}, could not extract content."
         ))
@@ -139,7 +118,7 @@ fn decode_text(url: &str, response: Response) -> Result<String, IsError> {
                 "Request failed for {url}, Brotli decompression failed."
             ))
         })?;
-        bytes = decompressed.into();
+        bytes = decompressed;
     }
 
     let encoding = encoding_from_headers
@@ -156,5 +135,6 @@ fn decode_text(url: &str, response: Response) -> Result<String, IsError> {
             "Request failed for {url}, could not decode content."
         ))
     })?;
+
     Ok(text)
 }
