@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.16.1]
+### Fix
+- Change reqwest to ureq due to issues with cloudflare blocking reqwest.
+
 ## [0.16.0]
 ### Added
 - Log feature flag for allowing logging to be easily set.

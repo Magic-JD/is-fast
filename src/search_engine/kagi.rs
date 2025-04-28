@@ -2,9 +2,8 @@ use crate::errors::error::IsError;
 use crate::errors::error::IsError::Scrape;
 use crate::errors::error::IsError::Search as SearchError;
 use crate::search_engine::link::Link;
-use crate::search_engine::scrape::REQWEST_CLIENT;
+use crate::search_engine::scrape::UREQ_AGENT;
 use crate::search_engine::search_type::Search;
-use reqwest::blocking::Response;
 use serde_json::from_str;
 
 #[derive(serde::Deserialize)]
@@ -44,13 +43,23 @@ impl KagiSearch {
 
     fn request_results(api_key: &str, query: &str) -> Result<String, IsError> {
         let url = format!("https://kagi.com/api/v0/search?q={query}");
-        REQWEST_CLIENT
+        UREQ_AGENT
             .get(&url)
-            .header("Authorization", format!("Bot {api_key}"))
-            .send()
-            .and_then(Response::error_for_status)
-            .and_then(Response::text)
+            .set("Authorization", &format!("Bot {api_key}"))
+            .call()
             .map_err(|e| Scrape(format!("Request failed for {url}: {e}")))
+            .and_then(|response| {
+                if response.status() >= 200 && response.status() < 300 {
+                    response
+                        .into_string()
+                        .map_err(|e| Scrape(format!("Failed to read response body for {url}: {e}")))
+                } else {
+                    Err(Scrape(format!(
+                        "Request failed for {url}: HTTP Status {}",
+                        response.status()
+                    )))
+                }
+            })
     }
 
     fn get_links(api_key: &str, query: &str) -> Result<Vec<Link>, IsError> {
