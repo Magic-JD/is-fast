@@ -833,7 +833,7 @@ The logging system is based on Rust's standard logging framework, which is norma
 Example of using `RUST_LOG` to enable verbose logging across crates:
 
 ```sh
-RUST_LOG="is_fast=debug,reqwest=info" is-fast "How to do rust logging"
+RUST_LOG="is_fast=debug,ureq=info" is-fast "How to do rust logging"
 ```
 
 ### `--log`
