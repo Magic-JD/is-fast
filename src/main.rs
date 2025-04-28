@@ -43,8 +43,8 @@ enum DisplayConfig {
 }
 
 fn main() {
-    init_logger();
     let args = Cli::parse();
+    init_logger(args.log);
     let pretty_print = parse_pretty_print(&args.output.pretty_print.join(","));
     let cache_command = determine_cache_mode(&args.cache);
     let ignored = determine_ignored(args.selection.ignore);
@@ -113,21 +113,13 @@ fn determine_styles(styles: Vec<String>) -> Vec<(String, Style)> {
 fn process_clear_command(clear_cache: bool, clear_history: bool, clear_all: bool) -> bool {
     if clear_cache || clear_history || clear_all {
         if clear_cache || clear_all {
-            log::debug!(
-                "Clearing cache - Clear cache {}, Clear all {}",
-                clear_cache,
-                clear_all
-            );
+            log::debug!("Clearing cache - Clear cache {clear_cache}, Clear all {clear_all}");
             cache::clear();
         }
         if clear_history || clear_all {
-            log::debug!(
-                "Clearing history - Clear history {}, Clear all {}",
-                clear_history,
-                clear_all
-            );
+            log::debug!("Clearing history - Clear history {clear_history}, Clear all {clear_all}");
             history_database::clear_history()
-                .unwrap_or_else(|e| log::error!("Failed to clear history: {}", e));
+                .unwrap_or_else(|e| log::error!("Failed to clear history: {e}"));
         }
         return true;
     }

@@ -1,3 +1,4 @@
+use crate::cli::command::{LogArgs, LogLevel};
 use crate::config::files::log_path;
 use chrono::Local;
 use env_logger::Builder;
@@ -6,10 +7,19 @@ use std::io::Write;
 use std::sync::{Arc, Mutex};
 use std::{env, thread};
 
-pub fn init_logger() {
+pub fn init_logger(log_args: LogArgs) {
     let rust_log_level = env::var("RUST_LOG");
     if let Ok(level) = rust_log_level {
         log_to_file(&level);
+    } else if log_args.log {
+        let log_level = match log_args.log_level.unwrap_or_default() {
+            LogLevel::Error => "is_fast=error",
+            LogLevel::Warn => "is_fast=warn",
+            LogLevel::Info => "is_fast=info",
+            LogLevel::Debug => "is_fast=debug",
+            LogLevel::Trace => "is_fast=trace",
+        };
+        log_to_file(log_level)
     }
 }
 

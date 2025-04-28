@@ -95,6 +95,7 @@ engine = "duckduckgo"
 "*techbeamers.com*" = "div.entry-content > *:not(div.ruby-table-contents)"
 "*old.reddit.com*" = "a.title, h1.redditname, span.subscribers, p.users-online"
 "*old.reddit.com/r/*/comments/*" = "a.title, a.author, div.entry > form, div.expando > form"
+"*docs.rs*" = "section#main-content"
 
 # This defines the other configs that should be appended for the matching sites.
 # These configs should be defined in the same directory as your default config.
