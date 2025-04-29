@@ -25,13 +25,21 @@ impl TuiApp {
             match tool {
                 Err(error) => return Err(General(error.to_string())),
                 Ok(command) => {
-                    let bin = command[0].as_str();
-                    let args = &command[1..];
-                    Command::new(bin)
-                        .args(args)
-                        .arg(url)
+                    // Insert the command if there is a matcher, else append
+                    let mut command = command.clone();
+                    if let Some(index) = command.iter().position(|s| s == &"{}".to_owned()) {
+                        command[index] = url.to_owned();
+                    } else {
+                        command.push(url.to_owned());
+                    }
+                    let command_str = command.join(" ");
+                    //let bin = command[0].as_str();
+                    // let args = &command[1..];
+                    Command::new("sh")
+                        .arg("-c")
+                        .arg(&command_str)
                         .status()
-                        .map_err(|e| General(format!("{e} - you are trying to open with '{bin}' - confirm running this tool with url {url} externally for more information")))?;
+                        .map_err(|e| General(format!("{e} - you are trying to open with '{command_str}' - confirm running this tool with url {url} externally for more information")))?;
                 }
             }
             // If there is a user defined tool to open, use that
