@@ -33,7 +33,7 @@ impl TuiApp {
                         .status()
                         .map_err(|e| General(format!("{e} - you are trying to open with '{bin}' - confirm running this tool with url {url} externally for more information")))?;
                 }
-            };
+            }
             // If there is a user defined tool to open, use that
         } else {
             // Use system open tool

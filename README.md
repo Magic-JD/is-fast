@@ -286,6 +286,15 @@ that domain. This can be overridden by the `--site` argument.
 site = "en.wikipedia.org"
 ```
 
+### Timeout
+
+This setting allows you to set the timeout in seconds before the tool will give up on a search or page.
+
+```toml
+[search]
+timeout = 10
+```
+
 ## 🔍 Selectors
 
 ### Definition

@@ -1,3 +1,4 @@
+use crate::config::load::Config;
 use crate::config::site::SiteConfig;
 use crate::errors::error::IsError;
 use crate::errors::error::IsError::Scrape;
@@ -11,8 +12,9 @@ use std::io::Read;
 use std::time::Duration;
 use ureq::{Agent, AgentBuilder, Response};
 
-pub static UREQ_AGENT: Lazy<Agent> =
-    Lazy::new(|| AgentBuilder::new().timeout(Duration::from_secs(4)).build());
+pub static TIMEOUT: Lazy<Duration> = Lazy::new(|| Duration::from_secs(Config::get_timeout()));
+
+pub static UREQ_AGENT: Lazy<Agent> = Lazy::new(|| AgentBuilder::new().timeout(*TIMEOUT).build());
 
 pub static HEADER_ORDERING: Lazy<Vec<&str>> = Lazy::new(|| {
     vec![
@@ -99,8 +101,7 @@ fn decode_text(url: &str, response: Response) -> Result<String, IsError> {
 
     let is_brotli = response
         .header("Content-Encoding")
-        .map(|e| e.eq_ignore_ascii_case("br"))
-        .unwrap_or(false);
+        .is_some_and(|e| e.eq_ignore_ascii_case("br"));
 
     let mut bytes = Vec::new();
     let mut reader = response.into_reader();

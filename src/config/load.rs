@@ -127,6 +127,8 @@ pub struct Config {
     extraction: ExtractionConfig,
     history_widget: HistoryWidgetConfig,
     sites: SitePicker,
+    timeout: u64,
+    search_site: Option<String>,
 }
 
 impl Config {
@@ -144,6 +146,7 @@ impl Config {
         no_block: bool,
         nth_element: Vec<usize>,
         styles: &[(String, Style)],
+        search_site: Option<String>,
     ) {
         let this = Self::new(
             args_color_mode,
@@ -155,12 +158,24 @@ impl Config {
             no_block,
             nth_element,
             styles,
+            search_site,
         );
         CONFIG.try_insert(this).expect("Failed to insert config");
     }
 
     fn default() -> Config {
-        Self::new(None, None, false, vec![], None, &[], false, vec![], &[])
+        Self::new(
+            None,
+            None,
+            false,
+            vec![],
+            None,
+            &[],
+            false,
+            vec![],
+            &[],
+            None,
+        )
     }
 
     // This is where the key configuration is combined, and I would rather have these values being passed
@@ -177,6 +192,7 @@ impl Config {
         no_block: bool,
         nth_element: Vec<usize>,
         styles: &[(String, Style)],
+        search_site: Option<String>,
     ) -> Self {
         let mut tool: ToolRawConfig =
             toml::from_str(DEFAULT_CONFIG).unwrap_or(ToolRawConfig::default());
@@ -243,6 +259,9 @@ impl Config {
             extraction,
             history_widget,
             sites: site_picker,
+            timeout: tool.search.as_ref().map_or(4, |search| search.timeout),
+            search_site: search_site
+                .or_else(|| tool.search.as_ref().and_then(|search| search.site.clone())),
         }
     }
 
@@ -351,6 +370,14 @@ impl Config {
 
     pub fn get_site_config(url: &str) -> &SiteConfig {
         Self::get_config().sites.get_site_config(url)
+    }
+
+    pub fn get_timeout() -> u64 {
+        Self::get_config().timeout
+    }
+
+    pub fn get_search_site() -> Option<String> {
+        Self::get_config().search_site.clone()
     }
 }
 

@@ -19,7 +19,7 @@ pub fn init_logger(log_args: LogArgs) {
             LogLevel::Debug => "is_fast=debug",
             LogLevel::Trace => "is_fast=trace",
         };
-        log_to_file(log_level)
+        log_to_file(log_level);
     }
 }
 

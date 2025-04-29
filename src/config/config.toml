@@ -63,9 +63,13 @@ enabled = true
 # To add a custom search engine, fork the repository and follow the
 # instructions in src/search/search_type.rs.
 engine = "duckduckgo"
+
 # Uncommnt to restrict search results to only the given domain. Only compatable with duckduckgo search.
 # Can be overriden with the --site flag.
 # site = "domain.name.org"
+
+# Sets the timeout for the search or page in seconds.
+timeout = 4
 
 # This determines which part of the page will be selected. No good one for a site you use? Add your own, and make a pull
 # request @https://github.com/Magic-JD/is-fast.

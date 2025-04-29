@@ -35,6 +35,8 @@ pub struct SearchSection {
     pub(crate) engine: Option<String>,
     #[serde(default)]
     pub(crate) site: Option<String>,
+    #[serde(default)]
+    pub(crate) timeout: u64,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -168,6 +170,7 @@ fn override_search(
     let mut search = config.unwrap_or(SearchSection {
         engine: None,
         site: None,
+        timeout: 0,
     });
 
     if let Some(u_search) = u_config {
@@ -176,6 +179,9 @@ fn override_search(
         }
         if let Some(site) = u_search.site {
             search.site = Some(site);
+        }
+        if u_search.timeout > 0 {
+            search.timeout = u_search.timeout;
         }
     }
     search

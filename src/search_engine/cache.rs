@@ -170,32 +170,32 @@ pub fn cached_pages_write(url: &HtmlSource, html: &str) {
     log::debug!("Caching {}", url.get_url());
     HTML_CACHE
         .insert(url, html)
-        .unwrap_or_else(|e| log::error!("Error when writing page to cache: {:?}", e));
+        .unwrap_or_else(|e| log::error!("Error when writing page to cache: {e:?}"));
 }
 
 pub fn cached_pages_read(html_source: &HtmlSource) -> Option<String> {
     let cache_result = HTML_CACHE.get(html_source).unwrap_or_else(|e| {
-        log::error!("Error when reading page from cache: {:?}", e);
+        log::error!("Error when reading page from cache: {e:?}");
         None
     });
     let url = html_source.get_url();
     match cache_result {
         Some(_) => log::debug!("Cache hit for {url}"),
         None => log::debug!("Cache miss for {url}"),
-    };
+    }
     cache_result
 }
 
 pub fn cached_pages_purge(url: &HtmlSource) {
     HTML_CACHE.remove(url).unwrap_or_else(|e| {
-        log::error!("Error when removing page from cache: {:?}", e);
+        log::error!("Error when removing page from cache: {e:?}");
     });
 }
 
 pub fn clear() {
     HTML_CACHE
         .clear()
-        .unwrap_or_else(|e| log::error!("Error when clearing cache: {:?}", e));
+        .unwrap_or_else(|e| log::error!("Error when clearing cache: {e:?}"));
 }
 
 #[cfg(test)]

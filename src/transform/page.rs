@@ -65,7 +65,7 @@ impl PageExtractor {
         .unwrap_or_else(|err| {
             if let HtmlSource::LinkSource(_) = html_source {
                 scrape::cache_purge(html_source);
-            };
+            }
             (
                 String::from("Failed to retrieve"),
                 vec![Line::from_single(Span::from(&err.to_string()))],
@@ -99,7 +99,7 @@ impl PageExtractor {
             },
             |t| t.text().collect::<String>(),
         );
-        log::debug!("Title extracted: {}", title);
+        log::debug!("Title extracted: {title}");
         title
     }
 
@@ -216,7 +216,7 @@ fn resize_text(content: &str, size: Option<Size>) -> String {
                 format!("\x1b]66;n=1:d=2:w=1;{result}\x07")
             }
         };
-    };
+    }
     content.to_string()
 }
 

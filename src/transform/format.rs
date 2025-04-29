@@ -18,7 +18,7 @@ impl Formatter {
     }
 
     pub fn to_display(&self, element: ElementRef) -> Vec<Line> {
-        log::trace!("Converting element to display lines: {:?}", element);
+        log::trace!("Converting element to display lines: {element:?}");
         let mut lines = self
             .to_lines(element, element.value().name() == "pre")
             .into_iter()

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.2]
+### Fix
+- Let site selection in config be applied. (currently only the flag is working correctly)
+
+### Added
+- Configuration for timeout.
+
 ## [0.16.1]
 ### Fix
 - Change reqwest to ureq due to issues with cloudflare blocking reqwest.

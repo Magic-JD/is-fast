@@ -1,9 +1,13 @@
 use crate::cli::command::OpenArgs;
+use crate::config::load::Config;
 use crate::database::history_database::get_latest_history;
 use crate::errors::error::IsError;
 use crate::search_engine::link::HtmlSource::{FileSource, LinkSource};
 use crate::search_engine::link::{File, HtmlSource, Link};
 use crate::search_engine::search::find_links;
+use once_cell::sync::Lazy;
+
+static SITE: Lazy<Option<String>> = Lazy::new(Config::get_search_site);
 
 pub fn prepare_pages(query: OpenArgs) -> Result<Vec<HtmlSource>, IsError> {
     let mut sources: Vec<HtmlSource> = vec![];
@@ -22,7 +26,10 @@ pub fn prepare_pages(query: OpenArgs) -> Result<Vec<HtmlSource>, IsError> {
         sources.push(LinkSource(Link::new(&url)));
     }
     if let Some(search_term) = query.query.map(|q| q.join(" ")) {
-        let site = query.site.map(|s| format!("site:{s}")).unwrap_or_default();
+        let site = SITE
+            .clone()
+            .map(|s| format!("site:{s}"))
+            .unwrap_or_default();
         find_links(format!("{search_term} {site}").trim())?
             .into_iter()
             .map(LinkSource)

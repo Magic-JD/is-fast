@@ -60,6 +60,7 @@ fn main() {
         args.selection.no_block,
         nth_element,
         &styles,
+        args.open.site.clone(),
     );
     // Generate config doesn't need a display, process and return.
     if args.task.generate_config {

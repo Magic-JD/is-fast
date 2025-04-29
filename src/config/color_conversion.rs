@@ -149,7 +149,7 @@ impl FromStr for Style {
                     "dim" => config.dim = Self::parse_bool(value.as_deref()),
                     _ => {
                         if !key.trim().is_empty() {
-                            log::error!("Unrecognized tag style key: {}", key);
+                            log::error!("Unrecognized tag style key: {key}");
                         }
                     }
                 }

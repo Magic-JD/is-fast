@@ -7,7 +7,7 @@ pub fn determine_nth_element(nth_element: Vec<String>) -> Vec<usize> {
         .into_iter()
         .flat_map(|s| s.split(',').map(str::trim).map(String::from).collect::<Vec<String>>())
         .filter_map(|n| n.parse::<usize>().map_err(|_| {
-            log::error!("Invalid index to pass for --nth-element. {}", n);
+            log::error!("Invalid index to pass for --nth-element. {n}");
             General("Error parsing args".to_string())
         }).and_then(|index| {
             if index == 0 {
@@ -69,7 +69,7 @@ pub fn parse_pretty_print(line: &str) -> Vec<DisplayConfig> {
                     Some(DisplayConfig::Title(some_or_none.map(ToString::to_string)))
                 }
                 _ => {
-                    log::error!("Invalid display configuration: {}", s);
+                    log::error!("Invalid display configuration: {s}");
                     None
                 }
             }
