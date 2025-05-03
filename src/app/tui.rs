@@ -36,8 +36,8 @@ impl TuiApp {
         Ok(())
     }
 
-    fn insert_url(url: &str, command: &Vec<String>) -> Vec<String> {
-        let mut command = command.clone();
+    fn insert_url(url: &str, command: &[String]) -> Vec<String> {
+        let mut command = command.to_owned();
         if let Some(index) = command.iter().position(|s| s == &"{}".to_owned()) {
             command[index] = url.to_owned();
         } else {
