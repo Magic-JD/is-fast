@@ -31,6 +31,7 @@ enabled = true
 
 [misc]
 # open_tool = "firefox" # Uses system open as default, only uncomment if you want to override this behaviour
+# run_tool = "is-fast --direct {} --color=always | bat" # Allows execution of a script on a page, substituting in the url for the first instance of {}
 
 # EXPERIMENTAL
 # Set text size. Text size is only supported for kitty terminal 0.40.0+.

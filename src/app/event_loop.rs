@@ -57,6 +57,7 @@ pub fn page_event_loop() -> PageAction {
             KeyCode::PageDown => PageAction::PageDown,
             KeyCode::Char('d') if modifiers.contains(KeyModifiers::CONTROL) => PageAction::PageDown,
             KeyCode::Char('o') => PageAction::Open,
+            KeyCode::Char('O') => PageAction::Run,
             _ => PageAction::Continue,
         };
     }
@@ -72,6 +73,7 @@ fn drain_buffer() {
 pub(crate) enum PageAction {
     Exit,
     Open,
+    Run,
     Up,
     Down,
     PageUp,

@@ -121,6 +121,7 @@ pub struct Config {
     search_type: AtomKind,
     search_engine: SearchEngine,
     open_tool: Option<Result<Vec<String>, IsError>>,
+    run_tool: Option<Result<Vec<String>, IsError>>,
     scroll: Scroll,
     history_enabled: bool,
     pretty_print: Vec<DisplayConfig>,
@@ -240,6 +241,11 @@ impl Config {
                 .as_ref()
                 .and_then(|misc| misc.open_tool.clone())
                 .map(|open_tool| shell_words::split(&open_tool).map_err(IsError::Parse)),
+            run_tool: tool
+                .misc
+                .as_ref()
+                .and_then(|misc| misc.run_tool.clone())
+                .map(|open_tool| shell_words::split(&open_tool).map_err(IsError::Parse)),
             scroll: convert_to_scroll(
                 &tool
                     .display
@@ -350,6 +356,10 @@ impl Config {
 
     pub fn get_open_command() -> Option<&'static Result<Vec<String>, IsError>> {
         Self::get_config().open_tool.as_ref()
+    }
+
+    pub fn get_run_command() -> Option<&'static Result<Vec<String>, IsError>> {
+        Self::get_config().run_tool.as_ref()
     }
 
     pub fn get_scroll() -> &'static Scroll {

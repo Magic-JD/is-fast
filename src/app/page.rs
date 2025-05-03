@@ -57,6 +57,10 @@ impl PageViewer for TuiApp {
                     self.open_link(index, pages)
                         .unwrap_or_else(|err| self.display.shutdown_with_error(&err.to_string()));
                 }
+                PageAction::Run => {
+                    self.run_link(index, pages)
+                        .unwrap_or_else(|err| self.display.shutdown_with_error(&err.to_string()));
+                }
                 PageAction::Continue => continue,
             }
             self.display.render(page_content.create_widgets(
