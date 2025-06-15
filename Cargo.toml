@@ -1,6 +1,6 @@
 [package]
 name = "is-fast"
-version = "0.16.2"
+version = "0.17.0"
 edition = "2021"
 repository = "https://github.com/Magic-JD/is-fast"
 homepage = "https://github.com/Magic-JD/is-fast"
@@ -14,46 +14,46 @@ license = false
 eula = false
 
 [dependencies]
-crossterm = "0.28.1"
-ratatui = "0.29.0"
-ureq = "2.9"
-scraper = "0.23.1"
-thiserror = "2.0.11"
-once_cell = "1.20.3"
-syntect = "5.2.0"
-serde = { version = "1.0.218", features = ["derive"] }
-toml = "0.8.20"
-dirs = "6.0.0"
-clap = { version = "4.5.31", features = ["derive"] }
-open = "5.3.2"
-dashmap = "7.0.0-rc1"
-globset = "0.4.16"
-rusqlite = { version = "0.34.0", features = ["bundled"] }
-chrono = "0.4.40"
-nucleo-matcher = "0.3.1"
-serde_json = "1.0.139"
+brotli = "8.0.1"
+chrono = "0.4.41"
+clap = { version = "4.5.40", features = ["derive"] }
+crossterm = "0.29.0"
 csv = "1.3.1"
-enum_dispatch = "0.3.13"
-nu-ansi-term = "0.50.1"
-log = "0.4.26"
-env_logger = "0.11.7"
-zstd = "0.13.3"
-parking_lot = "0.12.3"
-textwrap = "0.16.2"
+ctor = "0.4.2"
+dashmap = "7.0.0-rc2"
+dirs = "6.0.0"
 encoding_rs = "0.8.35"
 encoding_rs_io = "0.1.7"
-ctor = "0.4.1"
-brotli = "7.0.0"
+enum_dispatch = "0.3.13"
+env_logger = "0.11.8"
+globset = "0.4.16"
+log = "0.4.27"
+nu-ansi-term = "0.50.1"
+nucleo-matcher = "0.3.1"
+once_cell = "1.21.3"
+open = "5.3.2"
+parking_lot = "0.12.4"
+ratatui = "0.29.0"
+rusqlite = { version = "0.36.0", features = ["bundled"] }
+scraper = "0.23.1"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
 shell-words = "1.1.0"
+syntect = "5.2.0"
+textwrap = "0.16.2"
+thiserror = "2.0.12"
+toml = "0.8.23"
+ureq = "3.0.11"
+zstd = "0.13.3"
 
 [build-dependencies]
-clap = { version = "4.5.31", features = ["derive", "cargo", "env"] }
-clap_mangen = "0.2.26"
-clap_complete = "4.5.46"
+clap = { version = "4.5.40", features = ["derive", "cargo", "env"] }
+clap_mangen = "0.2.27"
+clap_complete = "4.5.54"
 
 [dev-dependencies]
 serial_test = "3.2.0"
-tempfile = "3.17.1"
+tempfile = "3.20.0"
 
 # The profile that 'dist' will build with
 [profile.dist]

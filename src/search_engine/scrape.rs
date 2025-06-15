@@ -8,13 +8,21 @@ use brotli::Decompressor;
 use encoding_rs::{Encoding, UTF_8};
 use encoding_rs_io::DecodeReaderBytesBuilder;
 use once_cell::sync::Lazy;
+use std::convert::Into;
 use std::io::Read;
 use std::time::Duration;
-use ureq::{Agent, AgentBuilder, Response};
+use ureq::http::Response;
+use ureq::typestate::WithoutBody;
+use ureq::{Agent, Body};
 
 pub static TIMEOUT: Lazy<Duration> = Lazy::new(|| Duration::from_secs(Config::get_timeout()));
 
-pub static UREQ_AGENT: Lazy<Agent> = Lazy::new(|| AgentBuilder::new().timeout(*TIMEOUT).build());
+pub static UREQ_AGENT: Lazy<Agent> = Lazy::new(|| {
+    Agent::config_builder()
+        .timeout_global(Some(*TIMEOUT))
+        .build()
+        .into()
+});
 
 pub static HEADER_ORDERING: Lazy<Vec<&str>> = Lazy::new(|| {
     vec![
@@ -57,14 +65,17 @@ fn ureq_scrape(html_source: &HtmlSource) -> Result<String, IsError> {
         ))
     })?;
 
-    if !(response.status() >= 200 && response.status() < 300) {
+    if !response.status().is_success() {
         return Err(error_for_fail_response_code(url, &response));
     }
 
     decode_text(url, response)
 }
 
-fn add_url_based_headers(url: &SiteConfig, request: ureq::Request) -> ureq::Request {
+fn add_url_based_headers(
+    url: &SiteConfig,
+    request: ureq::RequestBuilder<WithoutBody>,
+) -> ureq::RequestBuilder<WithoutBody> {
     let mut request = request;
     let headers = url.get_call().get_headers();
     let mut sorted_headers: Vec<(&String, &String)> = headers.iter().collect();
@@ -77,34 +88,40 @@ fn add_url_based_headers(url: &SiteConfig, request: ureq::Request) -> ureq::Requ
     });
 
     for (key, value) in sorted_headers {
-        request = request.set(key, value);
+        request = request.header(key, value);
     }
 
     request
 }
 
-fn error_for_fail_response_code(url: &str, response: &Response) -> IsError {
+fn error_for_fail_response_code(url: &str, response: &Response<Body>) -> IsError {
     Scrape(format!(
         "Request failed for {url}: HTTP Status {}",
         response.status()
     ))
 }
 
-fn decode_text(url: &str, response: Response) -> Result<String, IsError> {
-    let content_type = response.header("Content-Type").unwrap_or("");
+fn decode_text(url: &str, response: Response<Body>) -> Result<String, IsError> {
+    let content_type = response
+        .headers()
+        .get("Content-Type")
+        .and_then(|c| c.to_str().ok())
+        .unwrap_or_default();
     let encoding_from_headers = if let Some(start) = content_type.find("charset=") {
-        let charset = &content_type[start + 8..].trim();
+        let charset = content_type[start + 8..].trim();
         Encoding::for_label(charset.as_bytes())
     } else {
         None
     };
 
     let is_brotli = response
-        .header("Content-Encoding")
+        .headers()
+        .get("Content-Encoding")
+        .and_then(|e| e.to_str().ok())
         .is_some_and(|e| e.eq_ignore_ascii_case("br"));
 
     let mut bytes = Vec::new();
-    let mut reader = response.into_reader();
+    let mut reader = response.into_body().into_reader();
     reader.read_to_end(&mut bytes).map_err(|_| {
         Scrape(format!(
             "Request failed for {url}, could not extract content."

@@ -25,7 +25,7 @@ pub fn prepare_pages(query: OpenArgs) -> Result<Vec<HtmlSource>, IsError> {
     for url in query.direct {
         sources.push(LinkSource(Link::new(&url)));
     }
-    if let Some(search_term) = query.query.map(|q| q.join(" ")) {
+    if let Some(search_term) = query.query.map(|q| q.join("+").replace(" ", "+")) {
         let site = SITE
             .clone()
             .map(|s| format!("site:{s}"))

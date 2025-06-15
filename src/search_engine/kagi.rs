@@ -45,13 +45,14 @@ impl KagiSearch {
         let url = format!("https://kagi.com/api/v0/search?q={query}");
         UREQ_AGENT
             .get(&url)
-            .set("Authorization", &format!("Bot {api_key}"))
+            .header("Authorization", &format!("Bot {api_key}"))
             .call()
             .map_err(|e| Scrape(format!("Request failed for {url}: {e}")))
             .and_then(|response| {
-                if response.status() >= 200 && response.status() < 300 {
+                if response.status().is_success() {
                     response
-                        .into_string()
+                        .into_body()
+                        .read_to_string()
                         .map_err(|e| Scrape(format!("Failed to read response body for {url}: {e}")))
                 } else {
                     Err(Scrape(format!(
