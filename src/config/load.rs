@@ -445,6 +445,14 @@ fn parse_key_combos(command: &str) -> Vec<KeyCombo> {
                     "DOWN" => key_code = Some(KeyCode::Down),
                     "LEFT" => key_code = Some(KeyCode::Left),
                     "RIGHT" => key_code = Some(KeyCode::Right),
+                    "PAGE_UP" => key_code = Some(KeyCode::PageUp),
+                    "PAGE_DOWN" => key_code = Some(KeyCode::PageDown),
+                    "HOME" => key_code = Some(KeyCode::Home),
+                    "END" => key_code = Some(KeyCode::End),
+                    "INSERT" => key_code = Some(KeyCode::Insert),
+                    "DELETE" => key_code = Some(KeyCode::Delete),
+                    "BACKSPACE" => key_code = Some(KeyCode::Backspace),
+                    "TAB" => key_code = Some(KeyCode::Tab),
                     _ => return None,
                 }
             }

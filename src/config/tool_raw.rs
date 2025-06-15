@@ -302,7 +302,7 @@ mod tests {
             search: None,
             misc: None,
             custom_config: Default::default(),
-            keybind_page: None,
+            keybindings: None,
         };
 
         let user_config = ToolRawConfig {
@@ -328,7 +328,7 @@ mod tests {
             search: None,
             misc: None,
             custom_config: Default::default(),
-            keybind_page: None,
+            keybindings: None,
         };
 
         override_defaults_tool(&mut default_config, user_config);
