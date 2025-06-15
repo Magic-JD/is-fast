@@ -4,6 +4,9 @@
 ### Added
 - Configurable keybinds for the page.
 
+### Changed
+- Updated dependencies.
+
 ## [0.16.2]
 ### Fix
 - Let site selection in config be applied. (currently only the flag is working correctly)
