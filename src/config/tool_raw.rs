@@ -47,6 +47,26 @@ pub struct MiscSection {
     pub(crate) text_size_supported: bool,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+pub struct KeybindPageSection {
+    #[serde(default)]
+    pub(crate) exit: Option<String>,
+    #[serde(default)]
+    pub(crate) next: Option<String>,
+    #[serde(default)]
+    pub(crate) previous: Option<String>,
+    #[serde(default)]
+    pub(crate) down: Option<String>,
+    #[serde(default)]
+    pub(crate) up: Option<String>,
+    #[serde(default)]
+    pub(crate) page_up: Option<String>,
+    #[serde(default)]
+    pub(crate) page_down: Option<String>,
+    #[serde(default)]
+    pub(crate) open_in_browser: Option<String>,
+}
+
 #[derive(Debug, Deserialize, Clone)]
 pub struct ToolRawConfig {
     #[serde(default)]
@@ -61,6 +81,8 @@ pub struct ToolRawConfig {
     pub(crate) misc: Option<MiscSection>,
     #[serde(default)]
     pub(crate) custom_config: HashMap<String, Vec<String>>,
+    #[serde(default)]
+    pub(crate) keybind_page: Option<KeybindPageSection>,
 }
 
 impl ToolRawConfig {
@@ -72,6 +94,7 @@ impl ToolRawConfig {
             search: None,
             misc: None,
             custom_config: HashMap::new(),
+            keybind_page: None,
         }
     }
 }
@@ -91,6 +114,10 @@ pub fn override_defaults_tool(config: &mut ToolRawConfig, mut u_config: ToolRawC
     config.search = Some(override_search(
         config.search.take(),
         u_config.search.take(),
+    ));
+    config.keybind_page = Some(override_keybinds_page(
+        config.keybind_page.take(),
+        u_config.keybind_page.take(),
     ));
     config.misc = Some(override_misc(config.misc.take(), u_config.misc.take()));
     for (site, file) in u_config.custom_config {
@@ -187,6 +214,49 @@ fn override_search(
     search
 }
 
+fn override_keybinds_page(
+    keybind_page_section: Option<KeybindPageSection>,
+    u_keybind_page_section: Option<KeybindPageSection>,
+) -> KeybindPageSection {
+    let mut kps = keybind_page_section.unwrap_or(KeybindPageSection {
+        exit: None,
+        next: None,
+        previous: None,
+        down: None,
+        up: None,
+        page_up: None,
+        page_down: None,
+        open_in_browser: None,
+    });
+    if let Some(ukps) = u_keybind_page_section {
+        if let Some(exit) = ukps.exit {
+            kps.exit = Some(exit);
+        }
+        if let Some(next) = ukps.next {
+            kps.next = Some(next);
+        }
+        if let Some(previous) = ukps.previous {
+            kps.previous = Some(previous);
+        }
+        if let Some(down) = ukps.down {
+            kps.down = Some(down);
+        }
+        if let Some(up) = ukps.up {
+            kps.up = Some(up);
+        }
+        if let Some(page_up) = ukps.page_up {
+            kps.page_up = Some(page_up);
+        }
+        if let Some(page_down) = ukps.page_down {
+            kps.page_down = Some(page_down);
+        }
+        if let Some(open_in_browser) = ukps.open_in_browser {
+            kps.open_in_browser = Some(open_in_browser);
+        }
+    }
+    kps
+}
+
 fn override_misc(misc: Option<MiscSection>, u_misc: Option<MiscSection>) -> MiscSection {
     let mut misc = misc.unwrap_or(MiscSection {
         open_tool: None,
@@ -232,6 +302,7 @@ mod tests {
             search: None,
             misc: None,
             custom_config: Default::default(),
+            keybind_page: None,
         };
 
         let user_config = ToolRawConfig {
@@ -257,6 +328,7 @@ mod tests {
             search: None,
             misc: None,
             custom_config: Default::default(),
+            keybind_page: None,
         };
 
         override_defaults_tool(&mut default_config, user_config);

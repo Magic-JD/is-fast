@@ -1,5 +1,10 @@
+use crate::config::load::{Config, KeyCombo};
 use crossterm::event;
-use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
+use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
+use once_cell::sync::Lazy;
+use std::collections::HashMap;
+
+static PAGE_KEYS: Lazy<HashMap<KeyCombo, PageAction>> = Lazy::new(Config::get_page_keybinds);
 
 pub fn history_event_loop() -> HistoryAction {
     if let Ok(event::Event::Key(KeyEvent {
@@ -34,6 +39,7 @@ pub enum HistoryAction {
     Backspace,
     ChangeSearch,
 }
+
 pub fn page_event_loop() -> PageAction {
     // As the next page load can take some time especially this can cause an issue if the user
     // enters input while in the loading screen. To fix this we drain the buffer before we read the
@@ -46,19 +52,8 @@ pub fn page_event_loop() -> PageAction {
         ..
     })) = event::read()
     {
-        return match code {
-            KeyCode::Char('q') | KeyCode::Esc => PageAction::Exit,
-            KeyCode::Char('n') | KeyCode::Right => PageAction::Next,
-            KeyCode::Char('b') | KeyCode::Left => PageAction::Previous,
-            KeyCode::Down | KeyCode::Char('j') => PageAction::Down,
-            KeyCode::Up | KeyCode::Char('k') => PageAction::Up,
-            KeyCode::PageUp => PageAction::PageUp,
-            KeyCode::Char('u') if modifiers.contains(KeyModifiers::CONTROL) => PageAction::PageUp,
-            KeyCode::PageDown => PageAction::PageDown,
-            KeyCode::Char('d') if modifiers.contains(KeyModifiers::CONTROL) => PageAction::PageDown,
-            KeyCode::Char('o') => PageAction::Open,
-            _ => PageAction::Continue,
-        };
+        let key = KeyCombo { code, modifiers };
+        return *PAGE_KEYS.get(&key).unwrap_or(&PageAction::Continue);
     }
     PageAction::Continue
 }
@@ -69,6 +64,7 @@ fn drain_buffer() {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) enum PageAction {
     Exit,
     Open,

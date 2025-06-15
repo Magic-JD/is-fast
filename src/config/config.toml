@@ -13,6 +13,16 @@ page_scroll = "full"
 # This setting can be overriden by the --color flag.
 color_mode = "tui"
 
+[keybind_page]
+exit = "q|ESC"
+next = "n|RIGHT"
+previous = "b|LEFT"
+down = "j|DOWN"
+up = "k|UP"
+page_up = "u+CTRL|PAGE_UP"
+page_down = "d+CTRL|PAGE_DOWN"
+open_in_browser = "o"
+
 # Setting for the history page
 [history]
 # Sets the color of the title on the history entries.

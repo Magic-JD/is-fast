@@ -1,13 +1,15 @@
+use crate::app::event_loop::PageAction;
 use crate::cli::command::{CacheMode, ColorMode};
 use crate::config::color_conversion::{Color, Style};
 use crate::config::files::config_path;
 use crate::config::glob_generation::generate_globs;
 use crate::config::site::{SiteConfig, SitePicker};
-use crate::config::tool_raw::{override_defaults_tool, ToolRawConfig};
+use crate::config::tool_raw::{override_defaults_tool, KeybindPageSection, ToolRawConfig};
 use crate::errors::error::IsError;
 use crate::search_engine::search_type::SearchEngine;
 use crate::search_engine::search_type::SearchEngine::{DuckDuckGo, Google, Kagi};
 use crate::DisplayConfig;
+use crossterm::event::{KeyCode, KeyModifiers};
 use globset::{Glob, GlobSet};
 use nucleo_matcher::pattern::AtomKind;
 use once_cell::sync::OnceCell;
@@ -18,6 +20,12 @@ use toml;
 
 static CONFIG: OnceCell<Config> = OnceCell::new();
 pub const DEFAULT_CONFIG: &str = include_str!("config.toml");
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct KeyCombo {
+    pub code: KeyCode,
+    pub modifiers: KeyModifiers,
+}
 
 #[derive(Debug, Clone)]
 pub struct HistoryWidgetConfig {
@@ -129,6 +137,7 @@ pub struct Config {
     sites: SitePicker,
     timeout: u64,
     search_site: Option<String>,
+    page_keybinds: HashMap<KeyCombo, PageAction>,
 }
 
 impl Config {
@@ -208,7 +217,11 @@ impl Config {
         let extraction =
             Self::create_extraction_config(args_color_mode, selector_override, nth_element, &tool);
         let history_widget = Self::create_history_widget_config(&tool);
-
+        let keybind_page: HashMap<KeyCombo, PageAction> = tool
+            .keybind_page
+            .map(Self::create_keybind_page_map)
+            .unwrap_or_default()
+            .clone();
         Self {
             page_margin: tool
                 .display
@@ -262,6 +275,7 @@ impl Config {
             timeout: tool.search.as_ref().map_or(4, |search| search.timeout),
             search_site: search_site
                 .or_else(|| tool.search.as_ref().and_then(|search| search.site.clone())),
+            page_keybinds: keybind_page,
         }
     }
 
@@ -379,6 +393,65 @@ impl Config {
     pub fn get_search_site() -> Option<String> {
         Self::get_config().search_site.clone()
     }
+
+    pub fn get_page_keybinds() -> HashMap<KeyCombo, PageAction> {
+        Self::get_config().page_keybinds.clone()
+    }
+}
+
+fn create_keybind_page_map(keybinds: KeybindPageSection) -> HashMap<KeyCombo, PageAction> {
+    let mut map = HashMap::new();
+    let bindings = [
+        (&keybinds.exit, PageAction::Exit),
+        (&keybinds.next, PageAction::Next),
+        (&keybinds.previous, PageAction::Previous),
+        (&keybinds.down, PageAction::Down),
+        (&keybinds.up, PageAction::Up),
+        (&keybinds.page_up, PageAction::PageUp),
+        (&keybinds.page_down, PageAction::PageDown),
+        (&keybinds.open_in_browser, PageAction::Open),
+    ];
+    for (opt_str, action) in bindings {
+        if let Some(s) = opt_str {
+            for combo in parse_key_combos(s) {
+                map.insert(combo, action.clone());
+            }
+        }
+    }
+    map
+}
+
+fn parse_key_combos(command: &str) -> Vec<KeyCombo> {
+    command
+        .split('|')
+        .filter_map(|s| {
+            let parts = s.split('+').map(str::trim);
+            let mut modifiers = KeyModifiers::NONE;
+            let mut key_code = None;
+
+            for part in parts {
+                match part {
+                    "CTRL" => modifiers |= KeyModifiers::CONTROL,
+                    "ALT" => modifiers |= KeyModifiers::ALT,
+                    s if s.len() == 1 => {
+                        if let Some(c) = s.chars().next() {
+                            key_code = Some(KeyCode::Char(c));
+                        }
+                    }
+                    "ESC" => key_code = Some(KeyCode::Esc),
+                    "ENTER" => key_code = Some(KeyCode::Enter),
+                    "UP" => key_code = Some(KeyCode::Up),
+                    "SPACE" => key_code = Some(KeyCode::Char(' ')),
+                    "DOWN" => key_code = Some(KeyCode::Down),
+                    "LEFT" => key_code = Some(KeyCode::Left),
+                    "RIGHT" => key_code = Some(KeyCode::Right),
+                    _ => return None,
+                }
+            }
+
+            key_code.map(|code| KeyCombo { code, modifiers })
+        })
+        .collect()
 }
 
 fn convert_to_color_mode(color_mode: &str) -> ColorMode {
