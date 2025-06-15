@@ -4,7 +4,7 @@ use crate::config::color_conversion::{Color, Style};
 use crate::config::files::config_path;
 use crate::config::glob_generation::generate_globs;
 use crate::config::site::{SiteConfig, SitePicker};
-use crate::config::tool_raw::{override_defaults_tool, KeybindPageSection, ToolRawConfig};
+use crate::config::tool_raw::{override_defaults_tool, KeybindingsSection, ToolRawConfig};
 use crate::errors::error::IsError;
 use crate::search_engine::search_type::SearchEngine;
 use crate::search_engine::search_type::SearchEngine::{DuckDuckGo, Google, Kagi};
@@ -137,7 +137,7 @@ pub struct Config {
     sites: SitePicker,
     timeout: u64,
     search_site: Option<String>,
-    page_keybinds: HashMap<KeyCombo, PageAction>,
+    keybindings: HashMap<KeyCombo, PageAction>,
 }
 
 impl Config {
@@ -218,8 +218,8 @@ impl Config {
             Self::create_extraction_config(args_color_mode, selector_override, nth_element, &tool);
         let history_widget = Self::create_history_widget_config(&tool);
         let keybind_page: HashMap<KeyCombo, PageAction> = tool
-            .keybind_page
-            .map(Self::create_keybind_page_map)
+            .keybindings
+            .map(create_keybindings)
             .unwrap_or_default()
             .clone();
         Self {
@@ -275,7 +275,7 @@ impl Config {
             timeout: tool.search.as_ref().map_or(4, |search| search.timeout),
             search_site: search_site
                 .or_else(|| tool.search.as_ref().and_then(|search| search.site.clone())),
-            page_keybinds: keybind_page,
+            keybindings: keybind_page,
         }
     }
 
@@ -395,11 +395,11 @@ impl Config {
     }
 
     pub fn get_page_keybinds() -> HashMap<KeyCombo, PageAction> {
-        Self::get_config().page_keybinds.clone()
+        Self::get_config().keybindings.clone()
     }
 }
 
-fn create_keybind_page_map(keybinds: KeybindPageSection) -> HashMap<KeyCombo, PageAction> {
+fn create_keybindings(keybinds: KeybindingsSection) -> HashMap<KeyCombo, PageAction> {
     let mut map = HashMap::new();
     let bindings = [
         (&keybinds.exit, PageAction::Exit),

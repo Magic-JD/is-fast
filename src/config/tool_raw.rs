@@ -48,7 +48,7 @@ pub struct MiscSection {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct KeybindPageSection {
+pub struct KeybindingsSection {
     #[serde(default)]
     pub(crate) exit: Option<String>,
     #[serde(default)]
@@ -82,7 +82,7 @@ pub struct ToolRawConfig {
     #[serde(default)]
     pub(crate) custom_config: HashMap<String, Vec<String>>,
     #[serde(default)]
-    pub(crate) keybind_page: Option<KeybindPageSection>,
+    pub(crate) keybindings: Option<KeybindingsSection>,
 }
 
 impl ToolRawConfig {
@@ -94,7 +94,7 @@ impl ToolRawConfig {
             search: None,
             misc: None,
             custom_config: HashMap::new(),
-            keybind_page: None,
+            keybindings: None,
         }
     }
 }
@@ -115,9 +115,9 @@ pub fn override_defaults_tool(config: &mut ToolRawConfig, mut u_config: ToolRawC
         config.search.take(),
         u_config.search.take(),
     ));
-    config.keybind_page = Some(override_keybinds_page(
-        config.keybind_page.take(),
-        u_config.keybind_page.take(),
+    config.keybindings = Some(override_keybinds_page(
+        config.keybindings.take(),
+        u_config.keybindings.take(),
     ));
     config.misc = Some(override_misc(config.misc.take(), u_config.misc.take()));
     for (site, file) in u_config.custom_config {
@@ -215,10 +215,10 @@ fn override_search(
 }
 
 fn override_keybinds_page(
-    keybind_page_section: Option<KeybindPageSection>,
-    u_keybind_page_section: Option<KeybindPageSection>,
-) -> KeybindPageSection {
-    let mut kps = keybind_page_section.unwrap_or(KeybindPageSection {
+    keybind_page_section: Option<KeybindingsSection>,
+    u_keybind_page_section: Option<KeybindingsSection>,
+) -> KeybindingsSection {
+    let mut kps = keybind_page_section.unwrap_or(KeybindingsSection {
         exit: None,
         next: None,
         previous: None,

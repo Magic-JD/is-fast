@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.17.0]
+### Added
+- Configurable keybinds for the page.
+
 ## [0.16.2]
 ### Fix
 - Let site selection in config be applied. (currently only the flag is working correctly)

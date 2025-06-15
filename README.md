@@ -230,6 +230,44 @@ search_type = "fuzzy"
 enabled = false # Not currently tracking your history.
 ```
 
+## ⌨️ Keybinding Settings
+
+### The `[keybindings]` section defines keyboard shortcuts for navigation in the UI.
+
+**Exit**
+The key(s) used to exit the page view.
+Example: `q|ESC`
+
+**Next / Previous**
+Keys used to navigate forward and backward between pages.
+Example: `n|RIGHT`, `b|LEFT`
+
+**Down / Up**
+Scroll down or up by one line.
+Example: `j|DOWN`, `k|UP`
+
+**Page Up / Page Down**
+Scroll up or down by a page. The number of lines is configured in the `[display]` section.
+Example: `u+CTRL|PAGE_UP`, `d+CTRL|PAGE_DOWN`
+
+**Open in Browser**
+Opens the current item in the system's default browser.
+Example: `o`
+
+Each field accepts one or more key combinations separated by `|`. Combinations can use modifiers like `CTRL` or `ALT` with `+` (e.g., `o+CTRL`).
+
+```toml
+[keybindings]
+exit = "q|ESC"
+next = "n|RIGHT"
+previous = "b|LEFT"
+down = "j|DOWN"
+up = "k|UP"
+page_up = "u+CTRL|PAGE_UP"
+page_down = "d+CTRL|PAGE_DOWN"
+open_in_browser = "o"
+```
+
 ## 🔍 Search Configuration
 
 ### Engine
