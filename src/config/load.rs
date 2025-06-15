@@ -414,7 +414,7 @@ fn create_keybindings(keybinds: KeybindingsSection) -> HashMap<KeyCombo, PageAct
     for (opt_str, action) in bindings {
         if let Some(s) = opt_str {
             for combo in parse_key_combos(s) {
-                map.insert(combo, action.clone());
+                map.insert(combo, action);
             }
         }
     }
