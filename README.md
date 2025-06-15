@@ -68,6 +68,7 @@ cargo install --git https://github.com/Magic-JD/is-fast.git
 - [Tool Configuration](#tool-configuration)
   - [🎨 Display Settings](#-display-settings)
   - [🕰️ History Settings](#-history-settings)
+  - [⌨️ Keybinding Settings](#-keybinding-settings)
   - [🔍 Search Configuration](#-search-configuration)
   - [🔍 Selectors](#-selectors)
   - [❓ Miscellaneous Configuration](#-miscellaneous-settings)
