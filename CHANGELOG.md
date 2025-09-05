@@ -1,5 +1,10 @@
 # Changelog
 
+
+## [0.17.1]
+### Fix
+- Certificates when trusted by corprate machine
+
 ## [0.17.0]
 ### Added
 - Configurable keybinds for the page.

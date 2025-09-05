@@ -12,6 +12,7 @@ use std::convert::Into;
 use std::io::Read;
 use std::time::Duration;
 use ureq::http::Response;
+use ureq::tls::{RootCerts, TlsConfig};
 use ureq::typestate::WithoutBody;
 use ureq::{Agent, Body};
 
@@ -19,6 +20,11 @@ pub static TIMEOUT: Lazy<Duration> = Lazy::new(|| Duration::from_secs(Config::ge
 
 pub static UREQ_AGENT: Lazy<Agent> = Lazy::new(|| {
     Agent::config_builder()
+        .tls_config(
+            TlsConfig::builder()
+                .root_certs(RootCerts::PlatformVerifier) // use OS Keychain
+                .build(),
+        )
         .timeout_global(Some(*TIMEOUT))
         .build()
         .into()
