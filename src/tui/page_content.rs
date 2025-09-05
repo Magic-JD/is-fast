@@ -45,7 +45,7 @@ impl PageContent<'_> {
         scroll: u16,
         pages: &[HtmlSource],
         available_space: Rect,
-    ) -> Vec<Widget> {
+    ) -> Vec<Widget<'_>> {
         if available_space != self.total_area {
             self.total_area = available_space;
             self.areas = Self::page_area(available_space);

@@ -66,7 +66,7 @@ impl HistoryContent<'_> {
         }
     }
 
-    pub fn create_widgets(&mut self, available_space: Rect) -> Vec<Widget> {
+    pub fn create_widgets(&mut self, available_space: Rect) -> Vec<Widget<'_>> {
         if available_space != self.total_area || self.needs_update {
             self.total_area = available_space;
             self.areas = Self::history_areas(available_space, self.current_history.len() as u16);

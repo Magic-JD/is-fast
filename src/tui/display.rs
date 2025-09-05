@@ -63,7 +63,7 @@ impl Display {
         self.unwrap_terminal().get_frame().area()
     }
 
-    fn unwrap_terminal(&self) -> MutexGuard<Terminal<CrosstermBackend<Stdout>>> {
+    fn unwrap_terminal(&self) -> MutexGuard<'_, Terminal<CrosstermBackend<Stdout>>> {
         let mut terminal = self
             .terminal
             .lock()

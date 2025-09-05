@@ -159,7 +159,7 @@ impl Cache {
         Ok(SystemTime::now().duration_since(UNIX_EPOCH)?.as_millis() as i64)
     }
 
-    fn get_connection(&self) -> MutexGuard<Connection> {
+    fn get_connection(&self) -> MutexGuard<'_, Connection> {
         self.connection
             .try_lock_for(Duration::from_millis(100))
             .expect("Failed to get database connection")

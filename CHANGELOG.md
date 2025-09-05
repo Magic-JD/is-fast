@@ -4,6 +4,7 @@
 ## [0.17.1]
 ### Fix
 - Certificates when trusted by corprate machine
+- Cargo clippy fixes
 
 ## [0.17.0]
 ### Added
