@@ -1,10 +1,13 @@
 # Changelog
 
+## [0.17.2]
+### fix
+- Removes windows support.
 
 ## [0.17.1]
-### Fix
-- Certificates when trusted by corprate machine
-- Cargo clippy fixes
+### fix
+- certificates when trusted by corprate machine
+- cargo clippy fixes
 
 ## [0.17.0]
 ### Added
