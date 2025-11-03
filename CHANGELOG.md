@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.17.5]
+## [0.17.6]
 ### Fix
 - Using latest version of cargo dist
 
