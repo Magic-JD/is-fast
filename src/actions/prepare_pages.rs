@@ -30,7 +30,7 @@ pub fn prepare_pages(query: OpenArgs) -> Result<Vec<HtmlSource>, IsError> {
             .clone()
             .map(|s| format!("site:{s}"))
             .unwrap_or_default();
-        find_links(format!("{search_term} {site}").trim())?
+        find_links(format!("{search_term}+{site}").trim())?
             .into_iter()
             .map(LinkSource)
             .for_each(|source| sources.push(source));

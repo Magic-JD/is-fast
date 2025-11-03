@@ -116,6 +116,7 @@ timeout = 4
 [custom_config]
 "*finance.yahoo.com*" = ["alternate_headers.toml"]
 "*stackoverflow.com*" = ["alternate_headers.toml"]
+"*google.com*" = ["alternate_headers.toml"]
 
 
 # SITE SPECIFIC - This section can be overriden in a custom config file.

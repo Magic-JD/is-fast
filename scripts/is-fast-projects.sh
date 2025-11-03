@@ -6,6 +6,7 @@
 # Select span elements with the base class
 # We want this output to display directly in the terminal, rather than being shown in the tui so we use --piped.
 # By default these spans are not colored, but if displaying in the terminal it is fine to include ansi-codes
+# NOTE: This will not work in certain regions (e.g. UK) due to the site having a popup inquiring about cookies.
 isf_stock() {
     is-fast \
         --direct "https://finance.yahoo.com/quote/${1}/" \
@@ -21,8 +22,9 @@ isf_stock() {
 # What is something? Give it a word or a name and it will return the first wikipedia paragraph of that thing. This will work if there is a wikipedia article with that
 # exact name. Works for most people and things. E.g. isf_what albert einstein
 isf_what() {
+    local query="${*// /_}"
     is-fast \
-        --direct "en.wikipedia.org/wiki/${*}" \
+        --direct "en.wikipedia.org/wiki/${query}" \
         --selector "div.mw-content-ltr > p" \
         --color=always \
         --piped \
@@ -65,22 +67,5 @@ isf_stars() {
         --pretty-print="title:Current Stars,margin:5" \
         --color=always \
         --piped \
-        --no-cache
-}
-
-# Checks the google page to get the information for the info box, works for most conversions (with thanks to d3-X-t3r for this suggestion)
-# E.g. isf_quick 200f to c
-# isf_quick 30 GBP to USD
-# isf_quick Weather Berlin
-isf_quick() {
-    is-fast \
-        --direct "https://www.google.com/search?q=${*}" \
-        --piped \
-        --selector="div.ezO2md" \
-        --ignore="a" \
-        --no-block \
-        --nth-element 1 \
-        --pretty-print="margin:20" \
-        --color=always \
         --no-cache
 }
