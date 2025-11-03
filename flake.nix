@@ -19,7 +19,7 @@
 
       darwinDeps =
         pkgs: with pkgs; [
-          darwin.apple_sdk.frameworks.SystemConfiguration
+          pkgs.apple_sdk.frameworks.SystemConfiguration
           libiconv
         ];
     in
