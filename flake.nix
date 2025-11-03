@@ -19,7 +19,7 @@
             cargo-edit
             clippy
             rustc
-          ] ++ pkgs.lib.optionals pkgs.stdenv.isDarwin (darwinDeps pkgs);
+          ];
         };
       });
 
