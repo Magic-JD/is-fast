@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.17.4]
+### Fix
+- Using latest version of cargo dist
+
 ## [0.17.3]
 ### Fix
 - Reinstate building for windows
