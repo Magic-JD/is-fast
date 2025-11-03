@@ -1,5 +1,8 @@
 # Changelog
 
+## [0.17.3]
+### Fix
+- Reinstate building for windows
 
 ## [0.17.1]
 ### Fix
