@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.7]
+### Fix
+- Fixed wikipedia script to work with multiple words
+- Fixed issue where site wasn't working correctly
+- Removed the google specific scripts as they were no longer working
+- Added clarifying comment to the stock script
+
 ## [0.17.6]
 ### Fix
 - Using latest version of cargo dist
