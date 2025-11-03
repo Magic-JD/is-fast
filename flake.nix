@@ -9,11 +9,6 @@
     let
       forAllSystems = f:
         nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ] (system: f nixpkgs.legacyPackages.${system});
-
-      darwinDeps = pkgs: with pkgs; [
-        darwin.apple_sdk.frameworks.SystemConfiguration
-        libiconv
-      ];
     in
     {
       devShells = forAllSystems (pkgs: {
@@ -36,7 +31,7 @@
             pname = cargoToml.package.name;
             version = cargoToml.package.version;
             cargoLock = { lockFile = ./Cargo.lock; };
-            darwinBuildInputs = darwinDeps pkgs;
+            darwinBuildInputs = [];
           in
           pkgs.rustPlatform.buildRustPackage {
             inherit pname version cargoLock;
