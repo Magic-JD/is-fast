@@ -17,11 +17,10 @@
           "aarch64-darwin"
         ] (system: function nixpkgs.legacyPackages.${system});
 
-      darwinDeps =
-        pkgs: with pkgs; [
-          pkgs.apple-sdk.frameworks.SystemConfiguration
-          libiconv
-        ];
+      darwinDeps = with pkgs; [
+         darwin.apple_sdk.frameworks.SystemConfiguration
+         libiconv
+      ];
     in
     {
       devShells = forAllSystems (pkgs: {
